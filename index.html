@@ -1881,21 +1881,28 @@ class Component extends DCLogic {
      abre ningún carrete no descarga un solo byte de video.                   -->
 <style>
   /* ── El botón, dentro de la lámina ────────────────────────────────────── */
-  .reel-go { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  /* Abajo al centro de la lámina, y siempre visible: un botón que sólo aparece
+     al pasar el cursor no existe para quien llega desde un teléfono. */
+  .reel-go { position: absolute; left: 50%; bottom: 11px; transform: translateX(-50%);
     z-index: 7; appearance: none; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 11px 16px 11px 14px; min-height: 46px; box-sizing: border-box;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 11px 6px 10px; box-sizing: border-box;
     background: #08123a; border: 1px solid #0102ec; color: #e6effb;
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 3px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
     text-transform: uppercase; line-height: 1;
-    box-shadow: 4px 4px 0 rgba(1,2,236,.32);
+    box-shadow: 3px 3px 0 rgba(1,2,236,.3);
     transition: background .16s, color .16s, box-shadow .16s, transform .16s; }
-  .reel-go svg { display: block; width: 11px; height: 12px; fill: #0102ec;
+  .reel-go svg { display: block; width: 8px; height: 9px; fill: #0102ec;
     transition: fill .16s; }
-  .reel-go:hover { background: #0102ec; box-shadow: 6px 6px 0 rgba(8,18,58,.3);
-    transform: translate(-50%, -50%) translate(-1px, -1px); }
+  .reel-go:hover { background: #0102ec; box-shadow: 5px 5px 0 rgba(8,18,58,.28);
+    transform: translateX(-50%) translateY(-1px); }
   .reel-go:hover svg { fill: #fff; }
   .reel-go:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  /* El dibujo es chico pero el dedo necesita 44 px: el relleno crece, no la
+     tipografía. */
+  @media (pointer: coarse) {
+    .reel-go { min-height: 46px; padding: 6px 16px; bottom: 9px; }
+  }
   /* La lámina se marca como picable sólo donde hay carrete. */
   .stripes-slot.reel-hay { cursor: pointer; }
 
@@ -1985,7 +1992,8 @@ class Component extends DCLogic {
   /* Qué carrete va en qué tarjeta. Cambiar el reparto es cambiar esta tabla —
      nada más. La clave es el id que ya usa el proyecto en su ficha. */
   var CARRETES = {
-    '001': { src: 'media/project.mp4' },
+    // 001 (fracture) no lleva video: lleva su propio motor corriendo en vivo,
+    // que es lo que de verdad enseña qué hace. Ver el bloque de abajo.
     '002': { src: 'media/pasillo.mp4' },
     '003': { src: 'media/menu-pasillo.mp4' }
   };
@@ -2246,6 +2254,320 @@ class Component extends DCLogic {
     /* Se vigila el <body>, NO la sección #work: si el componente vuelve a
        pintar y reemplaza #work, un observador colgado de ese nodo se muere con
        él y nunca se entera de las tarjetas nuevas. */
+    mo.observe(document.body, { childList: true, subtree: true });
+    setTimeout(function () { mo.disconnect(); clearTimeout(pend); }, 20000);
+  }
+})();
+</script>
+
+
+<!-- ══ FRACTURE, EN VIVO ═════════════════════════════════════════════════════
+     La tarjeta 001 no lleva video: lleva la herramienta trabajando.
+
+     fracture convierte una palabra en una portada, con semilla determinista —
+     la misma palabra da siempre la misma imagen. Enseñar eso con una grabación
+     sería enseñar el resultado; esto enseña el mecanismo: teclea, hornea, lee
+     la semilla, limpia, y otra vez con otra palabra.
+
+     Vive fuera del bloque <x-dc>, como todo lo demás.                        -->
+<style>
+  .frx { position: absolute; inset: 0; z-index: 1; display: block;
+    width: 100%; height: 100%; background: #f4f7fc; }
+  /* La lámina original se queda debajo: si el canvas no pinta, la tarjeta se
+     ve exactamente como antes en vez de quedarse en blanco. */
+  .frx-rotulo { position: absolute; left: 10px; bottom: 9px; z-index: 3;
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(8,18,58,.72); pointer-events: none;
+    background: rgba(244,247,252,.86); padding: 3px 6px; }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  var PALABRAS = ['fracture', 'adrift', 'eigenlicht', 'develop'];
+  var PAPEL = '#f4f7fc', TINTA = '#08123a', AZUL = '#0102ec', MEDIO = '#9db8dc';
+
+  var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Semilla determinista: la misma palabra da siempre los mismos números, que
+     es justo la promesa de la herramienta. */
+  function dado(palabra) {
+    var h = 1779033703 ^ palabra.length;
+    for (var i = 0; i < palabra.length; i++) {
+      h = Math.imul(h ^ palabra.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function () {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h ^= h >>> 16;
+      return (h >>> 0) / 4294967296;
+    };
+  }
+
+  /* La partitura de una portada: qué piezas la componen y en qué orden entran.
+     Se calcula una vez por palabra; dibujar sólo la lee. */
+  function componer(palabra, w, h) {
+    var d = dado(palabra), piezas = [];
+    var n = 4 + Math.floor(d() * 3);
+
+    // esquirlas: triángulos de canto, nunca curvas
+    for (var i = 0; i < n; i++) {
+      var x = d() * w, y = d() * h, s = (0.16 + d() * 0.36) * Math.min(w, h) * 1.6;
+      var giro = d() * Math.PI * 2;
+      piezas.push({ tipo: 'esquirla', x: x, y: y, s: s, giro: giro,
+        color: d() < 0.72 ? TINTA : AZUL, alfa: 0.5 + d() * 0.5 });
+    }
+    // barras macizas
+    for (var j = 0; j < 2 + Math.floor(d() * 2); j++) {
+      piezas.push({ tipo: 'barra', x: d() * w, y: d() * h,
+        w: (0.1 + d() * 0.5) * w, alto: 2 + d() * 9,
+        color: d() < 0.5 ? AZUL : TINTA });
+    }
+    // pelos: líneas de 1 px que cruzan
+    for (var k = 0; k < 3 + Math.floor(d() * 3); k++) {
+      piezas.push({ tipo: 'pelo', y: d() * h, desde: d() * w * 0.4,
+        hasta: w * (0.5 + d() * 0.5), color: MEDIO });
+    }
+    // trama de puntos
+    piezas.push({ tipo: 'trama', x: d() * w * 0.7, y: d() * h * 0.7,
+      w: (0.2 + d() * 0.3) * w, alto: (0.2 + d() * 0.4) * h, paso: 4 + d() * 3 });
+    // la letra fantasma
+    piezas.push({ tipo: 'letra', ch: palabra.charAt(0).toUpperCase(),
+      x: w * (0.62 + d() * 0.2), y: h * (0.78 + d() * 0.14), tam: h * (0.8 + d() * 0.5) });
+    return piezas;
+  }
+
+  function pinta(ctx, pieza, w, h) {
+    ctx.save();
+    if (pieza.tipo === 'esquirla') {
+      ctx.globalAlpha = pieza.alfa;
+      ctx.fillStyle = pieza.color;
+      ctx.translate(pieza.x, pieza.y);
+      ctx.rotate(pieza.giro);
+      ctx.beginPath();
+      ctx.moveTo(0, -pieza.s * 0.5);
+      ctx.lineTo(pieza.s * 0.42, pieza.s * 0.38);
+      ctx.lineTo(-pieza.s * 0.3, pieza.s * 0.2);
+      ctx.closePath();
+      ctx.fill();
+    } else if (pieza.tipo === 'barra') {
+      ctx.fillStyle = pieza.color;
+      ctx.fillRect(pieza.x, pieza.y, pieza.w, pieza.alto);
+    } else if (pieza.tipo === 'pelo') {
+      ctx.strokeStyle = pieza.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pieza.desde, Math.round(pieza.y) + 0.5);
+      ctx.lineTo(pieza.hasta, Math.round(pieza.y) + 0.5);
+      ctx.stroke();
+    } else if (pieza.tipo === 'trama') {
+      ctx.fillStyle = 'rgba(8,18,58,.45)';
+      for (var y = pieza.y; y < pieza.y + pieza.alto; y += pieza.paso) {
+        for (var x = pieza.x; x < pieza.x + pieza.w; x += pieza.paso) {
+          ctx.fillRect(x, y, 1.4, 1.4);
+        }
+      }
+    } else if (pieza.tipo === 'letra') {
+      ctx.globalAlpha = 0.14;
+      ctx.fillStyle = TINTA;
+      ctx.font = '900 ' + pieza.tam + 'px Arial Black, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(pieza.ch, pieza.x, pieza.y);
+    }
+    ctx.restore();
+  }
+
+  function arrancar(cuna) {
+    if (cuna.getAttribute('data-frx')) return;
+    cuna.setAttribute('data-frx', '1');
+
+    var lienzo = document.createElement('canvas');
+    lienzo.className = 'frx';
+    lienzo.setAttribute('aria-hidden', 'true');
+    cuna.insertBefore(lienzo, cuna.firstChild);
+
+    var rotulo = document.createElement('div');
+    rotulo.className = 'frx-rotulo';
+    rotulo.textContent = 'seed: ' + PALABRAS[0];
+    cuna.appendChild(rotulo);
+
+    var ctx = lienzo.getContext('2d');
+    var w = 0, h = 0, piezas = [], indice = 0, corriendo = false;
+
+    function medir() {
+      var r = cuna.getBoundingClientRect();
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = Math.max(1, Math.round(r.width));
+      h = Math.max(1, Math.round(r.height));
+      lienzo.width = Math.round(w * dpr);
+      lienzo.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      piezas = componer(PALABRAS[indice], w, h);
+    }
+
+    /* Dibuja la portada hasta cierto punto: 0 = papel en blanco, 1 = completa.
+       `letras` es cuántas letras de la palabra van tecleadas. */
+    function cuadro(avance, letras) {
+      ctx.fillStyle = PAPEL;
+      ctx.fillRect(0, 0, w, h);
+
+      var cuantas = Math.floor(avance * piezas.length);
+      for (var i = 0; i < cuantas; i++) pinta(ctx, piezas[i], w, h);
+
+      // el cursor y la palabra tecleándose, arriba a la izquierda
+      var palabra = PALABRAS[indice];
+      var visto = palabra.slice(0, letras);
+      ctx.save();
+      ctx.font = '600 13px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = TINTA;
+      ctx.fillText('> ' + visto, 11, 22);
+      if (letras < palabra.length) {
+        var an = ctx.measureText('> ' + visto).width;
+        ctx.fillStyle = AZUL;
+        ctx.fillRect(11 + an + 2, 12, 7, 12);
+      }
+      ctx.restore();
+
+      // marco de registro, para amarrarlo a la estética de la página
+      ctx.strokeStyle = 'rgba(8,18,58,.28)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(6.5, 6.5, w - 13, h - 13);
+    }
+
+    medir();
+
+    /* El estado final, dibujado YA y sin depender de un solo cuadro de
+       animación. Si el bucle nunca corre —pestaña de fondo, captura, motor que
+       no compone— la tarjeta enseña una portada terminada en vez de un
+       rectángulo vacío. */
+    cuadro(1, PALABRAS[indice].length);
+
+    /* Y otra vez cuando las fuentes estén listas.
+
+       El primer dibujo ocurre antes de que cargue IBM Plex Mono, así que la
+       palabra tecleada sale con la tipografía de respaldo y cambia sola un
+       instante después. Las formas no se mueven —el generador es
+       determinista, medido— pero el texto sí, y ese salto se nota. */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        if (!corriendo) cuadro(1, PALABRAS[indice].length);
+      });
+    }
+
+    if (quieto) return;   // con movimiento reducido se queda en esa portada
+
+    // ── el ciclo ────────────────────────────────────────────────────────────
+    var TECLEA = 950, HORNEA = 1250, LEE = 1250, LIMPIA = 450;
+    var TOTAL = TECLEA + HORNEA + LEE + LIMPIA;
+    var t0 = null, vivo = true, pedido = 0;
+
+    function paso(t) {
+      if (!vivo) { corriendo = false; return; }
+      if (t0 === null) t0 = t;
+      var e = (t - t0) % TOTAL;
+      var vuelta = Math.floor((t - t0) / TOTAL) % PALABRAS.length;
+      if (vuelta !== indice) { indice = vuelta; piezas = componer(PALABRAS[indice], w, h); }
+
+      var palabra = PALABRAS[indice];
+      if (e < TECLEA) {
+        cuadro(0, Math.ceil((e / TECLEA) * palabra.length));
+        rotulo.textContent = 'seed: ' + palabra.slice(0, Math.ceil((e / TECLEA) * palabra.length));
+      } else if (e < TECLEA + HORNEA) {
+        cuadro((e - TECLEA) / HORNEA, palabra.length);
+        rotulo.textContent = 'bake · ' + Math.round(((e - TECLEA) / HORNEA) * 100) + '%';
+      } else if (e < TECLEA + HORNEA + LEE) {
+        cuadro(1, palabra.length);
+        rotulo.textContent = 'seed: ' + palabra + ' · 3000px';
+      } else {
+        // barrido de limpieza: la portada se va por la izquierda
+        var f = (e - TECLEA - HORNEA - LEE) / LIMPIA;
+        cuadro(1, palabra.length);
+        ctx.fillStyle = PAPEL;
+        ctx.fillRect(0, 0, w * f, h);
+        rotulo.textContent = 'clear';
+      }
+      pedido = requestAnimationFrame(paso);
+    }
+
+    function enciende() {
+      if (corriendo || !vivo) return;
+      corriendo = true;
+      t0 = null;
+      pedido = requestAnimationFrame(paso);
+    }
+    function apaga() {
+      corriendo = false;
+      if (pedido) cancelAnimationFrame(pedido);
+      pedido = 0;
+    }
+
+    /* Sólo corre cuando se ve. Un canvas animado fuera de pantalla es batería
+       regalada, y en una tarjeta que casi siempre está abajo del pliegue, la
+       mayor parte del tiempo no se ve. */
+    if (typeof IntersectionObserver !== 'undefined') {
+      var io = new IntersectionObserver(function (es) {
+        for (var i = 0; i < es.length; i++) {
+          if (es[i].isIntersecting) enciende(); else apaga();
+        }
+      }, { threshold: 0.15 });
+      io.observe(cuna);
+      /* Red de seguridad: si el observador nunca reporta, se enciende igual.
+         La portada terminada ya está pintada, así que esto sólo agrega el
+         movimiento — nunca es la diferencia entre ver algo y no ver nada. */
+      setTimeout(function () { if (!corriendo) enciende(); }, 1500);
+    } else {
+      enciende();
+    }
+
+    // La página se oculta: se para. Vuelve: sigue.
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) apaga(); else if (vivo) enciende();
+    });
+
+    var remedir = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(remedir);
+      remedir = setTimeout(function () {
+        medir();
+        cuadro(1, PALABRAS[indice].length);
+      }, 200);
+    }, { passive: true });
+  }
+
+  function montar() {
+    var tarjetas = document.querySelectorAll('#work .aug-card');
+    for (var i = 0; i < tarjetas.length; i++) {
+      var cur = tarjetas[i].getAttribute('data-cur') || '';
+      if (!/^001/.test(cur)) continue;
+      var cuna = tarjetas[i].querySelector('.stripes-slot');
+      if (cuna) arrancar(cuna);
+    }
+  }
+
+  var intentos = 0;
+  (function esperar() {
+    if (document.querySelector('#work .aug-card')) { montar(); vigilar(); return; }
+    if (++intentos > 60) return;
+    setTimeout(esperar, 100);
+  })();
+
+  function vigilar() {
+    if (typeof MutationObserver === 'undefined') return;
+    var pend = null;
+    var mo = new MutationObserver(function (ms) {
+      var hubo = false;
+      for (var i = 0; i < ms.length && !hubo; i++) {
+        if (ms[i].addedNodes.length || ms[i].removedNodes.length) hubo = true;
+      }
+      if (!hubo) return;
+      clearTimeout(pend);
+      pend = setTimeout(montar, 160);
+    });
+    // El <body>, no #work: si el componente reemplaza esa sección, un
+    // observador colgado de ella se muere con ella.
     mo.observe(document.body, { childList: true, subtree: true });
     setTimeout(function () { mo.disconnect(); clearTimeout(pend); }, 20000);
   }
