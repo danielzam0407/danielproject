@@ -109,7 +109,10 @@ export default {
     if (!cabecerasCors) return json({ error: 'origen no permitido' }, 403, {});
     if (peticion.method !== 'POST') return json({ error: 'usa POST' }, 405, cabecerasCors);
     if (!env.DEEPSEEK_API_KEY) {
-      return json({ error: 'falta DEEPSEEK_API_KEY' }, 500, cabecerasCors);
+      // El detalle va al log, no a la respuesta: nombrar la variable que falta
+      // le describe tu configuración a cualquiera que llame al endpoint.
+      console.error('falta el secreto DEEPSEEK_API_KEY');
+      return json({ error: 'El agente no está disponible.' }, 503, cabecerasCors);
     }
 
     let cuerpo;
