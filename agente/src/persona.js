@@ -73,13 +73,20 @@ Lo que sigue prohibido, y ser comercial no lo cambia:
 - No cotizas, no das precios, no prometes fechas, plazos ni disponibilidad.
 - No aceptas ni descartas un encargo en su nombre.
 
-Las dos herramientas:
+Las tres herramientas:
 - agendar_llamada — cuando hay un encargo, una colaboración o una entrevista de
   por medio y la persona quiere hablar. El motivo va en la llamada.
 - pasar_a_whatsapp — tu herramienta por defecto: para todo lo que no puedas
   contestar, y para quien prefiera escribir antes que agendar. El resumen es el
   mensaje que Daniel va a recibir, así que escríbelo en primera persona de quien
   te habla, con quién es, qué quiere, y la pregunta concreta si la hubo.
+- dejar_recado — para quien no quiere WhatsApp ni agendar, o escribe desde una
+  computadora donde abrir WhatsApp es un estorbo. Le pides nombre, correo y qué
+  necesita, y se lo entregas a Daniel sin que salga del chat. Pide los tres
+  datos en un solo mensaje, no de uno en uno como formulario.
+
+Cuando alguien dude entre escribir y agendar, ofrécele las dos y que elija; no
+decidas tú por él.
 
 Dispara la herramienta en cuanto tenga sentido, incluso en el primer mensaje si
 ahí ya hay una intención clara o una pregunta que no puedes contestar. Lo único
@@ -136,11 +143,46 @@ export const HERRAMIENTAS = [
       required: ['resumen'],
     },
   },
+  {
+    name: 'dejar_recado',
+    description:
+      'Entrega el recado a Daniel sin que la persona salga del chat ni abra ' +
+      'nada. Úsala cuando no quiera WhatsApp ni agendar. Necesitas los tres ' +
+      'datos antes de llamarla; si te falta alguno, pídelo primero.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nombre: { type: 'string', description: 'Cómo se llama quien escribe.' },
+        correo: {
+          type: 'string',
+          description: 'Su correo, para que Daniel pueda responderle.',
+        },
+        mensaje: {
+          type: 'string',
+          description: 'Qué necesita, con el detalle que haya dado.',
+        },
+      },
+      required: ['nombre', 'correo', 'mensaje'],
+    },
+  },
 ];
+
+// Filtro mínimo: algo@algo.algo, sin espacios. No valida que el buzón exista
+// —eso no se puede desde aquí— pero atrapa el dedazo, que es lo común. Si no
+// pasa, el modelo recibe el error como tool_result y vuelve a preguntar.
+const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // ─── EJECUCIÓN ─────────────────────────────────────────────────────────────
 // Las dos herramientas sólo arman una URL. No tocan red ni estado, así que el
 // loop nunca puede quedarse colgado esperando algo de afuera.
+/* Devuelve tres cosas:
+     resultado — lo que ve el modelo, para que sepa cómo seguir
+     accion    — el botón que se dibuja en el chat (o null)
+     aviso     — lo que se te manda a ti por Telegram (o null)
+
+   El aviso es lo que hace que no dependas de que el visitante toque nada: aunque
+   cierre la pestaña sin enviar el WhatsApp, a ti ya te llegó quién era y qué
+   quería. */
 export function ejecutar(nombre, entrada, env) {
   if (nombre === 'agendar_llamada') {
     const url = env.CAL_URL;
@@ -148,16 +190,14 @@ export function ejecutar(nombre, entrada, env) {
       return {
         resultado: 'La página de reservas no está configurada. Ofrece WhatsApp.',
         accion: null,
+        aviso: null,
       };
     }
+    const motivo = String(entrada.motivo || '').slice(0, 160);
     return {
       resultado: 'Listo: se le mostró el botón para elegir horario.',
-      accion: {
-        tipo: 'agenda',
-        etiqueta: 'elegir horario',
-        detalle: String(entrada.motivo || '').slice(0, 160),
-        url,
-      },
+      accion: { tipo: 'agenda', etiqueta: 'elegir horario', detalle: motivo, url },
+      aviso: { titulo: 'quiere agendar llamada', cuerpo: motivo },
     };
   }
 
@@ -167,6 +207,7 @@ export function ejecutar(nombre, entrada, env) {
       return {
         resultado: 'El WhatsApp no está configurado. Ofrece agendar llamada.',
         accion: null,
+        aviso: null,
       };
     }
     const texto = String(entrada.resumen || '').slice(0, 600);
@@ -178,8 +219,34 @@ export function ejecutar(nombre, entrada, env) {
         detalle: texto,
         url: `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`,
       },
+      aviso: { titulo: 'le preparé un WhatsApp', cuerpo: texto },
     };
   }
 
-  return { resultado: `Herramienta desconocida: ${nombre}`, accion: null };
+  if (nombre === 'dejar_recado') {
+    const correo = String(entrada.correo || '').trim();
+    if (!CORREO.test(correo)) {
+      // El modelo lee esto y vuelve a preguntar en vez de entregar un correo
+      // al que nunca vas a poder contestar.
+      return {
+        resultado:
+          `"${correo}" no parece un correo válido. Pídeselo otra vez antes de ` +
+          'volver a llamar esta herramienta.',
+        accion: null,
+        aviso: null,
+      };
+    }
+    const quien = String(entrada.nombre || '').trim().slice(0, 80);
+    const que = String(entrada.mensaje || '').trim().slice(0, 900);
+    return {
+      resultado: 'Listo: el recado ya le llegó a Daniel. Confírmaselo.',
+      accion: null,
+      aviso: {
+        titulo: 'recado nuevo',
+        cuerpo: `de: ${quien} <${correo}>\n\n${que}`,
+      },
+    };
+  }
+
+  return { resultado: `Herramienta desconocida: ${nombre}`, accion: null, aviso: null };
 }

@@ -1,8 +1,9 @@
 # agente
 
 El chat del portfolio. Atiende a quien llega, contesta lo que sabe, y cuando la
-conversación vale la pena la convierte en una llamada agendada o en un WhatsApp
-que la persona sólo tiene que enviar.
+conversación vale la pena la convierte en un contacto: una llamada agendada, un
+WhatsApp ya redactado, o un recado con correo. Y te avisa por Telegram en cuanto
+pasa, sin depender de que el visitante toque nada.
 
 ## Por qué existe este directorio
 
@@ -89,14 +90,47 @@ Wrangler imprime la URL del worker. Cópiala.
 
 ## Conectarlo al sitio
 
-En `../index.html`, hasta abajo, hay una línea que hoy está vacía:
+Al final de `../index.html` está la línea que apunta al worker:
 
 ```js
-var ENDPOINT = '';
+var ENDPOINT = 'https://daniel-agente.daniii.workers.dev/';
 ```
 
-Pon ahí la URL del worker. **Mientras esté vacía el botón no se dibuja** — el
-sitio nunca muestra un chat roto, simplemente no hay chat.
+Si se vacía, **el botón deja de dibujarse** — el sitio nunca muestra un chat
+roto, simplemente no hay chat. Es el interruptor para apagarlo sin desplegar.
+
+## Que te avise de cada lead
+
+Sin esto dependes de que el visitante toque el botón. Alguien puede leer el
+mensaje de WhatsApp que el agente le redactó, cerrar la pestaña y nunca
+enviarlo: para ti ese lead no existió. Con el aviso, te llega igual.
+
+El worker te escribe por Telegram cada vez que alguien pide agendar, pide el
+WhatsApp o deja un recado — con lo que quería y las últimas seis vueltas de la
+conversación.
+
+Montarlo son dos minutos, todo dentro de Telegram:
+
+1. Habla con **@BotFather** y manda `/newbot`. Le pones nombre y usuario, y te
+   devuelve un token como `123456789:AAG...`.
+2. Habla con **@userinfobot** y manda cualquier cosa. Te contesta con tu `Id`
+   numérico — ese es el `chat_id`.
+3. **Mándale un mensaje a tu bot nuevo**, el que sea. Telegram no deja que un
+   bot escriba primero, así que sin este paso el aviso nunca llega.
+
+```bash
+npx wrangler secret put TELEGRAM_TOKEN
+```
+
+```bash
+npx wrangler secret put TELEGRAM_CHAT_ID
+```
+
+Los dos son opcionales: sin ellos el agente funciona igual, sólo que en silencio.
+
+Ojo con lo que viaja: el nombre, el correo y el mensaje que deje un visitante
+llegan a ese chat de Telegram. Es el punto —es tu lead— pero tenlo presente si
+alguna vez compartes la pantalla.
 
 ## Llenar el perfil
 
@@ -108,7 +142,7 @@ a qué te dedicas, qué encargos te interesan, tu disponibilidad. **No las
 inventé.** Mientras estén así el agente dice que no sabe y ofrece pasar el
 contacto — que es mejor que mentirle a alguien que te está considerando.
 
-Debajo están las instrucciones de tono y las dos herramientas. Cualquier cambio
+Debajo están las instrucciones de tono y las tres herramientas. Cualquier cambio
 necesita `npm run deploy` otra vez.
 
 ## Lo que cuesta
@@ -151,7 +185,7 @@ Muestra las peticiones en vivo. Los errores del agente se escriben ahí con
 
 | Archivo | Qué es |
 | --- | --- |
-| `src/persona.js` | Perfil, tono y las dos herramientas. **Es el que vas a editar.** |
+| `src/persona.js` | Perfil, tono y las tres herramientas. **Es el que vas a editar.** |
 | `src/index.js` | Plomería: CORS, topes, el loop de herramientas y el streaming |
 | `wrangler.toml` | Nombre del worker, orígenes permitidos y el almacén de cuotas |
 
@@ -167,8 +201,11 @@ lleve por delante.
   worker reconstruye los mensajes desde cero.
 - **El texto del modelo se pinta con `textContent`, nunca con `innerHTML`.** Lo
   que escribe el agente es texto, no marcado.
-- **Las dos herramientas sólo arman una URL.** No tocan red ni estado, así que
-  el loop no puede quedarse colgado esperando algo de afuera.
+- **Las herramientas no tocan red.** Sólo arman una URL o un aviso, así que el
+  loop no puede quedarse colgado esperando algo de afuera. El único fetch extra
+  es el de Telegram, y va aparte: si falla, la conversación del visitante sigue.
+- **El aviso se recoge antes de cerrar el stream.** Al cerrarlo el worker puede
+  terminar, y una notificación a medio salir se perdería en silencio.
 - **CORS lo decide el servidor.** Un origen que no esté en `ORIGENES` recibe 403
   antes de que se toque la API.
 - **Un turno nunca termina en silencio.** Si el modelo declina, se corta, o sólo

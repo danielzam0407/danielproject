@@ -18,3 +18,8 @@ id = "217a5a72b7474dd48fa8305d7f171b74"
 #   DEEPSEEK_API_KEY    la llave de platform.deepseek.com
 #   WHATSAPP_E164       tu número en formato E.164 sin +, ej. 528112345678
 #   CAL_URL             tu página de reservas, ej. https://cal.com/daniel/30min
+#   TELEGRAM_TOKEN      el token del bot que te avisa de cada lead
+#   TELEGRAM_CHAT_ID    tu chat con ese bot (número, puede ser negativo)
+#
+# Los dos de Telegram son opcionales: sin ellos el agente funciona igual, sólo
+# que no te avisa de nada.

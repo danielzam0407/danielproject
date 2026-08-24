@@ -78,6 +78,43 @@ async function cupo(kv, ip) {
   return null;
 }
 
+/* Te avisa a ti, por Telegram, en cuanto alguien muestra intención — sin
+   depender de que toque el botón. Alguien puede leer el mensaje de WhatsApp que
+   el agente le preparó, cerrar la pestaña y nunca enviarlo: sin esto, ese lead
+   no existió nunca.
+
+   Nunca lanza. Que Telegram falle no puede tumbar la conversación del visitante,
+   que es lo único que él ve. */
+async function notificar(env, aviso, conversacion) {
+  if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+
+  const hilo = conversacion
+    .slice(-6)
+    .map((m) => `${m.role === 'user' ? 'visitante' : 'agente'}: ${m.content}`)
+    .join('\n');
+
+  const texto =
+    `lead — ${aviso.titulo}\n\n${aviso.cuerpo}\n\n` +
+    `---- conversación ----\n${hilo}`;
+
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      // Sin parse_mode a propósito: el texto lo escribió un desconocido y
+      // cualquier símbolo suelto rompería el formateo de Telegram.
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHAT_ID,
+        text: texto.slice(0, 4000),
+        disable_web_page_preview: true,
+      }),
+    });
+    if (!r.ok) console.error('telegram respondió', r.status, await r.text());
+  } catch (e) {
+    console.error('no se pudo avisar por telegram:', e);
+  }
+}
+
 /* El navegador manda {rol, texto} y nada más. Nunca aceptamos bloques de
    contenido crudos: si lo hiciéramos, cualquiera podría inyectar un
    tool_result falso y hacer que el agente afirme lo que se le antoje. */
@@ -151,6 +188,7 @@ export default {
       // vueltas hay que dibujarlo — si no, la última palabra de uno queda
       // pegada a la primera del otro.
       let separadorPendiente = false;
+      const avisos = [];
       try {
         for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTA; vuelta++) {
           const flujo = cliente.messages.stream({
@@ -180,8 +218,11 @@ export default {
 
           const resultados = [];
           for (const uso of usos) {
-            const { resultado, accion } = ejecutar(uso.name, uso.input, env);
+            const { resultado, accion, aviso } = ejecutar(uso.name, uso.input, env);
             if (accion) await enviar('accion', accion);
+            // Sale en paralelo con la siguiente vuelta del modelo, así que no
+            // le cuesta tiempo al visitante. Se recoge antes de cerrar.
+            if (aviso) avisos.push(notificar(env, aviso, mensajes));
             resultados.push({
               type: 'tool_result',
               tool_use_id: uso.id,
@@ -208,6 +249,9 @@ export default {
         await enviar('error', { mensaje: publico });
         console.error('fallo del agente:', e);
       } finally {
+        // Antes de cerrar: en cuanto se cierra el stream el worker puede
+        // terminar, y un aviso a medio salir se pierde en silencio.
+        await Promise.allSettled(avisos);
         await escritor.close().catch(() => {});
       }
     })();
