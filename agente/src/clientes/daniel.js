@@ -58,7 +58,7 @@ preguntan cuándo puede, ahí los mandas con agendar_llamada.
 `;
 
 // ─── INSTRUCCIONES ─────────────────────────────────────────────────────────
-export const SISTEMA = `Eres el agente del sitio de Daniel Zambrano. Atiendes a
+const SISTEMA = `Eres el agente del sitio de Daniel Zambrano. Atiendes a
 quien llega a su portfolio: contestas lo que puedas y, cuando la conversación
 vale la pena, la conviertes en un contacto real.
 
@@ -147,7 +147,7 @@ nueva. Lo que no haces es repetir el mismo botón dos turnos seguidos sin que
 haya pasado nada en medio.`;
 
 // ─── HERRAMIENTAS ──────────────────────────────────────────────────────────
-export const HERRAMIENTAS = [
+const HERRAMIENTAS = [
   {
     name: 'agendar_llamada',
     description:
@@ -225,9 +225,9 @@ const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
    El aviso es lo que hace que no dependas de que el visitante toque nada: aunque
    cierre la pestaña sin enviar el WhatsApp, a ti ya te llegó quién era y qué
    quería. */
-export function ejecutar(nombre, entrada, env) {
+function ejecutar(nombre, entrada, ajustes) {
   if (nombre === 'agendar_llamada') {
-    const url = env.CAL_URL;
+    const url = ajustes.calUrl;
     if (!url) {
       return {
         resultado: 'La página de reservas no está configurada. Ofrece WhatsApp.',
@@ -244,7 +244,7 @@ export function ejecutar(nombre, entrada, env) {
   }
 
   if (nombre === 'pasar_a_whatsapp') {
-    const numero = env.WHATSAPP_E164;
+    const numero = ajustes.whatsapp;
     if (!numero) {
       return {
         resultado: 'El WhatsApp no está configurado. Ofrece agendar llamada.',
@@ -292,3 +292,36 @@ export function ejecutar(nombre, entrada, env) {
 
   return { resultado: `Herramienta desconocida: ${nombre}`, accion: null, aviso: null };
 }
+
+// ─── LA FICHA DEL CLIENTE ──────────────────────────────────────────────────
+/* Esto es lo único que index.js conoce de aquí. Para dar de alta otra empresa
+   se copia este archivo, se cambia todo lo de arriba, y se registra en
+   clientes/index.js. La plomería no se toca. */
+export default {
+  id: 'daniel',
+  nombre: 'Daniel Zambrano',
+
+  // Quién puede llamar al worker en nombre de este cliente. El origen es
+  // también lo que decide de qué cliente es la petición, así que dos empresas
+  // nunca pueden compartir uno.
+  origenes: ['https://danielzam0407.github.io', 'http://localhost:4322'],
+
+  sistema: SISTEMA,
+  herramientas: HERRAMIENTAS,
+  ejecutar,
+
+  // Topes diarios. El primero frena a una persona, el segundo frena a todas.
+  topes: { porIp: 40, global: 800 },
+
+  /* Los secretos de este cliente. Se resuelven aquí para que `ejecutar` reciba
+     valores y no el `env` entero — así una ficha no puede leer los secretos de
+     otra por descuido.
+
+     Daniel usa los nombres sin prefijo porque su worker ya está desplegado con
+     ellos. Un cliente nuevo debe prefijarlos: ACME_CAL_URL, ACME_WHATSAPP_E164. */
+  ajustes: (env) => ({
+    calUrl: env.CAL_URL,
+    whatsapp: env.WHATSAPP_E164,
+    saludoWhatsapp: 'Hi Daniel — I saw your portfolio.',
+  }),
+};

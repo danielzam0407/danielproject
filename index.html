@@ -1185,7 +1185,11 @@ class Component extends DCLogic {
   var botonEnviar = document.getElementById('ag-enviar');
   var telemetria = document.getElementById('ag-telemetria');
 
-  var historial = [];
+  /* El navegador ya no guarda la conversación: guarda su identificador y le
+     pide el texto al servidor. Dos copias del mismo hilo es la forma de error
+     más cara que hay — dos fuentes que se separan y nadie sabe cuál manda. */
+  var sesion = '';
+  try { sesion = sessionStorage.getItem('ag-sesion') || ''; } catch (e) {}
   var ocupado = false;
 
   barra.hidden = false;
@@ -1292,7 +1296,6 @@ class Component extends DCLogic {
 
   async function preguntar(texto) {
     burbuja('de-visitante', texto);
-    historial.push({ rol: 'yo', texto: texto });
     estado('thinking', true);
 
     var destino = burbuja('de-agente', '');
@@ -1312,7 +1315,7 @@ class Component extends DCLogic {
       var r = await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ mensaje: texto, historial: historial.slice(0, -1) })
+        body: JSON.stringify({ mensaje: texto, sesion: sesion })
       });
 
       if (!r.ok) {
@@ -1337,7 +1340,11 @@ class Component extends DCLogic {
           var leido = leerBloque(resto.slice(0, corte));
           resto = resto.slice(corte + 2);
           if (!leido) continue;
-          if (leido.evento === 'texto') { estado('writing', true); escribir(leido.datos.t); }
+          if (leido.evento === 'sesion') {
+            sesion = leido.datos.id;
+            try { sessionStorage.setItem('ag-sesion', sesion); } catch (e) {}
+          }
+          else if (leido.evento === 'texto') { estado('writing', true); escribir(leido.datos.t); }
           else if (leido.evento === 'accion') boton(leido.datos);
           else if (leido.evento === 'error') {
             cursor.remove();
@@ -1348,7 +1355,6 @@ class Component extends DCLogic {
 
       cursor.remove();
       if (!acumulado) destino.remove();
-      else historial.push({ rol: 'agente', texto: acumulado });
       estado('idle', false);
     } catch (e) {
       cursor.remove();
@@ -1361,13 +1367,36 @@ class Component extends DCLogic {
   abrir.addEventListener('click', function () {
     panel.hidden = false;
     barra.hidden = true;
-    if (!hilo.childElementCount) {
-      burbuja('de-agente', 'I answer for Daniel — his work, how he builds, whether a project fits. Pick one, or just type.');
-      pintarOpciones();
-      estado('idle', false);
-    }
+    if (!hilo.childElementCount) restaurar();
     entrada.focus();
   });
+
+  function saludar() {
+    if (hilo.childElementCount) return;
+    burbuja('de-agente', 'I answer for Daniel — his work, how he builds, whether a project fits. Pick one, or just type.');
+    pintarOpciones();
+    estado('idle', false);
+  }
+
+  /* Recarga la página y el hilo sigue ahí. Antes se vaciaba la pantalla pero el
+     agente sí recordaba: quedaban desalineados en los dos sentidos, y el
+     visitante contestaba a algo que ya no veía. */
+  function restaurar() {
+    if (!sesion) return saludar();
+    fetch(ENDPOINT.replace(/\/$/, '') + '/hilo?sesion=' + encodeURIComponent(sesion))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (hilo.childElementCount) return;
+        var turnos = (d && d.turnos) || [];
+        if (!turnos.length) return saludar();
+        turnos.forEach(function (t) {
+          burbuja(t.rol === 'visitante' ? 'de-visitante' : 'de-agente', t.texto);
+        });
+        estado('idle', false);
+        alFondo();
+      })
+      .catch(saludar);
+  }
 
   function cerrar() {
     panel.hidden = true;

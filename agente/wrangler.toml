@@ -3,10 +3,10 @@ main = "src/index.js"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Orígenes que pueden llamar al worker. Cualquier otro recibe 403 sin llegar a
-# la API — el navegador no es quien decide esto, lo decide el servidor.
-[vars]
-ORIGENES = "https://danielzam0407.github.io,http://localhost:4322"
+# Los orígenes permitidos YA NO VIVEN AQUÍ. Ahora cada empresa declara los
+# suyos en su ficha (src/clientes/*.js), porque el origen es también lo que
+# decide de quién es la petición: tenerlos en una lista plana hacía imposible
+# saber a qué cliente cobrarle el turno.
 
 # Contador de uso para los topes diarios. Creado con:
 #   npx wrangler kv namespace create CUOTA
@@ -14,12 +14,41 @@ ORIGENES = "https://danielzam0407.github.io,http://localhost:4322"
 binding = "CUOTA"
 id = "217a5a72b7474dd48fa8305d7f171b74"
 
+# Donde vive la conversación. Sin esto el agente contesta 503 a propósito:
+# la alternativa —aceptar el historial que manda el navegador— es el agujero
+# que este molde vino a cerrar.
+#
+#   npx wrangler d1 create agente
+#   npx wrangler d1 execute agente --remote --file=esquema.sql
+#
+# Pega abajo el database_id que imprime el primer comando.
+[[d1_databases]]
+binding = "DB"
+database_name = "agente"
+database_id = "PENDIENTE-pega-aqui-el-id-que-imprime-d1-create"
+
+# El verificador. Todos los días a las 9:00 UTC (3:00 en Monterrey). Sólo te
+# escribe si encontró algo — un parte diario de "todo bien" se vuelve ruido y
+# dejas de leerlo.
+[triggers]
+crons = ["0 9 * * *"]
+
 # Secretos (NO van aquí — se ponen con `npx wrangler secret put NOMBRE`):
+#
 #   DEEPSEEK_API_KEY    la llave de platform.deepseek.com
-#   WHATSAPP_E164       tu número en formato E.164 sin +, ej. 528112345678
-#   CAL_URL             tu página de reservas, ej. https://cal.com/daniel/30min
+#   BANDEJA_TOKEN       lo que te pide /bandeja para dejarte leer. Genera uno
+#                       largo y al azar; es la única puerta a conversaciones
+#                       de gente real.
 #   TELEGRAM_TOKEN      el token del bot que te avisa de cada lead
 #   TELEGRAM_CHAT_ID    tu chat con ese bot (número, puede ser negativo)
 #
-# Los dos de Telegram son opcionales: sin ellos el agente funciona igual, sólo
-# que no te avisa de nada.
+# Por cliente — el de Daniel va sin prefijo porque su worker ya está desplegado
+# con esos nombres. Toda empresa nueva los prefija (ACME_CAL_URL, etc.) y lo
+# declara en su ficha:
+#
+#   WHATSAPP_E164       su número en formato E.164 sin +, ej. 528112345678
+#   CAL_URL             su página de reservas
+#
+# Los dos de Telegram son opcionales: sin ellos el agente funciona igual, y el
+# aviso queda escrito en la base con entregado = 0 para que lo veas en la
+# bandeja. El BANDEJA_TOKEN no es opcional si quieres leer las conversaciones.

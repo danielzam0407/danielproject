@@ -9,3 +9,8 @@ desktop.ini
 # dependencias y build del worker
 node_modules/
 agente/.build/
+
+# estado del emulador local de wrangler (KV y D1 de mentiras) y secretos de
+# desarrollo. Nada de esto es del proyecto: es de esta computadora.
+.wrangler/
+.dev.vars
