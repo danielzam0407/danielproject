@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>privacy — daniel.project</title>
+<meta name="description" content="What this site does with data. Short, because it does very little.">
+<link rel="canonical" href="https://danielzam0407.github.io/danielproject/privacy.html">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f7fc'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%2308123a' stroke-width='2'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%230102ec'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f4f7fc; color: #08123a; }
+  body { font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.85; }
+  .hoja { max-width: 720px; margin: 0 auto; padding: clamp(48px, 9vw, 90px) clamp(20px, 5vw, 40px) 90px; }
+  a { color: #0102ec; }
+  a:hover { color: #3050ff; }
+  .kagi { position: relative; display: inline-block; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; padding: 5px 12px; color: rgba(8,18,58,.6); }
+  .kagi::before, .kagi::after { content: ''; position: absolute; width: 7px; height: 7px;
+    border-color: currentColor; border-style: solid; opacity: .85; }
+  .kagi::before { left: 0; top: 0; border-width: 1px 0 0 1px; }
+  .kagi::after { right: 0; bottom: 0; border-width: 0 1px 1px 0; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 7vw, 46px); font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1.05; margin: 22px 0 10px; }
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; letter-spacing: -0.01em;
+    margin: 44px 0 8px; }
+  .fecha { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(8,18,58,.5); }
+  hr { border: 0; border-top: 1px solid rgba(8,18,58,.2); margin: 34px 0; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 7px; }
+  .volver { display: inline-block; margin-top: 54px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="hoja">
+
+  <span class="kagi">privacy</span>
+  <h1>What this site does with data.</h1>
+  <p class="fecha">Last updated 24 August 2026</p>
+
+  <hr>
+
+  <p>Short version: this is a personal portfolio. It has no analytics, sets no
+  cookies, and stores nothing in your browser. If you never use the chat, the
+  only thing that happens is that a web page loads.</p>
+
+  <h2>What loads when you open the page</h2>
+  <p>Fonts come from Google Fonts and one stylesheet comes from unpkg. Loading a
+  file from someone else's server means that server sees your IP address — that
+  is how the web works, and it is true of any site using a font CDN. Neither is
+  used to identify you here.</p>
+  <p>The page itself is served by GitHub Pages, which keeps its own server logs.</p>
+
+  <h2>If you use the chat</h2>
+  <p>The chat sends what you type to a small server run by Daniel, which passes
+  it to <strong>DeepSeek</strong>, the company whose model writes the replies.
+  Your message and the conversation so far are processed there so an answer can
+  come back.</p>
+  <ul>
+    <li><strong>Your IP address</strong> is counted, so one person cannot run the
+    bill up. The counter is a number per address per day and is deleted
+    automatically after 48 hours. It is not linked to your messages.</li>
+    <li><strong>Nothing is stored</strong> otherwise. Conversations live in your
+    browser tab while it is open and are gone when you close it.</li>
+  </ul>
+
+  <h2>If you ask to be put in touch</h2>
+  <p>When the conversation turns into contact — booking a call, opening WhatsApp,
+  or leaving a message — Daniel gets a notification with what you asked for and
+  the recent part of the conversation, so he can answer you properly. If you
+  leave your name and email, those reach him too.</p>
+  <p>He keeps that the way anyone keeps an email from a potential client. It is
+  not sold, shared, or fed into any advertising system.</p>
+  <p>Booking a time uses Google Calendar's own booking page, which is covered by
+  Google's privacy policy, not this one.</p>
+
+  <h2>Calendar access</h2>
+  <p>Daniel uses a private tool that reads and writes <em>his own</em> Google
+  Calendar so he can manage his schedule. It runs on his machine, is used by
+  nobody else, and touches no visitor data. It is mentioned here because Google
+  requires an app using their API to point at a privacy policy.</p>
+
+  <h2>Children</h2>
+  <p>This site is not aimed at children and does not knowingly collect anything
+  from them.</p>
+
+  <h2>Asking for your data back</h2>
+  <p>If you have written to Daniel and want that deleted, ask him and he will
+  delete it. Since nothing else is stored, there is usually nothing else to
+  delete.</p>
+  <p>The way to reach him is on the <a href="./#contact">contact section</a> of
+  the site, or through the chat itself.</p>
+
+  <h2>Changes</h2>
+  <p>If this changes, the date at the top changes with it.</p>
+
+  <a class="volver" href="./">&larr; back to daniel.project</a>
+
+</div>
+</body>
+</html>
