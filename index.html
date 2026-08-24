@@ -1129,11 +1129,10 @@ class Component extends DCLogic {
 (function () {
   'use strict';
 
-  /* ── Pega aquí la URL del worker después de desplegarlo ──────────────
-     Ejemplo: 'https://daniel-agente.tu-subdominio.workers.dev'
-     Mientras esté vacío el botón no se dibuja, así nadie encuentra un
+  /* El worker que guarda la llave y habla con el modelo. Vive en agente/.
+     Si se vacía, el botón deja de dibujarse — así el sitio nunca muestra un
      chat que truena. */
-  var ENDPOINT = '';
+  var ENDPOINT = 'https://daniel-agente.daniii.workers.dev/';
 
   var abrir = document.getElementById('ag-abrir');
   var panel = document.getElementById('ag-panel');
