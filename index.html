@@ -1087,6 +1087,16 @@ class Component extends DCLogic {
   .ag-accion .detalle { font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.65;
     color: rgba(200,220,250,.72); }
 
+  /* Atajos del primer turno. Bajan la barrera de "y ahora qué le escribo",
+     que es donde se cae la mayoría de los chats. Desaparecen al primer
+     mensaje: después estorban. */
+  .ag-opciones { display: flex; flex-direction: column; gap: 7px; }
+  .ag-opciones button { text-align: left; padding: 9px 12px; cursor: pointer; background: transparent;
+    border: 1px solid rgba(200,220,250,.28); color: #cfe0ff; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; line-height: 1.5; letter-spacing: .3px; }
+  .ag-opciones button::before { content: '▸ '; color: #7f9bff; }
+  .ag-opciones button:hover { border-color: #7f9bff; background: rgba(127,155,255,.12); color: #fff; }
+
   .ag-pie { display: flex; align-items: stretch; gap: 9px; padding: 11px 12px; flex-shrink: 0;
     border-top: 1px solid rgba(200,220,250,.18); }
   .ag-pie textarea { flex: 1; resize: none; background: transparent; border: 1px solid rgba(200,220,250,.26);
@@ -1184,6 +1194,39 @@ class Component extends DCLogic {
     alFondo();
   }
 
+  /* Los tres caminos reales de una visita: mirar, traer algo, o contactar.
+     Cada uno arranca la conversación con intención ya declarada, así el agente
+     no gasta el primer turno preguntando qué buscas. */
+  var OPCIONES = [
+    'What kind of work does he do?',
+    'I have a project in mind',
+    'How do I reach him?'
+  ];
+
+  function pintarOpciones() {
+    var caja = document.createElement('div');
+    caja.className = 'ag-opciones';
+    caja.id = 'ag-opciones';
+    OPCIONES.forEach(function (txt) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = txt;
+      b.addEventListener('click', function () {
+        if (ocupado) return;
+        quitarOpciones();
+        preguntar(txt);
+      });
+      caja.appendChild(b);
+    });
+    hilo.appendChild(caja);
+    alFondo();
+  }
+
+  function quitarOpciones() {
+    var c = document.getElementById('ag-opciones');
+    if (c) c.remove();
+  }
+
   function estado(txt, trabajando) {
     telemetria.textContent = txt;
     ocupado = !!trabajando;
@@ -1276,7 +1319,8 @@ class Component extends DCLogic {
     panel.hidden = false;
     abrir.hidden = true;
     if (!hilo.childElementCount) {
-      burbuja('de-agente', 'I answer for Daniel — his work, how he builds, whether a project fits. What brings you here?');
+      burbuja('de-agente', 'I answer for Daniel — his work, how he builds, whether a project fits. Pick one, or just type.');
+      pintarOpciones();
       estado('idle', false);
     }
     entrada.focus();
@@ -1297,6 +1341,7 @@ class Component extends DCLogic {
     var texto = entrada.value.trim();
     if (!texto || ocupado) return;
     entrada.value = '';
+    quitarOpciones();
     preguntar(texto);
   });
 
