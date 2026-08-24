@@ -1,16 +1,22 @@
 /* Worker del agente del portfolio.
    Existe por una sola razón: la llave de la API no puede vivir en el navegador.
    Todo lo demás aquí es lo que hace falta para exponer un endpoint público sin
-   que sea una llave abierta a tu tarjeta. */
+   que sea una llave abierta a tu tarjeta.
+
+   Corre sobre DeepSeek. Sigue importando el SDK de Anthropic a propósito:
+   DeepSeek publica un endpoint compatible en /anthropic que habla exactamente
+   esa forma de request — system arriba, tools con input_schema, streaming
+   igual. Es la ruta que DeepSeek documenta, y deja el loop de herramientas tal
+   cual en vez de reescribirlo contra otro formato. */
 
 import Anthropic from '@anthropic-ai/sdk';
 import { SISTEMA, HERRAMIENTAS, ejecutar } from './persona.js';
 
-const MODELO = 'claude-opus-5';
+const BASE = 'https://api.deepseek.com/anthropic';
+const MODELO = 'deepseek-v4-pro';
 
-// Un chat, no un ensayo. El techo deja aire para el razonamiento adaptativo
-// sin dejar que una respuesta se vaya a diez párrafos.
-const MAX_TOKENS = 4096;
+// Un chat, no un ensayo.
+const MAX_TOKENS = 2048;
 
 // Topes diarios. El primero frena a una persona, el segundo frena a todas —
 // sin el global, mil visitantes legítimos también te vacían la cuenta.
@@ -102,8 +108,8 @@ export default {
     }
     if (!cabecerasCors) return json({ error: 'origen no permitido' }, 403, {});
     if (peticion.method !== 'POST') return json({ error: 'usa POST' }, 405, cabecerasCors);
-    if (!env.ANTHROPIC_API_KEY) {
-      return json({ error: 'falta ANTHROPIC_API_KEY' }, 500, cabecerasCors);
+    if (!env.DEEPSEEK_API_KEY) {
+      return json({ error: 'falta DEEPSEEK_API_KEY' }, 500, cabecerasCors);
     }
 
     let cuerpo;
@@ -121,7 +127,7 @@ export default {
     if (sinCupo) return json({ error: sinCupo }, 429, cabecerasCors);
 
     const mensajes = [...historial(cuerpo.historial), { role: 'user', content: pregunta }];
-    const cliente = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    const cliente = new Anthropic({ apiKey: env.DEEPSEEK_API_KEY, baseURL: BASE });
 
     const { readable, writable } = new TransformStream();
     const escritor = writable.getWriter();
@@ -133,37 +139,31 @@ export default {
         .catch(() => {});
 
     (async () => {
+      // El endpoint de DeepSeek acepta system, tools, tool_choice y stream, pero
+      // no las banderas propias de la plataforma de Anthropic — nada de betas,
+      // fallbacks ni output_config aquí.
+      let huboTexto = false;
       try {
         for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTA; vuelta++) {
-          const flujo = cliente.beta.messages.stream({
+          const flujo = cliente.messages.stream({
             model: MODELO,
             max_tokens: MAX_TOKENS,
             system: SISTEMA,
             tools: HERRAMIENTAS,
             messages: mensajes,
-            thinking: { type: 'adaptive' },
-            output_config: { effort: 'low' },
-            // Si el modelo declina, la API reintenta sola en otro modelo dentro
-            // de la misma llamada en vez de dejar al visitante sin respuesta.
-            betas: ['server-side-fallback-2026-07-01'],
-            fallbacks: 'default',
           });
 
-          flujo.on('text', (delta) => enviar('texto', { t: delta }));
+          flujo.on('text', (delta) => {
+            huboTexto = true;
+            enviar('texto', { t: delta });
+          });
           const mensaje = await flujo.finalMessage();
-
-          if (mensaje.stop_reason === 'refusal') {
-            await enviar('texto', {
-              t: 'Esa no la puedo contestar. ¿Te paso el contacto directo de Daniel?',
-            });
-            break;
-          }
 
           const usos = mensaje.content.filter((b) => b.type === 'tool_use');
           if (mensaje.stop_reason === 'end_turn' || usos.length === 0) break;
 
-          // El turno del asistente se devuelve tal cual, con sus bloques de
-          // razonamiento intactos — recortarlos rompe la continuación.
+          // El turno del asistente se devuelve tal cual, con todos sus bloques
+          // — recortarlo rompe la correspondencia con los tool_use_id de abajo.
           mensajes.push({ role: 'assistant', content: mensaje.content });
 
           const resultados = [];
@@ -177,6 +177,14 @@ export default {
             });
           }
           mensajes.push({ role: 'user', content: resultados });
+        }
+        // Un turno que termina sin una sola letra deja al visitante mirando una
+        // burbuja vacía. Pasa si el modelo declina, si se corta, o si sólo llamó
+        // herramientas: siempre hay que decir algo.
+        if (!huboTexto) {
+          await enviar('texto', {
+            t: 'Esa no la supe contestar. ¿Quieres que te pase el contacto directo de Daniel?',
+          });
         }
         await enviar('fin', {});
       } catch (e) {

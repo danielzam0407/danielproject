@@ -14,15 +14,35 @@ Así que el sitio se queda en Pages y esto vive en un Cloudflare Worker. El
 navegador le habla al worker, y sólo el worker conoce la llave.
 
 ```
-navegador ──POST──▶ worker ──▶ API de Claude
+navegador ──POST──▶ worker ──▶ API de DeepSeek
    ▲                  │
    └──── SSE ─────────┘   (texto en streaming + los botones de acción)
 ```
 
+## Por qué el código importa el SDK de Anthropic
+
+Corre sobre DeepSeek, pero verás `import Anthropic from '@anthropic-ai/sdk'`.
+No es un resto sin limpiar.
+
+DeepSeek publica un endpoint **compatible con Anthropic** en
+`https://api.deepseek.com/anthropic`, que habla exactamente la misma forma de
+request: `system` como campo de arriba, `tools` con `input_schema`, `tool_choice`
+y streaming igual. Es la ruta que DeepSeek documenta, y usarla deja el loop de
+herramientas tal cual en vez de reescribirlo contra otro formato.
+
+Lo que ese endpoint **no** acepta son las banderas propias de la plataforma de
+Anthropic: nada de `betas`, `fallbacks` ni `output_config`. Por eso no están.
+
+Si prefieres no depender de una capa de compatibilidad, la alternativa es el
+endpoint nativo de DeepSeek en formato OpenAI (`https://api.deepseek.com` con
+el SDK `openai`). Cambia la forma de los mensajes de herramientas —los
+resultados van como `{role: 'tool', tool_call_id}` en vez de bloques
+`tool_result`— así que es reescribir el loop, no cambiar una URL.
+
 ## Qué necesitas antes de empezar
 
 - Una cuenta de Cloudflare (el plan gratis alcanza de sobra).
-- Una llave de API de Anthropic — `console.anthropic.com`.
+- Una llave de API de DeepSeek — `platform.deepseek.com`.
 - Tu número de WhatsApp.
 - Una página de reservas: Cal.com o el "appointment schedule" de Google
   Calendar. Cualquiera de las dos da una URL pública, que es lo único que el
@@ -46,7 +66,7 @@ npx wrangler kv namespace create CUOTA
 Carga los tres secretos. Cada comando pide el valor y no queda en el repo:
 
 ```bash
-npx wrangler secret put ANTHROPIC_API_KEY
+npx wrangler secret put DEEPSEEK_API_KEY
 ```
 
 ```bash
@@ -93,9 +113,11 @@ necesita `npm run deploy` otra vez.
 
 ## Lo que cuesta
 
-Corre con `claude-opus-5`, el modelo más capaz. En una conversación de portfolio
-cada mensaje ronda **2 ¢ USD** — unos 2.000 tokens de entrada y unos 500 de
-salida, contando el razonamiento.
+Corre con `deepseek-v4-pro`. En hora pico son 1.32 USD por millón de tokens de
+entrada y 3.96 por millón de salida, así que un mensaje de portfolio —unos
+2.000 tokens de entrada y 300 de salida— sale en **medio centavo de dólar**.
+Fuera de pico cuesta la mitad: el descuento aplica salvo de 01:00 a 04:00 y de
+06:00 a 10:00 UTC, de lunes a viernes.
 
 Los topes están en `src/index.js`:
 
@@ -104,13 +126,17 @@ Los topes están en `src/index.js`:
 | `TOPE_POR_IP` | 40 / día | Que una persona se quede pegada al chat |
 | `TOPE_GLOBAL` | 800 / día | Tu gasto total, pase lo que pase |
 
-Con esos números el peor día posible son **unos 18 USD**. Si eso te parece
-mucho —y para un portfolio probablemente lo sea— baja `TOPE_GLOBAL` a 100 y el
-techo queda en ~2 USD diarios.
+Con esos números el peor día posible son **unos 3 USD**, y eso es con el chat
+saturado las 24 horas. Para un portfolio es un techo cómodo; si aun así quieres
+apretarlo, baja `TOPE_GLOBAL`.
 
-La otra palanca es el modelo. Cambiar `MODELO` a `claude-haiku-4-5` deja el
-gasto en la quinta parte, a cambio de respuestas menos finas. Lo dejé en Opus 5
-porque esa decisión es tuya, no mía.
+La otra palanca es el modelo: `deepseek-v4-flash` cuesta la tercera parte, a
+cambio de respuestas menos finas. Lo dejé en `-pro` porque a este precio la
+diferencia de gasto es de centavos y esa decisión es tuya.
+
+El caché de DeepSeek abarata mucho la entrada repetida —de 1.32 a 0.044 por
+millón cuando pega— y el prompt del sistema es idéntico en cada llamada, así
+que en la práctica vas a pagar bastante menos que la cuenta de arriba.
 
 ## Ver qué está pasando
 
@@ -145,9 +171,9 @@ lleve por delante.
   el loop no puede quedarse colgado esperando algo de afuera.
 - **CORS lo decide el servidor.** Un origen que no esté en `ORIGENES` recibe 403
   antes de que se toque la API.
-- **Reintento por rechazo (`fallbacks`).** Si el modelo declina una petición, la
-  API la reintenta sola en otro modelo dentro de la misma llamada, en vez de
-  dejar al visitante mirando una respuesta vacía.
+- **Un turno nunca termina en silencio.** Si el modelo declina, se corta, o sólo
+  llama herramientas sin decir nada, el worker manda una línea de salida. Sin
+  eso el visitante se queda mirando una burbuja vacía.
 
 ## Lo que este agente no hace
 
