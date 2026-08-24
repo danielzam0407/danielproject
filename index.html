@@ -975,12 +975,14 @@ class Component extends DCLogic {
     var coordY = (-8.4 + Math.cos(n / 900) * 2).toFixed(2);
     var drift = (Math.sin(n / 900) * 4).toFixed(2);
     var plates = [st.p0, st.p1, st.p2];
-    // Where project 001 lives. A visitor clicking a portfolio card should land
-    // on the working tool, not on source code — the repo is one click from there.
+    // Where the real projects live. A visitor clicking a portfolio card should
+    // land on the working thing, not on source code — the repo is one click from
+    // there.
     var FRACTURE_URL = 'https://danielzam0407.github.io/fracture/';
+    var MENU_URL = 'https://danielzam0407.github.io/menu-pasillo/';
     var projects = [
       { id: '001', name: 'fracture', tag: 'tool', desc: 'type a word — it becomes the cover', slot: 'fracture / plate 01', micro: 'canvas bake · offscreen worker · deterministic seed · export 3000px · status internal', url: FRACTURE_URL },
-      { id: '002', name: 'bluescreen.dream', tag: 'web', desc: 'an interactive place to get lost', slot: 'bluescreen.dream / shot 04', micro: 'webgl no · dom yes · gravity optional · status floating' },
+      { id: '002', name: 'menu.pasillo', tag: 'web', desc: 'a portfolio you walk, like a game menu', slot: 'menu.pasillo / room 02', micro: 'css 3d · webgl no · five rooms · keys 1-5 · status live', url: MENU_URL },
       { id: '003', name: 'paper.ghosts', tag: 'print', desc: 'a series about things left behind', slot: 'paper.ghosts / scan 12', micro: 'offset 2c · stock 120g · edition 50 · status sold out' }
     ].map(function (p, i) {
       p.onEnter = function () { self.setState({ sel: i }); };
