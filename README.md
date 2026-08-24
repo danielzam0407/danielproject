@@ -9,10 +9,14 @@ Portfolio personal en una sola página. Estética neo-Y2K / FUI, referencia The 
 
 | Archivo | Qué es |
 | --- | --- |
-| `Portfolio Y2K.dc.html` | La página. Único archivo que se edita. |
+| `index.html` | La página. Único archivo que se edita. |
 | `support.js` | Runtime de Claude Design (React por debajo). **Generado — no editar.** |
 
-El `.dc.html` es un formato de Claude Design: una plantilla `<x-dc>` con bindings `{{ }}`,
+Se llama `index.html` para que Vercel la sirva en la raíz sin configuración. En Claude
+Design el mismo archivo vive como `Portfolio Y2K.dc.html` — el nombre local y el remoto son
+independientes, y el contenido es idéntico.
+
+Ese contenido es un `.dc.html`, formato de Claude Design: una plantilla `<x-dc>` con bindings `{{ }}`,
 `<sc-if>`, `<sc-for>` y `<helmet>`, más un `<script data-dc-script>` con una clase
 `Component extends DCLogic` cuyo `renderVals()` devuelve los valores de la plantilla.
 
@@ -28,7 +32,15 @@ re-importable en Claude Design.
 python -m http.server 8791
 ```
 
-Y abrir `http://localhost:8791/Portfolio%20Y2K.dc.html`. No hay build.
+Y abrir `http://localhost:8791`. No hay build ni dependencias que instalar.
+
+## Deploy
+
+Es estático puro: la raíz del repo se publica tal cual, sin `vercel.json`, sin build step.
+
+```bash
+vercel --prod
+```
 
 ## Props editables
 
