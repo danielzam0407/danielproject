@@ -8,12 +8,11 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ORIGENES = "https://danielzam0407.github.io,http://localhost:4322"
 
-# Contador de uso para los topes diarios. Crear con:
+# Contador de uso para los topes diarios. Creado con:
 #   npx wrangler kv namespace create CUOTA
-# y pegar aquí el id que imprime.
 [[kv_namespaces]]
 binding = "CUOTA"
-id = "PENDIENTE_CORRER_wrangler_kv_namespace_create"
+id = "217a5a72b7474dd48fa8305d7f171b74"
 
 # Secretos (NO van aquí — se ponen con `npx wrangler secret put NOMBRE`):
 #   DEEPSEEK_API_KEY    la llave de platform.deepseek.com
