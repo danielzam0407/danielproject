@@ -146,6 +146,11 @@ export default {
       // no las banderas propias de la plataforma de Anthropic — nada de betas,
       // fallbacks ni output_config aquí.
       let huboTexto = false;
+      // El modelo suele escribir antes de llamar la herramienta y otra vez
+      // después. Son dos tramos de la misma burbuja, así que el corte entre
+      // vueltas hay que dibujarlo — si no, la última palabra de uno queda
+      // pegada a la primera del otro.
+      let separadorPendiente = false;
       try {
         for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTA; vuelta++) {
           const flujo = cliente.messages.stream({
@@ -157,6 +162,10 @@ export default {
           });
 
           flujo.on('text', (delta) => {
+            if (separadorPendiente) {
+              separadorPendiente = false;
+              enviar('texto', { t: '\n' });
+            }
             huboTexto = true;
             enviar('texto', { t: delta });
           });
@@ -180,6 +189,7 @@ export default {
             });
           }
           mensajes.push({ role: 'user', content: resultados });
+          if (huboTexto) separadorPendiente = true;
         }
         // Un turno que termina sin una sola letra deja al visitante mirando una
         // burbuja vacía. Pasa si el modelo declina, si se corta, o si sólo llamó
