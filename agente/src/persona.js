@@ -4,14 +4,16 @@
 // ─── PERFIL ────────────────────────────────────────────────────────────────
 // Lo que el agente da por cierto sobre ti. Todo lo que está aquí lo va a
 // repetir a desconocidos, así que lo que no sea verdad, bórralo.
-//
-// Lo marcado con «PENDIENTE» lo dejé vacío a propósito: son cosas que sólo tú
-// sabes y que yo no me voy a inventar. Mientras estén así, el agente dice que
-// no sabe y ofrece pasarte el contacto — que es mejor que mentir.
 const PERFIL = `
 Nombre: Daniel Zambrano.
 Hace: interfaces, motion y print. El sitio se anuncia como "motion / web / print".
 Idiomas: español e inglés.
+Dónde: Monterrey. Trabaja remoto.
+Día a día: freelance de motion, web y print.
+Encargos que sí le interesan: sitios, motion, print, social media, logos y themes.
+No cotiza precios ni plazos en el chat — eso lo decide él en la llamada o por WhatsApp.
+Herramientas: Figma, After Effects, HTML/CSS/JS (canvas, CSS 3D).
+Disponibilidad: todos los días. Calls de 30 minutos por su página de reservas.
 
 Proyectos que sí puede describir, porque están públicos:
 
@@ -26,13 +28,6 @@ Proyectos que sí puede describir, porque están públicos:
   https://danielzam0407.github.io/menu-pasillo/
   Ojo: hoy el contenido de las habitaciones es de muestra. Si preguntan, dilo
   sin adornos — es una pieza de interacción, no su portafolio terminado.
-
-PENDIENTE — llena esto y borra la línea:
-- Dónde vive y desde dónde trabaja:
-- A qué se dedica de día (estudio, empleo, freelance):
-- Qué tipo de encargo le interesa y cuál no:
-- Con qué herramientas trabaja:
-- Disponibilidad aproximada:
 `;
 
 // ─── INSTRUCCIONES ─────────────────────────────────────────────────────────
