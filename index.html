@@ -1000,8 +1000,8 @@ class Component extends DCLogic {
     var MENU_URL = 'https://danielzam0407.github.io/menu-pasillo/';
     var projects = [
       { id: '001', name: 'fracture', tag: 'tool', desc: 'type a word — it becomes the cover', slot: 'fracture / plate 01', micro: 'canvas bake · offscreen worker · deterministic seed · export 3000px · status internal', url: FRACTURE_URL },
-      { id: '002', name: 'menu.pasillo', tag: 'web', desc: 'a portfolio you walk, like a game menu', slot: 'menu.pasillo / room 02', micro: 'css 3d · webgl no · five rooms · keys 1-5 · status live', url: MENU_URL },
-      { id: '003', name: 'paper.ghosts', tag: 'print', desc: 'a series about things left behind', slot: 'paper.ghosts / scan 12', micro: 'offset 2c · stock 120g · edition 50 · status sold out' }
+      { id: '002', name: 'work2', tag: 'web', desc: 'a portfolio you walk, like a game menu', slot: 'work2 / room 02', micro: 'css 3d · webgl no · five rooms · keys 1-5 · status live', url: MENU_URL },
+      { id: '003', name: 'work3', tag: 'web', desc: 'a personal site you drive with the keyboard', slot: 'work3 / screen 03', micro: 'command menu · arrow keys · four sections · status internal' }
     ].map(function (p, i) {
       p.onEnter = function () { self.setState({ sel: i }); };
       p.plate = plates[i];
@@ -1571,6 +1571,17 @@ class Component extends DCLogic {
     // trabajo
     '[ 01 / work ]': '[ 01 / trabajo ]',
     'selected files': 'archivos seleccionados',
+    'tool': 'herramienta',
+    // las fichas de cada proyecto
+    'type a word — it becomes the cover': 'escribe una palabra y se vuelve una portada',
+    'canvas bake · offscreen worker · deterministic seed · export 3000px · status internal':
+      'horneado en canvas · worker aparte · semilla determinista · exporta 3000px · estado interno',
+    'a portfolio you walk, like a game menu': 'un portafolio que se camina, como menú de videojuego',
+    'css 3d · webgl no · five rooms · keys 1-5 · status live':
+      'css 3d · sin webgl · cinco habitaciones · teclas 1-5 · estado en vivo',
+    'a personal site you drive with the keyboard': 'un sitio personal que se maneja con el teclado',
+    'command menu · arrow keys · four sections · status internal':
+      'menú de comando · flechas · cuatro secciones · estado interno',
     // quién
     '[ 02 / about ]': '[ 02 / quién ]',
     'subject data': 'datos del sujeto',
@@ -1994,8 +2005,8 @@ class Component extends DCLogic {
   var CARRETES = {
     // 001 (fracture) no lleva video: lleva su propio motor corriendo en vivo,
     // que es lo que de verdad enseña qué hace. Ver el bloque de abajo.
-    '002': { src: 'media/pasillo.mp4' },
-    '003': { src: 'media/menu-pasillo.mp4' }
+    '002': { src: 'media/work2.mp4' },
+    '003': { src: 'media/work3.mp4' }
   };
 
   var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
