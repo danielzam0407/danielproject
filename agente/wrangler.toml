@@ -18,13 +18,13 @@ id = "217a5a72b7474dd48fa8305d7f171b74"
 # la alternativa —aceptar el historial que manda el navegador— es el agujero
 # que este molde vino a cerrar.
 #
-#   npx wrangler d1 create agente
-#   npx wrangler d1 execute agente --remote --file=esquema.sql
+#   npx wrangler d1 create conversaciones
+#   npx wrangler d1 execute conversaciones --remote --file=esquema.sql
 #
 # Pega abajo el database_id que imprime el primer comando.
 [[d1_databases]]
 binding = "DB"
-database_name = "agente"
+database_name = "conversaciones"
 database_id = "PENDIENTE-pega-aqui-el-id-que-imprime-d1-create"
 
 # El verificador. Todos los días a las 9:00 UTC (3:00 en Monterrey). Sólo te

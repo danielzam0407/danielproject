@@ -83,11 +83,11 @@ Crea la base donde vive la conversación y aplica el esquema. Pega el
 `database_id` que imprime el primer comando en `wrangler.toml`:
 
 ```bash
-npx wrangler d1 create agente
+npx wrangler d1 create conversaciones
 ```
 
 ```bash
-npx wrangler d1 execute agente --remote --file=esquema.sql
+npx wrangler d1 execute conversaciones --remote --file=esquema.sql
 ```
 
 Sin esto el agente contesta 503 a propósito. Falla ruidosamente porque la

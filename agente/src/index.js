@@ -168,7 +168,7 @@ export default {
       // Falla ruidosamente a propósito. La alternativa —aceptar el historial
       // del navegador cuando no hay base— es justo el agujero que este molde
       // vino a cerrar, y en silencio.
-      console.error('falta el binding DB: corre `npx wrangler d1 create agente` y aplica esquema.sql');
+      console.error('falta el binding DB: corre `npx wrangler d1 create conversaciones` y aplica esquema.sql');
       return json({ error: 'El agente no está disponible.' }, 503, cabecerasCors);
     }
 
