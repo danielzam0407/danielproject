@@ -323,6 +323,7 @@
       <h1 class="glitch-hover rgb-split" style="margin: 0; font-size: clamp(46px, 10.5vw, 116px); font-weight: 700; letter-spacing: -0.035em; line-height: .92; transform: skewX(-6deg);">daniel<span style="color: #0102ec;">.</span>project</h1>
       <div class="hatch draw-x" style="height: 13px; margin-top: 18px; max-width: 420px; color: rgba(8,18,58,.75);"></div>
       <div class="aug-chip" data-augmented-ui="tl-clip br-clip" style="display: inline-flex; align-items: center; gap: 14px; margin-top: 20px; background: #08123a; color: #e6effb; font-family: 'IBM Plex Mono', monospace; font-size: clamp(10px, 2.2vw, 13px); letter-spacing: 3px; padding: 8px 18px;">status: adrift // motion — web — print<span class="blink" style="display: inline-block; width: 8px; height: 15px; background: #e6effb;"></span></div>
+      <p class="hp-does" style="margin: 24px 0 0; max-width: 560px; border-left: 3px solid #0102ec; padding: 3px 0 3px 15px; font-size: clamp(15px, 3.3vw, 19px); line-height: 1.5; color: #08123a;">Custom sites, designed from scratch — no templates. 3D when the piece asks for it, and a chat agent built in: <b style="font-weight: 600; border-bottom: 2px solid #0102ec;">the one you are using right now</b>.</p>
       <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 34px; max-width: 520px;">
         <sc-if value="{{ matrix }}" hint-placeholder-val="{{ true }}">
           <img class="matrix-block" src="{{ matrix }}" alt="">
@@ -463,7 +464,8 @@
       <a href="mailto:hello@daniel.mx" class="glitch-hover rgb-split" data-cur="compose / transmit" style="display: inline-block; max-width: 100%; font-size: clamp(26px, 7.2vw, 72px); font-weight: 700; letter-spacing: -0.03em; color: #e6effb; transform: skewX(-6deg); word-break: break-word;">hello@daniel.mx</a>
       <div class="terminal-log inv boot" style="margin-top: 26px;">
         <div>net: @daniel</div>
-        <div>response.time: eventually</div>
+        <div>channels: chat / whatsapp / mail</div>
+        <div>every message reaches a person</div>
       </div>
       <div class="justified inv hide-sm" style="max-width: 460px; margin-top: 28px;">eigenlicht / the uniform dark gray many people report seeing in the absence of light / intrinsic light / 16161dff</div>
     </div>
@@ -1424,6 +1426,445 @@ class Component extends DCLogic {
       forma.requestSubmit();
     }
   });
+})();
+</script>
+
+
+<!-- ══ IDIOMA Y MOVIMIENTO ═══════════════════════════════════════════════════
+     Vive fuera del bloque <x-dc> a propósito, igual que el chat: así una
+     sincronización desde Claude Design no se lo lleva por delante.
+
+     Dos cosas, y las dos obedecen la misma regla de la casa: nada se queda
+     invisible esperando a una animación. Todo lo que se revela tiene salida al
+     estado final sin depender del bucle de cuadros — si el observador nunca
+     reporta (pestaña de fondo, captura de miniatura, navegador viejo), a los
+     1.4 s se muestra todo de golpe. Es el mismo patrón que ya usa .draw-x.  -->
+<style>
+  /* ── Interruptor de idioma ───────────────────────────────────────────── */
+  .lang-sw { display: inline-flex; align-items: stretch; border: 1px solid rgba(8,18,58,.5);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; flex-shrink: 0; }
+  .lang-sw button { appearance: none; background: transparent; border: 0; cursor: pointer;
+    color: rgba(8,18,58,.55); font: inherit; letter-spacing: inherit; padding: 4px 9px;
+    line-height: 1.4; transition: background .14s, color .14s; }
+  .lang-sw button + button { border-left: 1px solid rgba(8,18,58,.28); }
+  .lang-sw button:hover { color: #08123a; }
+  .lang-sw button[aria-pressed="true"] { background: #08123a; color: #e6effb; }
+  .lang-sw button:focus-visible { outline: 2px solid #0102ec; outline-offset: 1px; }
+
+  /* En pantallas chicas la barra ya venía justa —el logo y el nav solos suman
+     más de lo que cabe en 375— así que el interruptor sale de ahí y se ancla
+     abajo a la izquierda, en el hueco que dejan los botones del chat.
+     Se muestra sólo el idioma al que cambiarías: un botón, no dos. */
+  @media (max-width: 759px) {
+    .lang-sw { position: fixed; left: 12px; bottom: 100px; z-index: 61;
+      background: #f4f7fc; border-color: rgba(8,18,58,.6);
+      box-shadow: 3px 3px 0 rgba(8,18,58,.18); }
+    .lang-sw button[aria-pressed="true"] { display: none; }
+    .lang-sw button + button { border-left: 0; }
+    /* 46 y no 44: el borde de 1px se come el resto si la caja no es
+       border-box, y 43.9 no es un area tocable. */
+    .lang-sw button { min-width: 46px; min-height: 46px; padding: 0 13px; box-sizing: border-box; }
+  }
+
+  /* Dedo, no ratón: nada que se toque baja de 44px. */
+  @media (pointer: coarse) {
+    .lang-sw button { min-height: 46px; box-sizing: border-box; padding-left: 14px; padding-right: 14px; }
+  }
+
+  /* ── Riel de avance de lectura ───────────────────────────────────────── */
+  /* Marca cuánto llevas del documento. Un filo duro, no una barra redondeada. */
+  .rail { position: fixed; left: 0; top: 0; height: 3px; width: 100%; z-index: 60;
+    background: rgba(8,18,58,.12); pointer-events: none; }
+  .rail > i { display: block; height: 100%; width: 100%; background: #0102ec;
+    transform: scaleX(0); transform-origin: left center; }
+  .rail > u { position: absolute; top: 0; height: 3px; width: 26px; background: #08123a;
+    left: 0; transform: translateX(-26px); }
+
+  /* ── Revelados ───────────────────────────────────────────────────────── */
+  /* El estado escondido SÓLO existe cuando el motor confirmó que puede animar,
+     poniendo .mv-on en <html>. Sin JS, sin IntersectionObserver o con
+     movimiento reducido, esta regla nunca aplica y todo nace visible. */
+  .mv-on .mv:not(.mv-in) { opacity: 0; }
+
+  /* Barrido duro: el bloque entra tapado por su propio recorte, no difuminado. */
+  .mv-on .mv-wipe:not(.mv-in) { clip-path: inset(0 100% 0 0); }
+  .mv-wipe { transition: clip-path .72s cubic-bezier(.16,.84,.3,1), opacity .3s linear; }
+  .mv-wipe.mv-in { clip-path: inset(0 0 0 0); }
+
+  /* Desplazamiento seco, sin rebote ni escala. */
+  .mv-on .mv-up:not(.mv-in) { transform: translate3d(0, 22px, 0); }
+  .mv-up { transition: transform .6s cubic-bezier(.16,.84,.3,1), opacity .42s linear; }
+  .mv-up.mv-in { transform: none; }
+
+  .mv-on .mv-side:not(.mv-in) { transform: translate3d(-16px, 0, 0); }
+  .mv-side { transition: transform .55s cubic-bezier(.16,.84,.3,1), opacity .38s linear; }
+  .mv-side.mv-in { transform: none; }
+
+  .mv-in { opacity: 1; }
+
+  /* La salida de emergencia. La red de seguridad pone ESTO, no .mv-in:
+     .mv-in llega al estado final *transicionando*, y una transición es una
+     animación — si el navegador no la avanza (pestaña de fondo, captura,
+     motor sin componer) el elemento se queda en opacity 0 para siempre.
+     .mv-ya no anima: aterriza. */
+  .mv-ya, .mv-ya.mv-wipe, .mv-ya.mv-up, .mv-ya.mv-side {
+    opacity: 1 !important; transform: none !important;
+    clip-path: none !important; transition: none !important; }
+  .mv-ya.mv-edge::after { transform: scaleX(1); transition: none; }
+
+  /* Escalonado. Va en pasos de 70 ms — lo justo para leerse como secuencia y
+     no como retraso. */
+  .mv-d1 { transition-delay: .07s; } .mv-d2 { transition-delay: .14s; }
+  .mv-d3 { transition-delay: .21s; } .mv-d4 { transition-delay: .28s; }
+  .mv-d5 { transition-delay: .35s; } .mv-d6 { transition-delay: .42s; }
+
+  /* ── Filo que recorre el borde de la tarjeta al entrar ───────────────── */
+  .mv-edge { position: relative; }
+  .mv-edge::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px;
+    width: 100%; background: #0102ec; transform: scaleX(0); transform-origin: left center;
+    transition: transform .7s cubic-bezier(.16,.84,.3,1); pointer-events: none; z-index: 6; }
+  .mv-edge.mv-in::after { transform: scaleX(1); }
+
+  /* ── Sección activa en la barra ──────────────────────────────────────── */
+  .topnav a.mv-here { color: #0102ec; }
+  .topnav a.mv-here > span { color: #0102ec; }
+
+  /* ── Nada de esto corre si pidieron menos movimiento ─────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .mv, .mv-wipe, .mv-up, .mv-side { transition: none !important; opacity: 1 !important;
+      transform: none !important; clip-path: none !important; }
+    .mv-edge::after { transition: none; transform: scaleX(1); }
+    .rail > i, .rail > u { transition: none; }
+  }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  var raiz = document.documentElement;
+  var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ══ 1. IDIOMA ══════════════════════════════════════════════════════════
+     El HTML nace en inglés. Aquí se traduce recorriendo nodos de texto y
+     comparando contra el diccionario. Si una cadena cambia en el componente y
+     ya no coincide, esa línea simplemente se queda en inglés — se degrada, no
+     se rompe. */
+
+  var ES = {
+    // barra
+    '01 work': '01 trabajo',
+    '02 about': '02 quién',
+    '03 contact': '03 contacto',
+    'personal.file // v3.0 // do not fold': 'archivo.personal // v3.0 // no doblar',
+    // hero
+    'open: personal_file': 'abrir: archivo_personal',
+    'subject: daniel': 'sujeto: daniel',
+    'state: floating': 'estado: flotando',
+    'status: adrift // motion — web — print': 'estado: a la deriva // motion — web — print',
+    'personal file / subject daniel / motion, web and print / low-altitude drift confirmed / gravity listed as optional / this document is not a promise / 29087':
+      'archivo personal / sujeto daniel / motion, web e impreso / deriva a baja altura confirmada / gravedad registrada como opcional / este documento no es una promesa / 29087',
+    'develop:mental 29087 · re:assurance · source overflowing · 003:08:22 · nu.daniel · don’t look for me. this time.':
+      'develop:mental 29087 · re:assurance · fuente desbordada · 003:08:22 · nu.daniel · no me busques. esta vez.',
+    'fracture mode': 'modo fractura',
+    // trabajo
+    '[ 01 / work ]': '[ 01 / trabajo ]',
+    'selected files': 'archivos seleccionados',
+    // quién
+    '[ 02 / about ]': '[ 02 / quién ]',
+    'subject data': 'datos del sujeto',
+    'name: daniel': 'nombre: daniel',
+    'base: mx': 'base: mx',
+    'field: motion / web / print': 'campo: motion / web / impreso',
+    'gravity: optional': 'gravedad: opcional',
+    'i build small worlds — interfaces, motion, sound. mostly blue ones.':
+      'construyo mundos pequeños — interfaces, movimiento, sonido. casi siempre azules.',
+    'subject exhibits persistent low-altitude drift / exposure to blue light chronic / output classified under develop:mental / handle with care / this side up / 29087':
+      'el sujeto presenta deriva persistente a baja altura / exposición crónica a luz azul / producción clasificada bajo develop:mental / manéjese con cuidado / este lado arriba / 29087',
+    // contacto
+    '[ 03 / contact ]': '[ 03 / contacto ]',
+    'say hello.': 'escríbeme.',
+    'net: @daniel': 'red: @daniel',
+    'channels: chat / whatsapp / mail': 'canales: chat / whatsapp / correo',
+    'every message reaches a person': 'cada mensaje llega a una persona',
+    'eigenlicht / the uniform dark gray many people report seeing in the absence of light / intrinsic light / 16161dff':
+      'eigenlicht / el gris oscuro uniforme que mucha gente dice ver en ausencia de luz / luz intrínseca / 16161dff',
+    '■ □ personal.file — infinitely blue · no warranty expressed or implied':
+      '■ □ archivo.personal — infinitamente azul · sin garantía expresa ni implícita',
+    // la línea que dice a qué se dedica
+    'Custom sites, designed from scratch — no templates. 3D when the piece asks for it, and a chat agent built in:':
+      'Sitios a la medida, diseñados desde cero — sin plantillas. 3D cuando la pieza lo pide, y un agente de chat incluido:',
+    'the one you are using right now': 'el que estás usando ahora mismo'
+  };
+
+  var META = {
+    en: { titulo: 'daniel.project — motion / web / print',
+          desc: 'Personal file. Interfaces, motion and sound — mostly blue ones.' },
+    es: { titulo: 'daniel.project — motion / web / impreso',
+          desc: 'Archivo personal. Interfaces, movimiento y sonido — casi siempre azules.' }
+  };
+
+  /* El inglés original de cada nodo, guardado en el propio nodo la primera vez
+     que se toca. Volver al inglés es restaurar, no traducir de vuelta.
+
+     Va en un WeakMap y no en una lista: el componente puede volver a pintar y
+     habría que rehacer la lista. Si el original viviera en la lista, al
+     rehacerla en español guardaríamos el español COMO original y el botón «en»
+     dejaría de funcionar. Atado al nodo, eso no puede pasar. */
+  var ORIG = new WeakMap();
+  var idioma = 'en';
+
+  function juntarNodos() {
+    var lista = [];
+    var zonas = document.querySelectorAll('.topbar, #top, #work, #about, #contact, .ticker-wrap');
+    for (var z = 0; z < zonas.length; z++) {
+      var paso = document.createTreeWalker(zonas[z], NodeFilter.SHOW_TEXT, null);
+      var n;
+      while ((n = paso.nextNode())) {
+        var base = ORIG.has(n) ? ORIG.get(n) : n.nodeValue;
+        var clave = base.trim();
+        // Sólo los que el diccionario conoce. Lo demás ni se toca.
+        if (clave && Object.prototype.hasOwnProperty.call(ES, clave)) {
+          if (!ORIG.has(n)) ORIG.set(n, n.nodeValue);
+          lista.push(n);
+        }
+      }
+    }
+    return lista;
+  }
+
+  function pintarIdioma(lang) {
+    idioma = lang;
+    var lista = juntarNodos();
+    for (var i = 0; i < lista.length; i++) {
+      var orig = ORIG.get(lista[i]), clave = orig.trim();
+      lista[i].nodeValue = lang === 'es'
+        ? orig.replace(clave, ES[clave])
+        : orig;
+    }
+    raiz.setAttribute('lang', lang);
+    var m = META[lang];
+    document.title = m.titulo;
+    var d = document.querySelector('meta[name="description"]');
+    if (d) d.setAttribute('content', m.desc);
+
+    var botones = document.querySelectorAll('.lang-sw button');
+    for (var b = 0; b < botones.length; b++) {
+      botones[b].setAttribute('aria-pressed', String(botones[b].getAttribute('data-l') === lang));
+    }
+    try { localStorage.setItem('dp-lang', lang); } catch (e) {}
+  }
+
+  function idiomaInicial() {
+    var g = null;
+    try { g = localStorage.getItem('dp-lang'); } catch (e) {}
+    if (g === 'es' || g === 'en') return g;
+    // Primera visita: lo decide el navegador de quien llega.
+    var nav = (navigator.language || 'en').toLowerCase();
+    return nav.indexOf('es') === 0 ? 'es' : 'en';
+  }
+
+  function montarInterruptor() {
+    var barra = document.querySelector('.topbar');
+    if (!barra || barra.querySelector('.lang-sw')) return;
+    var sw = document.createElement('div');
+    sw.className = 'lang-sw';
+    sw.setAttribute('role', 'group');
+    sw.setAttribute('aria-label', 'Idioma / Language');
+    ['es', 'en'].forEach(function (l) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = l;
+      b.setAttribute('data-l', l);
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () { pintarIdioma(l); });
+      sw.appendChild(b);
+    });
+    // Antes del reloj, que es lo último de la barra.
+    var reloj = barra.querySelector('.telemetry');
+    barra.insertBefore(sw, reloj || null);
+  }
+
+  /* ══ 2. MOVIMIENTO AL BAJAR ═════════════════════════════════════════════ */
+
+  /* Reparte las clases de revelado. No toca el marcado del componente: sólo
+     agrega clases a lo que ya existe, así que una sincronización lo repone. */
+  function marcar() {
+    var puesto = 0;
+
+    function vestir(e, clases, escalon) {
+      if (!e || e.classList.contains('mv')) return;
+      e.classList.add('mv');
+      clases.split(' ').forEach(function (c) { if (c) e.classList.add(c); });
+      if (escalon) e.classList.add('mv-d' + Math.min(6, escalon));
+      puesto++;
+    }
+
+    function todos(sel, clases, escalonar) {
+      var els = document.querySelectorAll(sel);
+      for (var k = 0; k < els.length; k++) vestir(els[k], clases, escalonar ? k + 1 : 0);
+    }
+
+    // El título de cada sección entra con un barrido duro, y el [ 0n / … ] que
+    // lo antecede se desliza de lado un instante antes.
+    var titulos = document.querySelectorAll('#work h2, #about h2, #contact h2');
+    for (var i = 0; i < titulos.length; i++) {
+      vestir(titulos[i], 'mv-wipe');
+      vestir(titulos[i].previousElementSibling, 'mv-side');
+    }
+
+    // La línea que dice a qué se dedica. Es lo que más importa que se note.
+    todos('.hp-does', 'mv-side');
+
+    // Las tarjetas de trabajo, escalonadas.
+    todos('#work .aug-card', 'mv-up', true);
+
+    /* El filo azul va en el recuadro de la imagen, NO en la tarjeta: la tarjeta
+       ya usa ::after para los corchetes de esquina y le pisaríamos el suyo. */
+    todos('#work .stripes-slot', 'mv-edge', true);
+
+    // Bloques de datos y párrafos largos.
+    todos('#about .terminal-log, #about .justified, #contact .terminal-log', 'mv-up', true);
+
+    return puesto;
+  }
+
+  /* El observador, con la misma red de seguridad que .draw-x: si nunca reporta
+     —pestaña de fondo, captura, navegador sin IO— se muestra todo de golpe. */
+  function observar() {
+    var todos = document.querySelectorAll('.mv');
+    var mostrarTodo = function () {
+      // .mv-ya y no .mv-in: esto es la salida de emergencia, y tiene que
+      // aterrizar en el estado final sin pedirle nada al bucle de cuadros.
+      for (var i = 0; i < todos.length; i++) todos[i].classList.add('mv-ya');
+    };
+
+    if (quieto || typeof IntersectionObserver === 'undefined') { mostrarTodo(); return; }
+
+    raiz.classList.add('mv-on');
+    var reporto = false;
+    var io = new IntersectionObserver(function (entradas) {
+      reporto = true;
+      for (var i = 0; i < entradas.length; i++) {
+        if (entradas[i].isIntersecting) {
+          entradas[i].target.classList.add('mv-in');
+          io.unobserve(entradas[i].target);
+        }
+      }
+    }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+
+    for (var i = 0; i < todos.length; i++) io.observe(todos[i]);
+    setTimeout(function () { if (!reporto) mostrarTodo(); }, 1400);
+  }
+
+  /* Riel de avance + sección activa. Un solo listener, estrangulado por rAF. */
+  function montarRiel() {
+    if (document.querySelector('.rail')) return;
+    var rail = document.createElement('div');
+    rail.className = 'rail';
+    rail.setAttribute('aria-hidden', 'true');
+    rail.innerHTML = '<i></i><u></u>';
+    document.body.appendChild(rail);
+
+    var barra = rail.firstChild, cabeza = rail.lastChild;
+    var secciones = [], enlaces = {};
+    ['top', 'work', 'about', 'contact'].forEach(function (id) {
+      var s = document.getElementById(id);
+      if (s) secciones.push(s);
+      var a = document.querySelector('.topnav a[href="#' + id + '"]');
+      if (a) enlaces[id] = a;
+    });
+
+    var pendiente = false, ultima = '';
+    function medir() {
+      pendiente = false;
+      var alto = document.documentElement.scrollHeight - window.innerHeight;
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      var p = alto > 0 ? Math.max(0, Math.min(1, y / alto)) : 0;
+      barra.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+      cabeza.style.transform = 'translateX(' + (p * (window.innerWidth || 0) - 26).toFixed(1) + 'px)';
+
+      /* Qué sección va en el centro de la pantalla.
+
+         Se toma la última cuyo borde superior ya pasó el centro, en vez de
+         exigir que el centro caiga DENTRO de una. Entre secciones hay cosas
+         que no son sección —la franja del ticker, por ejemplo— y con la regla
+         estricta el centro cae en ese hueco y el resaltado del nav parpadea. */
+      var centro = y + (window.innerHeight / 2), activa = '';
+      for (var i = 0; i < secciones.length; i++) {
+        if (secciones[i].offsetTop <= centro) activa = secciones[i].id;
+      }
+      if (activa !== ultima) {
+        ultima = activa;
+        for (var k in enlaces) {
+          if (Object.prototype.hasOwnProperty.call(enlaces, k)) {
+            enlaces[k].classList.toggle('mv-here', k === activa);
+          }
+        }
+      }
+    }
+
+    window.addEventListener('scroll', function () {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(medir);
+    }, { passive: true });
+    window.addEventListener('resize', function () {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(medir);
+    }, { passive: true });
+    medir();
+  }
+
+  /* ══ ARRANQUE ═══════════════════════════════════════════════════════════
+     El componente se pinta solo y puede volver a pintarse: la primera vez que
+     lo hace reemplaza el árbol y se lleva por delante lo que hayamos colgado.
+     Por eso todo aquí es idempotente y se vuelve a aplicar cuando el árbol
+     cambia — montarInterruptor no duplica, marcar salta lo ya marcado, y el
+     idioma se restaura desde el original guardado en cada nodo. */
+  function aplicar() {
+    montarInterruptor();
+    pintarIdioma(idioma);
+    marcar();
+    observar();
+  }
+
+  function vigilarRepintado() {
+    if (typeof MutationObserver === 'undefined') return;
+    var pendiente = null;
+    var mo = new MutationObserver(function (ms) {
+      // Sólo nos importa que aparezcan o desaparezcan elementos. El texto que
+      // cambia solo —el reloj, la telemetría— pasa cientos de veces por minuto
+      // y no nos afecta.
+      var estructural = false;
+      for (var i = 0; i < ms.length && !estructural; i++) {
+        if (ms[i].addedNodes.length || ms[i].removedNodes.length) estructural = true;
+      }
+      if (!estructural) return;
+      clearTimeout(pendiente);
+      pendiente = setTimeout(aplicar, 140);
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    // A los 20 s el componente ya se asentó. Seguir mirando sería trabajo
+    // perpetuo por nada.
+    setTimeout(function () { mo.disconnect(); clearTimeout(pendiente); }, 20000);
+  }
+
+  function arrancar() {
+    idioma = idiomaInicial();
+    aplicar();
+    montarRiel();
+    vigilarRepintado();
+  }
+
+  var intentos = 0;
+  (function esperar() {
+    if (document.querySelector('.topbar') && document.getElementById('contact')) { arrancar(); return; }
+    if (++intentos > 60) return;
+    setTimeout(esperar, 100);
+  })();
 })();
 </script>
 
