@@ -214,8 +214,9 @@
     .topnav { display: flex; gap: 30px; margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 2px; }
     .statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; height: 32px; display: flex; align-items: center; gap: 20px; padding: 0 34px; background: #03060e; color: #9db8dc; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 34px; }
-    .grid-side { display: grid; grid-template-columns: 380px 1fr; gap: 70px; }
-    .work-head { display: grid; grid-template-columns: 1fr 200px; gap: 40px; align-items: start; }
+    .grid-side { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 70px; }
+    .grid-side > *, .work-head > * { min-width: 0; }
+    .work-head { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 40px; align-items: start; }
     .hairline-row { display: flex; align-items: center; gap: 6px; }
     .idx-row { display: flex; gap: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: rgba(8,18,58,.5); border-bottom: 1px solid rgba(8,18,58,.13); padding: 5px 0; }
 
@@ -230,8 +231,8 @@
     }
     @media (max-width: 900px) {
       .hide-md { display: none; }
-      .grid-side { grid-template-columns: 1fr; gap: 40px; }
-      .work-head { grid-template-columns: 1fr; gap: 22px; }
+      .grid-side { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+      .work-head { grid-template-columns: minmax(0, 1fr); gap: 22px; }
       /* hero plate becomes a full-bleed ground behind the type */
       .hero-plate { left: 0; width: 100%; opacity: .42; }
       .hero-plate::after { background: linear-gradient(180deg, rgba(244,247,252,.5), rgba(244,247,252,.8)),
@@ -251,6 +252,21 @@
       .justified { text-align: left; text-align-last: left; letter-spacing: 1.6px; }
     }
 
+    /* ---- pantallas táctiles ------------------------------------------- */
+    /* No es cosa de ancho sino de dedo: en una tableta también se toca. Los
+       enlaces del menú median 29px de alto, debajo de los 44 que necesita un
+       pulgar para no fallar. Crece el área tocable, no la letra. */
+    @media (hover: none) and (pointer: coarse) {
+      .topbar { height: 58px; }
+      .topnav { align-items: stretch; }
+      .topnav a, .topbar > a:first-child { display: flex; align-items: center; min-height: 44px; }
+      section[id] { scroll-margin-top: 58px; }
+      /* el correo del cierre y los dos accesos del agente, al mismo mínimo.
+         Crece la caja alrededor del texto, no el texto. */
+      #contact a[href^="mailto:"] { display: inline-flex; align-items: center; min-height: 44px; }
+      #ag-abrir, #ag-directo { box-sizing: border-box; min-height: 44px; }
+    }
+
     /* ---- reduced motion ---------------------------------------------- */
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -265,7 +281,7 @@
     }
   </style>
 </helmet>
-<div class="dc-anim" style="font-family: 'Space Grotesk', sans-serif; color: #08123a; background: #f4f7fc; min-height: 100vh;">
+<div class="dc-anim" style="font-family: 'Space Grotesk', sans-serif; color: #08123a; background: #f4f7fc; min-height: 100vh; min-height: 100svh;">
 
   <header class="topbar">
     <a href="#top" class="glitch-hover" data-cur="return / top" style="font-weight: 700; font-size: 17px; letter-spacing: 1px; color: #08123a; white-space: nowrap;">daniel.project<span style="color: #0102ec;">_</span></a>
@@ -279,7 +295,7 @@
     <div class="telemetry hide-sm">{{ clock }}</div>
   </header>
 
-  <section id="top" data-screen-label="hero" style="position: relative; min-height: 100vh; overflow: hidden; display: flex; align-items: center; padding: clamp(104px, 14vw, 120px) clamp(20px, 5vw, 70px) clamp(70px, 9vw, 90px);">
+  <section id="top" data-screen-label="hero" style="position: relative; min-height: 100vh; min-height: 100svh; overflow: hidden; display: flex; align-items: center; padding: clamp(104px, 14vw, 120px) clamp(20px, 5vw, 70px) clamp(70px, 9vw, 90px);">
     <div class="grid-bg"></div>
     <sc-if value="{{ hero }}" hint-placeholder-val="{{ true }}">
       <div class="hero-plate">
@@ -1057,7 +1073,7 @@ class Component extends DCLogic {
   #ag-directo[hidden] { display: none; }
 
   #ag-panel { position: fixed; right: 26px; bottom: 54px; z-index: 71; width: 384px; max-width: calc(100vw - 36px);
-    height: 540px; max-height: calc(100vh - 108px); display: flex; flex-direction: column; overflow: hidden;
+    height: 540px; max-height: calc(100svh - 108px); display: flex; flex-direction: column; overflow: hidden;
     background: #050b18; color: #e6effb; --aug-tl: 16px; --aug-br: 16px;
     --aug-border-all: 1px; --aug-border-bg: rgba(200,220,250,.42); }
   #ag-panel[hidden] { display: none; }
@@ -1119,7 +1135,7 @@ class Component extends DCLogic {
   .ag-pie button:disabled { background: rgba(200,220,250,.18); color: rgba(200,220,250,.45); cursor: default; }
 
   @media (max-width: 520px) {
-    #ag-panel { right: 12px; left: 12px; width: auto; bottom: 44px; height: calc(100vh - 90px); }
+    #ag-panel { right: 12px; left: 12px; width: auto; bottom: 44px; height: calc(100svh - 90px); }
     #ag-abrir { right: 14px; bottom: 44px; }
   }
   @media (prefers-reduced-motion: reduce) { .ag-latido { animation: none; } }
