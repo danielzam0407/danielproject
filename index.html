@@ -356,6 +356,10 @@
             </sc-if>
             <span class="kagi" style="position: relative; z-index: 2; background: rgba(244,247,252,.88); color: rgba(8,18,58,.75);">{{ item.slot }}</span>
           </div>
+          <sc-if value="{{ item.url }}" hint-placeholder-val="{{ true }}">
+            <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ item.aria }}"
+               style="position: absolute; inset: 0; z-index: 5;"></a>
+          </sc-if>
           <div style="padding: 22px 22px 26px; position: relative; overflow: hidden;">
             <div class="ghost-type narrow" style="right: 4px; bottom: -12px; font-size: 132px; font-weight: 900;">{{ item.id }}</div>
             <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; color: #0102ec; margin-bottom: 10px;">{{ item.id }} // {{ item.tag }}</div>
@@ -954,14 +958,18 @@ class Component extends DCLogic {
     var coordY = (-8.4 + Math.cos(n / 900) * 2).toFixed(2);
     var drift = (Math.sin(n / 900) * 4).toFixed(2);
     var plates = [st.p0, st.p1, st.p2];
+    // Where project 001 lives. A visitor clicking a portfolio card should land
+    // on the working tool, not on source code — the repo is one click from there.
+    var FRACTURE_URL = 'https://danielzam0407.github.io/fracture/';
     var projects = [
-      { id: '001', name: 'fracture', tag: 'tool', desc: 'type a word — it becomes the cover', slot: 'fracture / plate 01', micro: 'canvas bake · offscreen worker · deterministic seed · export 3000px · status internal' },
+      { id: '001', name: 'fracture', tag: 'tool', desc: 'type a word — it becomes the cover', slot: 'fracture / plate 01', micro: 'canvas bake · offscreen worker · deterministic seed · export 3000px · status internal', url: FRACTURE_URL },
       { id: '002', name: 'bluescreen.dream', tag: 'web', desc: 'an interactive place to get lost', slot: 'bluescreen.dream / shot 04', micro: 'webgl no · dom yes · gravity optional · status floating' },
       { id: '003', name: 'paper.ghosts', tag: 'print', desc: 'a series about things left behind', slot: 'paper.ghosts / scan 12', micro: 'offset 2c · stock 120g · edition 50 · status sold out' }
     ].map(function (p, i) {
       p.onEnter = function () { self.setState({ sel: i }); };
       p.plate = plates[i];
-      p.cur = p.id + ' / open ' + p.tag;
+      p.cur = p.id + (p.url ? ' / open ' + p.tag + ' ↗' : ' / ' + p.tag);
+      p.aria = p.url ? p.name + ' — abrir proyecto en una pestaña nueva' : p.name;
       return p;
     });
     var sel = this.state.sel;
