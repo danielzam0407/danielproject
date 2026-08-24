@@ -106,7 +106,7 @@ async function levantarAviso(env, clienteId, sesionId, aviso, hilo) {
 }
 
 export default {
-  async fetch(peticion, env) {
+  async fetch(peticion, env, contexto) {
     const ruta = new URL(peticion.url).pathname;
 
     // La bandeja va antes del control de origen: no es un cliente, eres tú.
@@ -219,7 +219,14 @@ export default {
         .write(codificador.encode(`event: ${evento}\ndata: ${JSON.stringify(datos)}\n\n`))
         .catch(() => {});
 
-    (async () => {
+    /* El trabajo se registra con waitUntil.
+
+       Sin esto, cuando el visitante cierra la pestaña a media respuesta el
+       runtime puede matar al worker antes de que termine este bloque — y con
+       él se van el turno del agente sin guardar y cualquier aviso de lead a
+       medio entregar. Verificado: una sesión cortada quedaba con el mensaje
+       del visitante y sin el del agente. */
+    const trabajo = (async () => {
       // Lo primero que sale: el id de la sesión, para que el navegador lo
       // guarde y el hilo sobreviva a recargar la página.
       await enviar('sesion', { id: sesionId });
@@ -322,6 +329,8 @@ export default {
         await escritor.close().catch(() => {});
       }
     })();
+
+    contexto.waitUntil(trabajo);
 
     return new Response(readable, {
       headers: {
