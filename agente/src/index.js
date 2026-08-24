@@ -6,10 +6,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SISTEMA, HERRAMIENTAS, ejecutar } from './persona.js';
 
-const MODELO = 'claude-opus-5';
+// DeepSeek V4 Flash vía el endpoint compatible con Anthropic.
+const MODELO = 'deepseek-v4-flash';
+const DEEPSEEK_BASE = 'https://api.deepseek.com/anthropic';
 
-// Un chat, no un ensayo. El techo deja aire para el razonamiento adaptativo
-// sin dejar que una respuesta se vaya a diez párrafos.
+// Un chat, no un ensayo. El techo deja aire sin dejar que una respuesta se
+// vaya a diez párrafos.
 const MAX_TOKENS = 4096;
 
 // Topes diarios. El primero frena a una persona, el segundo frena a todas —
@@ -102,8 +104,8 @@ export default {
     }
     if (!cabecerasCors) return json({ error: 'origen no permitido' }, 403, {});
     if (peticion.method !== 'POST') return json({ error: 'usa POST' }, 405, cabecerasCors);
-    if (!env.ANTHROPIC_API_KEY) {
-      return json({ error: 'falta ANTHROPIC_API_KEY' }, 500, cabecerasCors);
+    if (!env.DEEPSEEK_API_KEY) {
+      return json({ error: 'falta DEEPSEEK_API_KEY' }, 500, cabecerasCors);
     }
 
     let cuerpo;
@@ -121,7 +123,10 @@ export default {
     if (sinCupo) return json({ error: sinCupo }, 429, cabecerasCors);
 
     const mensajes = [...historial(cuerpo.historial), { role: 'user', content: pregunta }];
-    const cliente = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    const cliente = new Anthropic({
+      apiKey: env.DEEPSEEK_API_KEY,
+      baseURL: DEEPSEEK_BASE,
+    });
 
     const { readable, writable } = new TransformStream();
     const escritor = writable.getWriter();
@@ -135,18 +140,14 @@ export default {
     (async () => {
       try {
         for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTA; vuelta++) {
-          const flujo = cliente.beta.messages.stream({
+          // SDK de Anthropic contra el endpoint compatible de DeepSeek.
+          // Sin betas/fallbacks de Anthropic: DeepSeek no los implementa.
+          const flujo = cliente.messages.stream({
             model: MODELO,
             max_tokens: MAX_TOKENS,
             system: SISTEMA,
             tools: HERRAMIENTAS,
             messages: mensajes,
-            thinking: { type: 'adaptive' },
-            output_config: { effort: 'low' },
-            // Si el modelo declina, la API reintenta sola en otro modelo dentro
-            // de la misma llamada en vez de dejar al visitante sin respuesta.
-            betas: ['server-side-fallback-2026-07-01'],
-            fallbacks: 'default',
           });
 
           flujo.on('text', (delta) => enviar('texto', { t: delta }));

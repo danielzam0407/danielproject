@@ -16,6 +16,6 @@ binding = "CUOTA"
 id = "PENDIENTE_CORRER_wrangler_kv_namespace_create"
 
 # Secretos (NO van aquí — se ponen con `npx wrangler secret put NOMBRE`):
-#   ANTHROPIC_API_KEY   la llave de la API
+#   DEEPSEEK_API_KEY    llave de DeepSeek (model: deepseek-v4-flash)
 #   WHATSAPP_E164       tu número en formato E.164 sin +, ej. 528112345678
-#   CAL_URL             tu página de reservas, ej. https://cal.com/daniel/30min
+#   CAL_URL             tu página de reservas, ej. https://calendar.app.google/...
