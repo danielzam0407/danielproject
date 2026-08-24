@@ -100,7 +100,8 @@ no ejecuta el ciclo de render, y sin esa salida el contenido simplemente no apar
 
 ## Pendientes
 
-- Copy real: los proyectos 001–003 son ficticios y `hello@daniel.mx` es placeholder.
+- Copy real: 001 es [fracture](https://github.com/danielzam0407/fracture), pero 002 y 003
+  siguen siendo ficticios y `hello@daniel.mx` es placeholder.
 - Stills reales de los proyectos, para que el pipeline los procese en vez de generar desde cero.
 - La fuente LEDLIGHT (Billy Argel) es gratis sólo para uso personal. Para uso comercial hay que
   licenciarla, o recrear el efecto con un filtro SVG sobre una fuente libre.
