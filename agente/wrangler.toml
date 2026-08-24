@@ -1,0 +1,21 @@
+name = "daniel-agente"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Orígenes que pueden llamar al worker. Cualquier otro recibe 403 sin llegar a
+# la API — el navegador no es quien decide esto, lo decide el servidor.
+[vars]
+ORIGENES = "https://danielzam0407.github.io,http://localhost:4322"
+
+# Contador de uso para los topes diarios. Crear con:
+#   npx wrangler kv namespace create CUOTA
+# y pegar aquí el id que imprime.
+[[kv_namespaces]]
+binding = "CUOTA"
+id = "PENDIENTE_CORRER_wrangler_kv_namespace_create"
+
+# Secretos (NO van aquí — se ponen con `npx wrangler secret put NOMBRE`):
+#   ANTHROPIC_API_KEY   la llave de la API
+#   WHATSAPP_E164       tu número en formato E.164 sin +, ej. 528112345678
+#   CAL_URL             tu página de reservas, ej. https://cal.com/daniel/30min

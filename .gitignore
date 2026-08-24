@@ -5,3 +5,7 @@
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# dependencias y build del worker
+node_modules/
+agente/.build/

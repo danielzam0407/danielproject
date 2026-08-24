@@ -1034,5 +1034,282 @@ class Component extends DCLogic {
   }
 }
 </script>
+<!-- ═══ agente ═══════════════════════════════════════════════════════════
+     Chat que atiende visitantes y convierte la conversación en un contacto
+     real. Vive fuera del bloque <x-dc> a propósito: así una sincronización
+     desde Claude Design no se lo lleva por delante.
+     La llave de la API no está aquí — está en el worker de agente/. -->
+<style>
+  #ag-abrir { position: fixed; right: 26px; bottom: 54px; z-index: 70; display: flex; align-items: center; gap: 10px;
+    padding: 11px 18px; border: 0; cursor: pointer; background: #0102ec; color: #fff;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    --aug-tl: 9px; --aug-br: 9px; }
+  #ag-abrir:hover { background: #3050ff; }
+  #ag-abrir .ag-punto { width: 7px; height: 7px; background: #9ef0e4; flex-shrink: 0; }
+
+  #ag-panel { position: fixed; right: 26px; bottom: 54px; z-index: 71; width: 384px; max-width: calc(100vw - 36px);
+    height: 540px; max-height: calc(100vh - 108px); display: flex; flex-direction: column; overflow: hidden;
+    background: #050b18; color: #e6effb; --aug-tl: 16px; --aug-br: 16px;
+    --aug-border-all: 1px; --aug-border-bg: rgba(200,220,250,.42); }
+  #ag-panel[hidden], #ag-abrir[hidden] { display: none; }
+
+  .ag-barra { display: flex; align-items: center; gap: 12px; padding: 13px 15px 12px;
+    border-bottom: 1px solid rgba(200,220,250,.18); flex-shrink: 0; }
+  .ag-barra .kagi { color: #7f9bff; flex-shrink: 0; }
+  .ag-cerrar { margin-left: auto; background: none; border: 0; cursor: pointer; padding: 4px 8px;
+    color: rgba(200,220,250,.65); font-family: 'IBM Plex Mono', monospace; font-size: 15px; line-height: 1; }
+  .ag-cerrar:hover { color: #e6effb; }
+
+  .ag-hilo { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px 15px; display: flex;
+    flex-direction: column; gap: 15px; }
+  .ag-hilo::-webkit-scrollbar { width: 5px; }
+  .ag-hilo::-webkit-scrollbar-thumb { background: rgba(200,220,250,.28); }
+
+  .ag-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.85; white-space: pre-wrap;
+    word-break: break-word; }
+  .ag-msg.de-agente { color: rgba(230,239,251,.94); }
+  .ag-msg.de-agente::before { content: '> '; color: #7f9bff; }
+  .ag-msg.de-visitante { align-self: flex-end; max-width: 86%; padding: 8px 12px; background: rgba(127,155,255,.13);
+    border-left: 2px solid #7f9bff; color: #cfe0ff; }
+  .ag-msg.es-error { color: #ff9a8d; }
+
+  /* El cursor de escritura es adorno: el texto se escribe igual sin él. */
+  .ag-latido { display: inline-block; width: 7px; height: 12px; background: #7f9bff; vertical-align: -1px;
+    animation: ag-parpadeo 1.05s steps(2, start) infinite; }
+  @keyframes ag-parpadeo { to { visibility: hidden; } }
+
+  .ag-accion { display: flex; flex-direction: column; gap: 5px; padding: 11px 13px; text-decoration: none;
+    background: rgba(127,155,255,.1); color: #e6effb; --aug-tl: 8px; --aug-br: 8px;
+    --aug-border-all: 1px; --aug-border-bg: rgba(158,240,228,.55); }
+  .ag-accion:hover { background: rgba(127,155,255,.2); color: #fff; }
+  .ag-accion .rotulo { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: #9ef0e4; }
+  .ag-accion .detalle { font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.65;
+    color: rgba(200,220,250,.72); }
+
+  .ag-pie { display: flex; align-items: stretch; gap: 9px; padding: 11px 12px; flex-shrink: 0;
+    border-top: 1px solid rgba(200,220,250,.18); }
+  .ag-pie textarea { flex: 1; resize: none; background: transparent; border: 1px solid rgba(200,220,250,.26);
+    padding: 9px 11px; color: #e6effb; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    line-height: 1.5; height: 40px; }
+  .ag-pie textarea:focus { outline: none; border-color: #7f9bff; }
+  .ag-pie textarea::placeholder { color: rgba(200,220,250,.4); }
+  .ag-pie button { flex-shrink: 0; padding: 0 15px; border: 0; cursor: pointer; background: #0102ec; color: #fff;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+  .ag-pie button:hover:not(:disabled) { background: #3050ff; }
+  .ag-pie button:disabled { background: rgba(200,220,250,.18); color: rgba(200,220,250,.45); cursor: default; }
+
+  @media (max-width: 520px) {
+    #ag-panel { right: 12px; left: 12px; width: auto; bottom: 44px; height: calc(100vh - 90px); }
+    #ag-abrir { right: 14px; bottom: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ag-latido { animation: none; } }
+</style>
+
+<button id="ag-abrir" type="button" hidden data-augmented-ui="tl-clip br-clip"
+  aria-haspopup="dialog" aria-controls="ag-panel">
+  <span class="ag-punto" aria-hidden="true"></span> ask the agent
+</button>
+
+<div id="ag-panel" hidden data-augmented-ui="tl-clip br-clip border" role="dialog" aria-modal="false"
+  aria-label="Agent — ask about Daniel's work">
+  <div class="ag-barra">
+    <span class="kagi">[ agent / 001 ]</span>
+    <span class="telemetry inv" id="ag-telemetria" aria-hidden="true">idle</span>
+    <button class="ag-cerrar" type="button" id="ag-cerrar" aria-label="Close">✕</button>
+  </div>
+  <div class="ag-hilo" id="ag-hilo" role="log" aria-live="polite"></div>
+  <form class="ag-pie" id="ag-forma">
+    <textarea id="ag-entrada" rows="1" placeholder="ask something…" aria-label="Message" maxlength="1500"></textarea>
+    <button type="submit" id="ag-enviar">send</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Pega aquí la URL del worker después de desplegarlo ──────────────
+     Ejemplo: 'https://daniel-agente.tu-subdominio.workers.dev'
+     Mientras esté vacío el botón no se dibuja, así nadie encuentra un
+     chat que truena. */
+  var ENDPOINT = '';
+
+  var abrir = document.getElementById('ag-abrir');
+  var panel = document.getElementById('ag-panel');
+  if (!ENDPOINT || !abrir || !panel) return;
+
+  var hilo = document.getElementById('ag-hilo');
+  var forma = document.getElementById('ag-forma');
+  var entrada = document.getElementById('ag-entrada');
+  var botonEnviar = document.getElementById('ag-enviar');
+  var telemetria = document.getElementById('ag-telemetria');
+
+  var historial = [];
+  var ocupado = false;
+
+  abrir.hidden = false;
+
+  function alFondo() { hilo.scrollTop = hilo.scrollHeight; }
+
+  function burbuja(clase, texto) {
+    var div = document.createElement('div');
+    div.className = 'ag-msg ' + clase;
+    // textContent, nunca innerHTML: lo que escribe el modelo es texto, no
+    // marcado. Con innerHTML, cualquiera que logre que el agente repita una
+    // etiqueta la estaría ejecutando en tu dominio.
+    div.textContent = texto || '';
+    hilo.appendChild(div);
+    alFondo();
+    return div;
+  }
+
+  function boton(accion) {
+    var a = document.createElement('a');
+    a.className = 'ag-accion';
+    a.href = accion.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.setAttribute('data-augmented-ui', 'tl-clip br-clip border');
+    var rotulo = document.createElement('span');
+    rotulo.className = 'rotulo';
+    rotulo.textContent = accion.etiqueta || 'abrir';
+    a.appendChild(rotulo);
+    if (accion.detalle) {
+      var detalle = document.createElement('span');
+      detalle.className = 'detalle';
+      detalle.textContent = accion.detalle;
+      a.appendChild(detalle);
+    }
+    hilo.appendChild(a);
+    alFondo();
+  }
+
+  function estado(txt, trabajando) {
+    telemetria.textContent = txt;
+    ocupado = !!trabajando;
+    botonEnviar.disabled = ocupado;
+  }
+
+  /* Un bloque SSE: líneas 'event:' y 'data:'. Se separan por línea en blanco. */
+  function leerBloque(bloque) {
+    var evento = 'message', datos = '';
+    var lineas = bloque.split('\n');
+    for (var i = 0; i < lineas.length; i++) {
+      var l = lineas[i];
+      if (l.indexOf('event:') === 0) evento = l.slice(6).trim();
+      else if (l.indexOf('data:') === 0) datos += l.slice(5).trim();
+    }
+    if (!datos) return null;
+    try { return { evento: evento, datos: JSON.parse(datos) }; }
+    catch (e) { return null; }
+  }
+
+  async function preguntar(texto) {
+    burbuja('de-visitante', texto);
+    historial.push({ rol: 'yo', texto: texto });
+    estado('thinking', true);
+
+    var destino = burbuja('de-agente', '');
+    var cursor = document.createElement('span');
+    cursor.className = 'ag-latido';
+    destino.appendChild(cursor);
+    var acumulado = '';
+
+    function escribir(t) {
+      acumulado += t;
+      destino.textContent = acumulado;
+      destino.appendChild(cursor);
+      alFondo();
+    }
+
+    try {
+      var r = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mensaje: texto, historial: historial.slice(0, -1) })
+      });
+
+      if (!r.ok) {
+        var fallo = await r.json().catch(function () { return {}; });
+        cursor.remove();
+        destino.className = 'ag-msg de-agente es-error';
+        destino.textContent = fallo.error || ('The agent is unreachable (' + r.status + ').');
+        estado('error', false);
+        return;
+      }
+
+      var lector = r.body.getReader();
+      var dec = new TextDecoder();
+      var resto = '';
+
+      while (true) {
+        var trozo = await lector.read();
+        if (trozo.done) break;
+        resto += dec.decode(trozo.value, { stream: true });
+        var corte;
+        while ((corte = resto.indexOf('\n\n')) >= 0) {
+          var leido = leerBloque(resto.slice(0, corte));
+          resto = resto.slice(corte + 2);
+          if (!leido) continue;
+          if (leido.evento === 'texto') { estado('writing', true); escribir(leido.datos.t); }
+          else if (leido.evento === 'accion') boton(leido.datos);
+          else if (leido.evento === 'error') {
+            cursor.remove();
+            burbuja('de-agente es-error', leido.datos.mensaje);
+          }
+        }
+      }
+
+      cursor.remove();
+      if (!acumulado) destino.remove();
+      else historial.push({ rol: 'agente', texto: acumulado });
+      estado('idle', false);
+    } catch (e) {
+      cursor.remove();
+      destino.className = 'ag-msg de-agente es-error';
+      destino.textContent = 'Connection dropped. Try again.';
+      estado('error', false);
+    }
+  }
+
+  abrir.addEventListener('click', function () {
+    panel.hidden = false;
+    abrir.hidden = true;
+    if (!hilo.childElementCount) {
+      burbuja('de-agente', 'I answer for Daniel — his work, how he builds, whether a project fits. What brings you here?');
+      estado('idle', false);
+    }
+    entrada.focus();
+  });
+
+  function cerrar() {
+    panel.hidden = true;
+    abrir.hidden = false;
+    abrir.focus();
+  }
+  document.getElementById('ag-cerrar').addEventListener('click', cerrar);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) cerrar();
+  });
+
+  forma.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var texto = entrada.value.trim();
+    if (!texto || ocupado) return;
+    entrada.value = '';
+    preguntar(texto);
+  });
+
+  // Enter envía, Shift+Enter hace salto de línea.
+  entrada.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      forma.requestSubmit();
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

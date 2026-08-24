@@ -1,0 +1,18 @@
+{
+  "name": "daniel-agente",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Worker que atiende el chat del portfolio: habla por Daniel y convierte la conversación en una llamada agendada o un WhatsApp.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.125.0"
+  }
+}
