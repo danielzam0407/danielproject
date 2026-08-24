@@ -14,7 +14,7 @@ Así que el sitio se queda en Pages y esto vive en un Cloudflare Worker. El
 navegador le habla al worker, y sólo el worker conoce la llave.
 
 ```
-navegador ──POST──▶ worker ──▶ API de Claude
+navegador ──POST──▶ worker ──▶ API de DeepSeek (formato Anthropic)
    ▲                  │
    └──── SSE ─────────┘   (texto en streaming + los botones de acción)
 ```
@@ -22,7 +22,7 @@ navegador ──POST──▶ worker ──▶ API de Claude
 ## Qué necesitas antes de empezar
 
 - Una cuenta de Cloudflare (el plan gratis alcanza de sobra).
-- Una llave de API de Anthropic — `console.anthropic.com`.
+- Una llave de API de DeepSeek — `platform.deepseek.com`.
 - Tu número de WhatsApp.
 - Una página de reservas: Cal.com o el "appointment schedule" de Google
   Calendar. Cualquiera de las dos da una URL pública, que es lo único que el
@@ -46,7 +46,7 @@ npx wrangler kv namespace create CUOTA
 Carga los tres secretos. Cada comando pide el valor y no queda en el repo:
 
 ```bash
-npx wrangler secret put ANTHROPIC_API_KEY
+npx wrangler secret put DEEPSEEK_API_KEY
 ```
 
 ```bash
@@ -59,7 +59,7 @@ npx wrangler secret put CAL_URL
 
 `WHATSAPP_E164` va en formato internacional **sin `+` y sin espacios** —
 `528112345678`. `CAL_URL` es la página completa, por ejemplo
-`https://cal.com/daniel/30min`.
+`https://calendar.app.google/...`.
 
 ```bash
 npm run deploy
@@ -81,21 +81,15 @@ sitio nunca muestra un chat roto, simplemente no hay chat.
 ## Llenar el perfil
 
 `src/persona.js` empieza con un bloque `PERFIL`. Ahí está lo que el agente da
-por cierto sobre ti, y lo va a repetir a desconocidos.
-
-Dejé vacías, marcadas con `PENDIENTE`, las cosas que sólo tú sabes: dónde vives,
-a qué te dedicas, qué encargos te interesan, tu disponibilidad. **No las
-inventé.** Mientras estén así el agente dice que no sabe y ofrece pasar el
-contacto — que es mejor que mentirle a alguien que te está considerando.
-
-Debajo están las instrucciones de tono y las dos herramientas. Cualquier cambio
+por cierto sobre ti, y lo va a repetir a desconocidos. Cualquier cambio
 necesita `npm run deploy` otra vez.
 
 ## Lo que cuesta
 
-Corre con `claude-opus-5`, el modelo más capaz. En una conversación de portfolio
-cada mensaje ronda **2 ¢ USD** — unos 2.000 tokens de entrada y unos 500 de
-salida, contando el razonamiento.
+Corre con `deepseek-v4-flash` vía el endpoint Anthropic-compatible de DeepSeek
+(`https://api.deepseek.com/anthropic`). En una conversación de portfolio cada
+mensaje ronda **~0.08 ¢ USD** off-peak (unos 2.000 tokens de entrada y 500 de
+salida); en peak UTC el doble.
 
 Los topes están en `src/index.js`:
 
@@ -104,13 +98,7 @@ Los topes están en `src/index.js`:
 | `TOPE_POR_IP` | 40 / día | Que una persona se quede pegada al chat |
 | `TOPE_GLOBAL` | 800 / día | Tu gasto total, pase lo que pase |
 
-Con esos números el peor día posible son **unos 18 USD**. Si eso te parece
-mucho —y para un portfolio probablemente lo sea— baja `TOPE_GLOBAL` a 100 y el
-techo queda en ~2 USD diarios.
-
-La otra palanca es el modelo. Cambiar `MODELO` a `claude-haiku-4-5` deja el
-gasto en la quinta parte, a cambio de respuestas menos finas. Lo dejé en Opus 5
-porque esa decisión es tuya, no mía.
+Con esos números el peor día posible son **unos 0.60–1.20 USD**, no ~18.
 
 ## Ver qué está pasando
 
@@ -145,9 +133,8 @@ lleve por delante.
   el loop no puede quedarse colgado esperando algo de afuera.
 - **CORS lo decide el servidor.** Un origen que no esté en `ORIGENES` recibe 403
   antes de que se toque la API.
-- **Reintento por rechazo (`fallbacks`).** Si el modelo declina una petición, la
-  API la reintenta sola en otro modelo dentro de la misma llamada, en vez de
-  dejar al visitante mirando una respuesta vacía.
+- **DeepSeek con el SDK de Anthropic.** Misma librería, `baseURL` apuntando a
+  DeepSeek. Sin betas/fallbacks de Anthropic: DeepSeek no los implementa.
 
 ## Lo que este agente no hace
 
