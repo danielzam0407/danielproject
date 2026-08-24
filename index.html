@@ -1868,5 +1868,465 @@ class Component extends DCLogic {
 })();
 </script>
 
+
+<!-- ══ CARRETES ══════════════════════════════════════════════════════════════
+     La vista previa en video de cada proyecto. Fuera del bloque <x-dc>, igual
+     que todo lo demás, para que una sincronización no se lo lleve.
+
+     El vocabulario es de sala de proyección, no de reproductor web: carrete,
+     transporte, timecode. El botón es un triángulo con canto, no un círculo.
+
+     Nada carga hasta que alguien lo pide: los videos nacen con preload="none",
+     así que una visita que no toca play no descarga un solo byte de ellos.   -->
+<style>
+  /* ── El botón de transporte, en el encabezado de cada tarjeta ─────────── */
+  .reel-go { appearance: none; background: transparent; border: 1px solid #0102ec;
+    color: #0102ec; cursor: pointer; display: inline-flex; align-items: center;
+    gap: 6px; padding: 2px 7px 2px 6px; margin-left: 10px; vertical-align: middle;
+    font: inherit; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    line-height: 1; position: relative; z-index: 7; transition: background .14s, color .14s; }
+  .reel-go svg { display: block; width: 8px; height: 9px; fill: currentColor; }
+  .reel-go:hover { background: #0102ec; color: #fff; }
+  .reel-go:focus-visible { outline: 2px solid #08123a; outline-offset: 2px; }
+  /* El área tocable crece con el dedo sin engordar el dibujo. */
+  @media (pointer: coarse) {
+    /* min-height explicito y box-sizing: solo con padding la caja se quedaba
+       en 36px, porque el glifo mide 9. Un area tocable se declara. */
+    .reel-go { min-height: 44px; box-sizing: border-box; padding: 0 13px;
+      margin-left: 8px; }
+  }
+
+  /* ── El carrete dentro del recuadro de la tarjeta ─────────────────────── */
+  /* La lámina generativa que ya estaba sigue debajo: si el video no carga, la
+     tarjeta se ve exactamente como antes. */
+  .reel-v { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 3; background: #08123a;
+    clip-path: inset(0 0 100% 0); opacity: 0; }
+  .reel-armado .reel-v { clip-path: inset(0 0 0 0); opacity: 1;
+    transition: clip-path .5s cubic-bezier(.16,.84,.3,1), opacity .18s linear; }
+  /* El video es el que se pica para agrandar, así que se ve que se puede. */
+  .reel-armado .reel-v { cursor: zoom-in; }
+
+  /* Rayas sobre el video: lo amarra al resto de la página en vez de dejarlo
+     como una ventana ajena pegada encima. */
+  .reel-scan { position: absolute; inset: 0; z-index: 4; pointer-events: none;
+    opacity: 0; transition: opacity .3s linear;
+    background: repeating-linear-gradient(180deg, rgba(8,18,58,.16) 0 1px, transparent 1px 3px); }
+  .reel-armado .reel-scan { opacity: 1; }
+
+  /* ── La regleta de lectura: timecode, punto de grabación, avance ──────── */
+  .reel-hud { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    display: flex; align-items: center; gap: 9px; padding: 5px 9px 6px;
+    background: linear-gradient(0deg, rgba(8,18,58,.88), rgba(8,18,58,0));
+    color: #cfe0f7; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    letter-spacing: 1.5px; pointer-events: none;
+    opacity: 0; transform: translateY(6px); transition: opacity .28s linear, transform .28s ease; }
+  .reel-armado .reel-hud { opacity: 1; transform: none; }
+  .reel-dot { width: 6px; height: 6px; background: #ff3b30; flex-shrink: 0; }
+  .reel-armado .reel-dot { animation: reel-late 1.15s steps(1) infinite; }
+  @keyframes reel-late { 50% { opacity: .15; } }
+  .reel-tc { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .reel-bar { flex: 1; height: 2px; background: rgba(207,224,247,.28); min-width: 24px; }
+  .reel-bar > i { display: block; height: 100%; width: 100%; background: #0102ec;
+    transform: scaleX(0); transform-origin: left center; }
+  .reel-lupa { flex-shrink: 0; letter-spacing: 2px; opacity: .75; }
+
+  /* ── La vista grande ──────────────────────────────────────────────────── */
+  .reel-max { position: fixed; inset: 0; z-index: 200; display: flex;
+    align-items: center; justify-content: center; padding: clamp(14px, 4vw, 48px); }
+  .reel-max[hidden] { display: none; }
+  .reel-fondo { position: absolute; inset: 0; background: #03060e; opacity: 0;
+    transition: opacity .38s linear; }
+  .reel-max.reel-abierto .reel-fondo { opacity: .96; }
+  .reel-fondo::after { content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(180deg, rgba(120,160,240,.05) 0 1px, transparent 1px 3px); }
+  .reel-caja { position: relative; z-index: 2; max-width: min(1180px, 100%);
+    display: flex; flex-direction: column; gap: 10px; }
+  .reel-marco { position: relative; border: 1px solid rgba(200,220,250,.32); }
+  /* Corchetes de esquina, como los de las tarjetas. */
+  .reel-marco::before, .reel-marco::after { content: ''; position: absolute;
+    width: 18px; height: 18px; border: 2px solid #0102ec; pointer-events: none; }
+  .reel-marco::before { left: -6px; top: -6px; border-right: 0; border-bottom: 0; }
+  .reel-marco::after { right: -6px; bottom: -6px; border-left: 0; border-top: 0; }
+  .reel-escenario { display: block; line-height: 0; }
+  /* El tamaño se declara, no se hereda del archivo.
+
+     Con preload="none" el video no tiene tamaño propio hasta que carga
+     metadatos (videoWidth = 0), y `width: auto` cae al 300x150 que el
+     navegador usa por defecto — un video diminuto en medio del telón. Con
+     proporción fija el hueco es correcto desde el primer cuadro, y
+     object-fit: contain acomoda cualquier archivo que no sea 16:9. */
+  .reel-escenario .reel-v { position: static; clip-path: none; opacity: 1;
+    width: min(92vw, 1180px, calc(74vh * 16 / 9));
+    aspect-ratio: 16 / 9; height: auto; max-width: 100%;
+    object-fit: contain; cursor: zoom-out; transition: none; background: #03060e; }
+  .reel-pie { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    color: #9db8dc; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; }
+  .reel-pie b { color: #e6effb; font-weight: 700; letter-spacing: 1px;
+    text-transform: none; font-size: 14px; }
+  .reel-pie .reel-micro { color: rgba(157,184,220,.7); letter-spacing: 1px;
+    text-transform: none; flex: 1 1 240px; min-width: 0; }
+  .reel-cerrar { appearance: none; background: transparent; border: 1px solid rgba(200,220,250,.45);
+    color: #e6effb; font: inherit; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; padding: 7px 12px; cursor: pointer; margin-left: auto;
+    min-height: 34px; transition: background .14s, border-color .14s; }
+  .reel-cerrar:hover { background: #0102ec; border-color: #0102ec; }
+  .reel-cerrar:focus-visible { outline: 2px solid #7f9bff; outline-offset: 2px; }
+  @media (pointer: coarse) { .reel-cerrar { min-height: 46px; padding: 7px 18px; } }
+  /* Mientras hay algo abierto, la página de atrás no se mueve. */
+  html.reel-fijo, html.reel-fijo body { overflow: hidden; }
+
+  /* La salida de emergencia, hermana de .mv-ya.
+
+     El carrete se revela con un recorte que se abre y una opacidad que sube —
+     las dos son transiciones, y una transición es una animación. Donde el
+     navegador no la avanza, el video se queda REPRODUCIÉNDOSE INVISIBLE:
+     descargando datos, gastando batería, y sin que nadie vea nada. Medido.
+     Esto aterriza en el estado final sin pedirle nada al bucle de cuadros. */
+  .reel-ya .reel-v, .reel-ya .reel-scan, .reel-ya .reel-hud {
+    opacity: 1 !important; clip-path: none !important;
+    transform: none !important; transition: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reel-v, .reel-scan, .reel-hud, .reel-fondo { transition: none !important; }
+    .reel-armado .reel-dot { animation: none; }
+    .reel-hud { transform: none !important; }
+  }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  /* Qué carrete va en qué tarjeta. Cambiar el reparto es cambiar esta tabla —
+     nada más. La clave es el id que ya usa el proyecto en su ficha. */
+  var CARRETES = {
+    '001': { src: 'media/project.mp4' },
+    '002': { src: 'media/pasillo.mp4' },
+    '003': { src: 'media/menu-pasillo.mp4' }
+  };
+
+  var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var raiz = document.documentElement;
+  var grande = null;      // la caja de la vista grande, creada una sola vez
+  var abierto = null;     // { video, cuna, devolver } de lo que está agrandado
+  var focoPrevio = null;
+
+  function reloj(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    var m = Math.floor(s / 60);
+    return (m < 10 ? '0' + m : m) + ':' + (s % 60 < 10 ? '0' + (s % 60) : s % 60);
+  }
+
+  var TRIANGULO = '<svg viewBox="0 0 8 9" aria-hidden="true"><path d="M0 0 L8 4.5 L0 9 Z"/></svg>';
+  var CUADRO = '<svg viewBox="0 0 8 9" aria-hidden="true"><rect x="0" y="0.5" width="8" height="8"/></svg>';
+
+  /* ══ MONTAJE ════════════════════════════════════════════════════════════ */
+
+  function montar() {
+    var tarjetas = document.querySelectorAll('#work .aug-card');
+    for (var i = 0; i < tarjetas.length; i++) armar(tarjetas[i]);
+  }
+
+  function armar(tarjeta) {
+    if (tarjeta.getAttribute('data-carrete')) return;             // ya está
+    var cur = tarjeta.getAttribute('data-cur') || '';
+    var id = (cur.match(/^(\d{3})/) || [])[1];
+    var ficha = id && CARRETES[id];
+    if (!ficha) return;                                            // sin video: se queda como estaba
+    var cuna = tarjeta.querySelector('.stripes-slot');
+    if (!cuna) return;
+
+    /* El encabezado es la línea mono que dice «001 // tool».
+
+       Ojo con buscarlo por «div sin hijos»: el componente pinta cada valor
+       suyo dentro de un <span class="sc-interp">, así que ese div tiene dos
+       hijos y no cero. Se busca por lo que dice, no por cómo está armado. */
+    var cabecera = null, divs = tarjeta.querySelectorAll('div');
+    for (var d = 0; d < divs.length; d++) {
+      if (/^\d{3}\s*\/\/\s*\S+$/.test(divs[d].textContent.trim())) { cabecera = divs[d]; break; }
+    }
+    if (!cabecera) return;
+
+    tarjeta.setAttribute('data-carrete', id);
+
+    // ── el video ──────────────────────────────────────────────────────────
+    var v = document.createElement('video');
+    v.className = 'reel-v';
+    v.src = ficha.src;
+    v.preload = 'none';        // nada baja hasta que lo pidan
+    v.muted = true;            // sin esto ningún navegador deja arrancar solo
+    v.loop = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    v.setAttribute('tabindex', '-1');
+    v.setAttribute('aria-hidden', 'true');
+
+    var rayas = document.createElement('div');
+    rayas.className = 'reel-scan';
+
+    var hud = document.createElement('div');
+    hud.className = 'reel-hud';
+    hud.innerHTML = '<span class="reel-dot"></span><span class="reel-tc">00:00</span>' +
+      '<span class="reel-bar"><i></i></span><span class="reel-lupa">click = grande</span>';
+
+    cuna.appendChild(v);
+    cuna.appendChild(rayas);
+    cuna.appendChild(hud);
+
+    var tc = hud.querySelector('.reel-tc');
+    var avance = hud.querySelector('.reel-bar > i');
+
+    // ── el botón ──────────────────────────────────────────────────────────
+    var boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'reel-go';
+    boton.innerHTML = TRIANGULO + '<span>reel</span>';
+    boton.setAttribute('aria-pressed', 'false');
+    boton.setAttribute('aria-label', 'Ver el video del proyecto ' + id);
+    cabecera.appendChild(boton);
+
+    /* La tarjeta entera es un enlace que abre el proyecto: hay un <a> con
+       inset:0 encima de todo. Sin frenar el evento aquí, tocar play te sacaría
+       del sitio en vez de arrancar el video. */
+    var frenar = function (e) { e.preventDefault(); e.stopPropagation(); };
+
+    boton.addEventListener('click', function (e) {
+      frenar(e);
+      if (cuna.classList.contains('reel-armado')) apagar(); else encender();
+    });
+
+    /* El estado del botón lo dicta el VIDEO, no una bandera nuestra.
+
+       Si lo lleváramos aparte se desincroniza solo: Chrome pausa el video
+       silenciado cuando la pestaña deja de estar visible («video-only
+       background media was paused to save power»), y el botón se quedaría
+       diciendo «alto» sobre algo detenido. Escuchando play/pause, lo que se
+       ve siempre es lo que de verdad está pasando. */
+    function pintar(tocando) {
+      if (tocando) {
+        cuna.classList.add('reel-armado');
+        boton.innerHTML = CUADRO + '<span>alto</span>';
+        boton.setAttribute('aria-pressed', 'true');
+        /* Pasada la transición, si el video sigue invisible es que nadie la
+           avanzó. Se aterriza a la fuerza en vez de dejarlo sonando a oscuras. */
+        setTimeout(function () {
+          if (!cuna.classList.contains('reel-armado')) return;
+          if (parseFloat(getComputedStyle(v).opacity) < 0.5) cuna.classList.add('reel-ya');
+        }, 650);
+      } else {
+        cuna.classList.remove('reel-armado');
+        cuna.classList.remove('reel-ya');
+        boton.innerHTML = TRIANGULO + '<span>reel</span>';
+        boton.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    v.addEventListener('play', function () { pintar(true); });
+    v.addEventListener('pause', function () {
+      if (abierto && abierto.video === v) return;   // no se apaga estando grande
+      pintar(false);
+    });
+
+    function encender() { v.play().catch(function () {}); }
+    function apagar() { v.pause(); }
+
+    v.addEventListener('timeupdate', function () {
+      tc.textContent = reloj(v.currentTime);
+      if (v.duration) avance.style.transform = 'scaleX(' + (v.currentTime / v.duration).toFixed(4) + ')';
+    });
+
+    // Picar el video lo agranda. También frena el enlace de la tarjeta.
+    v.addEventListener('click', function (e) {
+      frenar(e);
+      if (!cuna.classList.contains('reel-armado')) { encender(); return; }
+      agrandar(v, cuna, tarjeta);
+    });
+
+    // Guardamos cómo volver, para cuando se cierre la vista grande.
+    v._volver = function () { cuna.insertBefore(v, cuna.firstChild); };
+    v._cuna = cuna;
+  }
+
+  /* ══ LA VISTA GRANDE ════════════════════════════════════════════════════
+     Se mueve el MISMO elemento de video, no una copia: así no se reinicia ni
+     se descarga dos veces, y sigue exactamente donde iba.
+
+     La animación es FLIP — se mide dónde estaba, se pone donde va, y se le
+     aplica la transformación inversa para soltarla. Eso hace que el recuadro
+     de la tarjeta *viaje* hasta el centro en vez de aparecerse. */
+
+  function cajaGrande() {
+    if (grande) return grande;
+    grande = document.createElement('div');
+    grande.className = 'reel-max';
+    grande.hidden = true;
+    grande.setAttribute('role', 'dialog');
+    grande.setAttribute('aria-modal', 'true');
+    grande.innerHTML =
+      '<div class="reel-fondo"></div>' +
+      '<div class="reel-caja">' +
+        '<div class="reel-marco"><div class="reel-escenario"></div></div>' +
+        '<div class="reel-pie">' +
+          '<b class="reel-nombre"></b>' +
+          '<span class="reel-slot"></span>' +
+          '<span class="reel-micro"></span>' +
+          '<button type="button" class="reel-cerrar">cerrar ✕</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(grande);
+    grande.querySelector('.reel-fondo').addEventListener('click', cerrar);
+    grande.querySelector('.reel-cerrar').addEventListener('click', cerrar);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && abierto) cerrar();
+    });
+    return grande;
+  }
+
+  function textoDe(tarjeta, sel) {
+    var e = tarjeta.querySelector(sel);
+    return e ? e.textContent.trim() : '';
+  }
+
+  function agrandar(v, cuna, tarjeta) {
+    if (abierto) return;
+    var caja = cajaGrande();
+    var escenario = caja.querySelector('.reel-escenario');
+
+    // Los datos del proyecto, sacados de la propia tarjeta.
+    caja.querySelector('.reel-nombre').textContent = textoDe(tarjeta, '.ghost-type') ||
+      (tarjeta.getAttribute('data-carrete') || '');
+    caja.querySelector('.reel-slot').textContent = textoDe(tarjeta, '.kagi');
+    caja.querySelector('.reel-micro').textContent = textoDe(tarjeta, '.microtext');
+    var titulo = tarjeta.querySelector('div[style*="font-size: 27px"]');
+    if (titulo) caja.querySelector('.reel-nombre').textContent = titulo.textContent.trim();
+
+    focoPrevio = document.activeElement;
+    var antes = v.getBoundingClientRect();
+
+    /* Mover un <video> de sitio lo pausa: el navegador lo trata como un
+       elemento nuevo al reinsertarlo. Sin esto, agrandar el carrete lo
+       detiene, que es justo lo contrario de lo que uno espera al picarle. */
+    var iba = !v.paused;
+    escenario.appendChild(v);
+    if (iba) v.play().catch(function () {});
+    caja.hidden = false;
+    raiz.classList.add('reel-fijo');
+    abierto = { video: v, cuna: cuna };
+
+    var despues = v.getBoundingClientRect();
+
+    if (quieto || !antes.width || !despues.width) {
+      caja.classList.add('reel-abierto');
+    } else {
+      var dx = antes.left - despues.left, dy = antes.top - despues.top;
+      var sx = antes.width / despues.width, sy = antes.height / despues.height;
+      v.style.transformOrigin = 'top left';
+      v.style.transition = 'none';
+      v.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')';
+      v.getBoundingClientRect();                      // fuerza el reflow
+      v.style.transition = 'transform .52s cubic-bezier(.16,.84,.3,1)';
+      v.style.transform = 'none';
+      caja.classList.add('reel-abierto');
+      /* Red de seguridad del FLIP: la transformación de arranque es la que
+         hace que el video *parezca* del tamaño de la tarjeta. Si nadie avanza
+         la transición, se queda así — un video chiquito en medio de un telón
+         negro. Pasado el tiempo de la animación se suelta a la fuerza. */
+      setTimeout(function () {
+        if (!abierto || abierto.video !== v) return;
+        /* Se corta la transición sin preguntar.
+
+           Preguntar por `v.style.transform` no sirve: el destino de la
+           transición YA es 'none', así que el estilo en línea dice 'none'
+           mientras lo pintado sigue siendo la escala de arranque. El estilo no
+           sabe nada de lo que se ve. Quitar la transición lo hace aterrizar. */
+        v.style.transition = 'none';
+        v.style.transform = 'none';
+      }, 620);
+    }
+
+    caja.querySelector('.reel-cerrar').focus();
+  }
+
+  function cerrar() {
+    if (!abierto) return;
+    var v = abierto.video, cuna = abierto.cuna, caja = grande;
+    var quien = abierto;
+    abierto = null;
+
+    var terminar = function () {
+      v.style.transition = '';
+      v.style.transform = '';
+      v.style.transformOrigin = '';
+      var seguia = !v.paused;
+      if (v._volver) v._volver();
+      if (seguia) v.play().catch(function () {});
+      caja.hidden = true;
+      caja.classList.remove('reel-abierto');
+      raiz.classList.remove('reel-fijo');
+      if (focoPrevio && focoPrevio.focus) focoPrevio.focus();
+      focoPrevio = null;
+    };
+
+    if (quieto) { terminar(); return; }
+
+    // A dónde tiene que aterrizar: el hueco que dejó en su tarjeta.
+    var destino = cuna.getBoundingClientRect();
+    var ahora = v.getBoundingClientRect();
+    if (!ahora.width || !destino.width) { terminar(); return; }
+
+    var dx = destino.left - ahora.left, dy = destino.top - ahora.top;
+    var sx = destino.width / ahora.width, sy = destino.height / ahora.height;
+    caja.classList.remove('reel-abierto');
+    v.style.transformOrigin = 'top left';
+    v.style.transition = 'transform .44s cubic-bezier(.4,.1,.3,1)';
+    v.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')';
+
+    var listo = false;
+    var acabar = function () { if (listo) return; listo = true; terminar(); };
+    v.addEventListener('transitionend', acabar, { once: true });
+    /* Red de seguridad: si la transición no corre —pestaña de fondo, motor que
+       no compone— el video se quedaría flotando encima de la página para
+       siempre. Se cierra igual. */
+    setTimeout(acabar, 700);
+  }
+
+  /* ══ ARRANQUE ══════════════════════════════════════════════════════════
+     Mismo trato que el resto: el componente se pinta solo y puede repintarse,
+     así que esto es idempotente y se vuelve a correr cuando el árbol cambia. */
+  window.__montarCarretes = montar;
+
+  var intentos = 0;
+  (function esperar() {
+    if (document.querySelector('#work .aug-card')) { montar(); vigilar(); return; }
+    if (++intentos > 60) return;
+    setTimeout(esperar, 100);
+  })();
+
+  function vigilar() {
+    if (typeof MutationObserver === 'undefined') return;
+    var pend = null;
+    var mo = new MutationObserver(function (ms) {
+      var hubo = false;
+      for (var i = 0; i < ms.length && !hubo; i++) {
+        if (ms[i].addedNodes.length || ms[i].removedNodes.length) hubo = true;
+      }
+      if (!hubo) return;
+      clearTimeout(pend);
+      pend = setTimeout(montar, 160);
+    });
+    /* Se vigila el <body>, NO la sección #work.
+
+       Si el componente vuelve a pintar y reemplaza #work, un observador colgado
+       de ese nodo se muere con él y nunca se entera de las tarjetas nuevas.
+       Eso es exactamente lo que pasaba: montar() corría contra las tarjetas de
+       relleno y luego nadie volvía a llamarlo. */
+    mo.observe(document.body, { childList: true, subtree: true });
+    setTimeout(function () { mo.disconnect(); clearTimeout(pend); }, 20000);
+  }
+})();
+</script>
+
 </body>
 </html>
