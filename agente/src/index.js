@@ -23,6 +23,10 @@ const MAX_TOKENS = 2048;
 const TOPE_POR_IP = 40;
 const TOPE_GLOBAL = 800;
 
+// Lo que trae escrito el WhatsApp del botón directo, para quien se salta el
+// chat. Corto a propósito: es un punto de partida, no un guion.
+const SALUDO_WHATSAPP = 'Hi Daniel — I saw your portfolio.';
+
 // Cotas de entrada. Un historial largo se paga en cada turno, así que se corta.
 const MAX_LARGO_MENSAJE = 1500;
 const MAX_TURNOS = 16;
@@ -144,6 +148,25 @@ export default {
         : new Response(null, { status: 403 });
     }
     if (!cabecerasCors) return json({ error: 'origen no permitido' }, 403, {});
+
+    // El botón de WhatsApp del sitio pide la URL aquí en vez de traerla escrita.
+    // Así el número no vive en un repo público —donde lo raspa cualquier bot de
+    // spam— y hay un solo lugar donde cambiarlo el día que cambie.
+    if (peticion.method === 'GET' && new URL(peticion.url).pathname === '/contacto') {
+      const numero = env.WHATSAPP_E164;
+      return json(
+        {
+          whatsapp: numero
+            ? `https://wa.me/${numero}?text=${encodeURIComponent(SALUDO_WHATSAPP)}`
+            : null,
+        },
+        200,
+        // Una hora de caché: el número no cambia, y sin esto cada visita al
+        // sitio despierta al worker para contestar lo mismo.
+        { ...cabecerasCors, 'cache-control': 'public, max-age=3600' }
+      );
+    }
+
     if (peticion.method !== 'POST') return json({ error: 'usa POST' }, 405, cabecerasCors);
     if (!env.DEEPSEEK_API_KEY) {
       // El detalle va al log, no a la respuesta: nombrar la variable que falta

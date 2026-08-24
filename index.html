@@ -1040,18 +1040,27 @@ class Component extends DCLogic {
      desde Claude Design no se lo lleva por delante.
      La llave de la API no está aquí — está en el worker de agente/. -->
 <style>
-  #ag-abrir { position: fixed; right: 26px; bottom: 54px; z-index: 70; display: flex; align-items: center; gap: 10px;
-    padding: 11px 18px; border: 0; cursor: pointer; background: #0102ec; color: #fff;
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    --aug-tl: 9px; --aug-br: 9px; }
+  /* Los dos accesos, juntos. Quien ya sabe qué quiere se va derecho a WhatsApp
+     sin gastar mensajes del agente; quien no sabe, pregunta. */
+  #ag-barra-entrada { position: fixed; right: 26px; bottom: 54px; z-index: 70; display: flex; align-items: stretch;
+    gap: 8px; }
+  #ag-barra-entrada[hidden] { display: none; }
+
+  #ag-abrir, #ag-directo { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border: 0;
+    cursor: pointer; text-decoration: none; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; --aug-tl: 9px; --aug-br: 9px; }
+  #ag-abrir { background: #0102ec; color: #fff; }
   #ag-abrir:hover { background: #3050ff; }
   #ag-abrir .ag-punto { width: 7px; height: 7px; background: #9ef0e4; flex-shrink: 0; }
+  #ag-directo { background: #050b18; color: #9ef0e4; --aug-border-all: 1px; --aug-border-bg: rgba(158,240,228,.5); }
+  #ag-directo:hover { background: #0d1929; color: #c8fff5; }
+  #ag-directo[hidden] { display: none; }
 
   #ag-panel { position: fixed; right: 26px; bottom: 54px; z-index: 71; width: 384px; max-width: calc(100vw - 36px);
     height: 540px; max-height: calc(100vh - 108px); display: flex; flex-direction: column; overflow: hidden;
     background: #050b18; color: #e6effb; --aug-tl: 16px; --aug-br: 16px;
     --aug-border-all: 1px; --aug-border-bg: rgba(200,220,250,.42); }
-  #ag-panel[hidden], #ag-abrir[hidden] { display: none; }
+  #ag-panel[hidden] { display: none; }
 
   .ag-barra { display: flex; align-items: center; gap: 12px; padding: 13px 15px 12px;
     border-bottom: 1px solid rgba(200,220,250,.18); flex-shrink: 0; }
@@ -1116,10 +1125,14 @@ class Component extends DCLogic {
   @media (prefers-reduced-motion: reduce) { .ag-latido { animation: none; } }
 </style>
 
-<button id="ag-abrir" type="button" hidden data-augmented-ui="tl-clip br-clip"
-  aria-haspopup="dialog" aria-controls="ag-panel">
-  <span class="ag-punto" aria-hidden="true"></span> ask the agent
-</button>
+<div id="ag-barra-entrada" hidden>
+  <button id="ag-abrir" type="button" data-augmented-ui="tl-clip br-clip"
+    aria-haspopup="dialog" aria-controls="ag-panel">
+    <span class="ag-punto" aria-hidden="true"></span> ask the agent
+  </button>
+  <a id="ag-directo" hidden target="_blank" rel="noopener noreferrer"
+    data-augmented-ui="tl-clip br-clip border" aria-label="Message Daniel on WhatsApp">whatsapp</a>
+</div>
 
 <div id="ag-panel" hidden data-augmented-ui="tl-clip br-clip border" role="dialog" aria-modal="false"
   aria-label="Agent — ask about Daniel's work">
@@ -1144,9 +1157,11 @@ class Component extends DCLogic {
      chat que truena. */
   var ENDPOINT = 'https://daniel-agente.daniii.workers.dev/';
 
+  var barra = document.getElementById('ag-barra-entrada');
   var abrir = document.getElementById('ag-abrir');
+  var directo = document.getElementById('ag-directo');
   var panel = document.getElementById('ag-panel');
-  if (!ENDPOINT || !abrir || !panel) return;
+  if (!ENDPOINT || !barra || !abrir || !panel) return;
 
   var hilo = document.getElementById('ag-hilo');
   var forma = document.getElementById('ag-forma');
@@ -1157,7 +1172,19 @@ class Component extends DCLogic {
   var historial = [];
   var ocupado = false;
 
-  abrir.hidden = false;
+  barra.hidden = false;
+
+  /* El número de Daniel no está escrito aquí — se pide al worker, que es quien
+     lo guarda. Si la petición falla, el botón de WhatsApp simplemente no
+     aparece y queda el del agente: mejor una salida menos que una rota. */
+  fetch(ENDPOINT.replace(/\/$/, '') + '/contacto')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.whatsapp) return;
+      directo.href = d.whatsapp;
+      directo.hidden = false;
+    })
+    .catch(function () {});
 
   function alFondo() { hilo.scrollTop = hilo.scrollHeight; }
 
@@ -1317,7 +1344,7 @@ class Component extends DCLogic {
 
   abrir.addEventListener('click', function () {
     panel.hidden = false;
-    abrir.hidden = true;
+    barra.hidden = true;
     if (!hilo.childElementCount) {
       burbuja('de-agente', 'I answer for Daniel — his work, how he builds, whether a project fits. Pick one, or just type.');
       pintarOpciones();
@@ -1328,7 +1355,7 @@ class Component extends DCLogic {
 
   function cerrar() {
     panel.hidden = true;
-    abrir.hidden = false;
+    barra.hidden = false;
     abrir.focus();
   }
   document.getElementById('ag-cerrar').addEventListener('click', cerrar);
