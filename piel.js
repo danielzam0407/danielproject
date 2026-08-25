@@ -141,34 +141,65 @@ function aHex(h, s, l) {
                           .toString(16).padStart(2, '0')).join('');
 }
 
-/* El MOLDE: la luminosidad y saturacion de cada ficha en la paleta original.
+/* El MOLDE: la paleta original, tal cual la diseno Daniel a mano.
 
-   Esto es lo que se aprendio a golpes. La primera version invertia tinta y
-   papel para los animos oscuros, y el resultado fue 69 elementos ilegibles
-   contra 17 del original.
+   Esto se aprendio en dos pasos, ambos midiendo:
 
-   La razon: el sitio NO es una superficie plana. Es claro arriba con una
-   seccion oscura de contacto, y ahi `papel-alto` no es fondo sino el COLOR
-   DEL TEXTO. Invertirlo lo vuelve oscuro sobre fondo oscuro. Varias fichas
-   tienen dos papeles segun la region, asi que invertir rompe uno de los dos
-   siempre.
+   1. La primera version INVERTIA tinta y papel en los animos oscuros. Salieron
+      69 elementos ilegibles contra 17 del original. La razon: el sitio no es
+      una superficie plana, es claro arriba con una seccion oscura de contacto,
+      y ahi `papel-alto` no es fondo sino el COLOR DEL TEXTO. Varias fichas
+      tienen dos papeles segun la region; invertir rompe uno de los dos siempre.
 
-   Por eso ahora **la luminosidad no se toca**: se conserva el molde y solo
-   se mueve el TONO. Asi toda relacion de contraste que Daniel diseno a mano
-   se preserva por construccion, sea cual sea el color que pidan. */
+   2. Conservar la luminosidad HSL bajo eso a 17 en morado... pero verde y
+      naranja seguian en 32. Porque **la L de HSL no es luminancia percibida**:
+      un verde con L=0.46 brilla mucho mas que un azul con la misma L, y pierde
+      contraste contra el papel.
+
+   Por eso lo que se conserva ahora es la LUMINANCIA RELATIVA de cada ficha
+   —la misma magnitud con la que se calcula el contraste WCAG—. Asi toda
+   relacion que Daniel diseno a mano se preserva por construccion, sea cual
+   sea el tono que pidan. */
 const MOLDE = {
-  'senal':       { s: 0.99, l: 0.46 },
-  'senal-suave': { s: 1.00, l: 0.75 },
-  'acento':      { s: 0.74, l: 0.78 },
-  'tinta':       { s: 0.76, l: 0.13 },
-  'papel':       { s: 0.62, l: 0.97 },
-  'papel-alto':  { s: 0.68, l: 0.94 },
-  'tenue':       { s: 0.47, l: 0.74 },
-  'fondo-hondo': { s: 0.65, l: 0.03 },
+  'senal':       '#0102ec',
+  'senal-suave': '#7f9bff',
+  'acento':      '#9ef0e4',
+  'tinta':       '#08123a',
+  'papel':       '#f4f7fc',
+  'papel-alto':  '#e6effb',
+  'tenue':       '#9db8dc',
+  'fondo-hondo': '#03060e',
 };
 
-/* Los animos ya NO invierten nada. Sólo ajustan caracter:
-   cuanta saturacion, cuanto grano, que tan rapido se mueve. */
+/** Luminancia relativa (WCAG). Es la magnitud que decide el contraste. */
+function luminancia(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+/* La luminancia objetivo y la saturacion de cada ficha, sacadas del molde. */
+const PERFIL = Object.fromEntries(Object.entries(MOLDE).map(([k, hex]) => {
+  const { s } = aHsl(hex);
+  return [k, { luz: luminancia(hex), s }];
+}));
+
+/** Busca la L que da la luminancia pedida, para ESE tono y saturacion.
+    Busqueda binaria: 18 pasos bastan para clavarla. */
+function conLuminancia(h, s, objetivo) {
+  let lo = 0, hi = 1, hex = aHex(h, s, 0.5);
+  for (let i = 0; i < 18; i++) {
+    const mid = (lo + hi) / 2;
+    hex = aHex(h, s, mid);
+    if (luminancia(hex) < objetivo) lo = mid; else hi = mid;
+  }
+  return hex;
+}
+
+/* Los animos ya NO invierten nada. Solo ajustan caracter. */
 const ANIMOS = {
   claro:  { sat: 0.85, ruido: 0.05, pulso: 1.00 },
   oscuro: { sat: 1.05, ruido: 0.35, pulso: 0.90 },
@@ -182,13 +213,12 @@ export function derivarPiel(color, animo) {
   if (!HEX.test(String(color || '').trim())) return null;
   const a = ANIMOS[animo] || ANIMOS.oscuro;
   const { h } = aHsl(color);
-  // El acento se va al otro lado de la rueda: es lo que evita que una paleta
-  // de un solo tono se sienta plana.
+  // El acento cruza la rueda: evita que una paleta de un solo tono se aplane.
   const hAcento = (h + 152) % 360;
   const piel = {};
-  for (const [ficha, base] of Object.entries(MOLDE)) {
+  for (const [ficha, base] of Object.entries(PERFIL)) {
     const tono = ficha === 'acento' ? hAcento : h;
-    piel[ficha] = aHex(tono, Math.min(1, base.s * a.sat), base.l);
+    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat), base.luz);
   }
   piel['pulso'] = String(a.pulso);
   piel['ruido'] = String(a.ruido);
