@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recorrido &middot; plantilla nerv</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root { --tinta:#e8eefc; --papel:#07090f; --senal:#6f8cff; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:auto; }
+  body { margin:0; background:var(--papel); color:var(--tinta);
+         font-family:ui-monospace,"Courier New",monospace; }
+
+  .aviso { padding:10px 14px; font-size:11px; letter-spacing:1px;
+           background:var(--senal); color:#08123a; font-weight:700; }
+
+  /* La pista es alta a proposito: su altura ES la duracion del recorrido.
+     Mas alto = mas scroll para cruzar el video = camara mas lenta. */
+  .pista { position:relative; height:520vh; }
+
+  .marco { position:sticky; top:0; height:100vh; overflow:hidden;
+           display:flex; align-items:center; justify-content:center; }
+  .marco video { width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* Velo para que el texto se lea sobre cualquier render */
+  .marco::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(7,9,15,.62) 0%, rgba(7,9,15,.12) 34%,
+                                        rgba(7,9,15,.20) 62%, rgba(7,9,15,.80) 100%); }
+
+  .hud { position:absolute; inset:0; pointer-events:none; z-index:2;
+         padding:20px; display:flex; flex-direction:column; justify-content:space-between; }
+  .marca { font-size:12px; letter-spacing:3px; text-transform:uppercase; opacity:.8; }
+  .marca b { color:var(--senal); }
+  .pie { display:flex; justify-content:space-between; align-items:flex-end;
+         gap:14px; font-size:11px; letter-spacing:1px; opacity:.75; }
+
+  .riel { position:absolute; left:20px; right:20px; bottom:64px; height:2px;
+          background:rgba(232,238,252,.22); }
+  .riel i { display:block; height:100%; width:0; background:var(--senal); }
+
+  /* Los rotulos: cada uno vive en un tramo del recorrido.
+     Arrancan visibles y el guion los apaga — nunca al reves. Si el rAF no
+     corre, la pieza se lee completa en vez de quedar en negro. */
+  .rotulo { position:absolute; left:20px; right:20px; bottom:96px; z-index:3;
+            pointer-events:none; transition:opacity .45s ease, transform .45s ease; }
+  .rotulo h2 { margin:0 0 6px; font-size:clamp(24px,6.4vw,44px); line-height:1.05;
+               letter-spacing:-1.2px; }
+  .rotulo p { margin:0; font-size:clamp(13px,3.4vw,16px); max-width:34em; opacity:.85; }
+  .rotulo[data-apagado="1"] { opacity:0; transform:translateY(14px); }
+
+  .cierre { min-height:70vh; padding:56px 20px; display:flex; flex-direction:column;
+            justify-content:center; gap:14px; border-top:1px solid rgba(232,238,252,.16); }
+  .cierre h2 { margin:0; font-size:clamp(22px,5vw,34px); letter-spacing:-1px; }
+  .cierre p { margin:0; max-width:38em; opacity:.8; font-size:15px; }
+  .cierre a { color:var(--senal); }
+</style>
+</head>
+<body>
+
+<div class="aviso">plantilla &middot; el material es de relleno, no es una casa real</div>
+
+<div class="pista" id="pista">
+  <div class="marco">
+    <video id="video" src="recorrido.mp4" muted playsinline preload="auto"
+           disablepictureinpicture></video>
+
+    <div class="hud">
+      <div class="marca">nerv <b>/</b> recorrido</div>
+      <div class="pie">
+        <span id="etapa">01 / 04</span>
+        <span>baja para avanzar</span>
+      </div>
+    </div>
+    <div class="riel"><i id="riel"></i></div>
+
+    <div class="rotulo" data-desde="0.00" data-hasta="0.26">
+      <h2>La casa, antes de la casa</h2>
+      <p>El mismo render que hoy vive en un folleto, ahora se camina con el dedo.</p>
+    </div>
+    <div class="rotulo" data-desde="0.26" data-hasta="0.52">
+      <h2>Sin descargar nada</h2>
+      <p>Abre en el navegador del cliente. Sin aplicaci&oacute;n, sin visor, sin
+      esperar a que cargue un modelo de trescientos megas.</p>
+    </div>
+    <div class="rotulo" data-desde="0.52" data-hasta="0.78">
+      <h2>Pesa menos que una foto</h2>
+      <p>Dos megas para todo el recorrido. Se abre con datos m&oacute;viles en la
+      obra, no s&oacute;lo con fibra en la oficina.</p>
+    </div>
+    <div class="rotulo" data-desde="0.78" data-hasta="1.01">
+      <h2>T&uacute; pones los renders</h2>
+      <p>Los que ya mandaste hacer para el folleto. Nosotros los volvemos esto.</p>
+    </div>
+  </div>
+</div>
+
+<section class="cierre">
+  <h2>C&oacute;mo se arma</h2>
+  <p>De ocho renders est&aacute;ticos sale un recorrido de 651 cuadros que pesa 2.17 MB.
+  La c&aacute;mara y los fundidos los genera <code>armar.py</code>; el scroll lo dirige
+  <code>scrub.js</code>.</p>
+  <p>El detalle que decide si esto se siente fluido o roto: el video va
+  reencodeado con <code>-g 1</code>, de modo que <b>cada cuadro es un punto de
+  entrada</b>. Medido en celular, eso baja el salto de cuadro de 407&nbsp;ms a
+  30&nbsp;ms. Trece veces.</p>
+  <p><a href="/">nerv</a> &middot; <a href="/contact">contacto</a></p>
+</section>
+
+<script type="module">
+import { recorrido } from './scrub.js';
+
+const rotulos = [...document.querySelectorAll('.rotulo')].map(el => ({
+  el,
+  desde: parseFloat(el.dataset.desde),
+  hasta: parseFloat(el.dataset.hasta)
+}));
+const riel  = document.getElementById('riel');
+const etapa = document.getElementById('etapa');
+
+/* Se pinta el estado para un avance dado. Se llama desde el motor en cada
+   cuadro, y TAMBIEN una vez de entrada: si el rAF nunca corre, la pieza
+   igual queda legible en su primer tramo en vez de en blanco. */
+function pintar(p) {
+  riel.style.width = (p * 100).toFixed(2) + '%';
+  let activo = 0;
+  rotulos.forEach((r, i) => {
+    const dentro = p >= r.desde && p < r.hasta;
+    r.el.dataset.apagado = dentro ? '0' : '1';
+    if (dentro) activo = i;
+  });
+  etapa.textContent = String(activo + 1).padStart(2, '0') + ' / ' +
+                      String(rotulos.length).padStart(2, '0');
+}
+
+pintar(0);
+
+const motor = recorrido({
+  video: document.getElementById('video'),
+  pista: document.getElementById('pista'),
+  suavizado: 0.14,
+  alCambiar: pintar
+});
+
+window.nervRecorrido = motor;   // para inspeccionar desde la consola
+</script>
+</body>
+</html>
