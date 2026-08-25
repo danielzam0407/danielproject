@@ -1418,6 +1418,18 @@ class Component extends DCLogic {
   }
   function boton(accion) {
     if (accion && accion.tipo === 'piel') { aplicarPiel(accion); return; }
+    if (accion && accion.tipo === 'bloques') {
+      // Mismo contrato que la piel: componer es opcional, el chat no.
+      try {
+        var B = window.nervBloques;
+        if (B) {
+          if (accion.operacion === 'limpiar') B.limpiar();
+          else if (accion.operacion === 'quitar') B.quitar(accion.seccion);
+          else B.agregar(accion.seccion);
+        }
+      } catch (e) {}
+      return;
+    }
     var a = document.createElement('a');
     a.className = 'ag-accion';
     a.href = accion.url;
@@ -2837,5 +2849,6 @@ class Component extends DCLogic {
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
 <script type="module" src="./piel.js?v=4"></script>
+<script type="module" src="./bloques.js?v=1"></script>
 </body>
 </html>

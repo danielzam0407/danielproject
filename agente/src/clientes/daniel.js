@@ -254,6 +254,40 @@ const HERRAMIENTAS = [
     },
   },
   {
+    name: 'componer_pagina',
+    description:
+      'Agrega o quita secciones enteras de la pagina, en vivo, delante de '+
+      'quien te escribe. Las secciones disponibles: "proceso" (como se '+
+      'trabaja, en tres pasos), "preguntas" (precios, tiempos, que incluye, '+
+      'si trabaja fuera de Monterrey) y "demo" (las piezas en vivo, con '+
+      'ligas). USALA APENAS venga al caso: si preguntan cuanto cuesta o '+
+      'cuanto tarda, contesta en una frase Y muestra "preguntas"; si '+
+      'preguntan como es trabajar con nerv, muestra "proceso"; si quieren '+
+      'ver trabajo o una demo, muestra "demo". Ensenar la seccion completa '+
+      'vale mas que resumirla en el chat. Tambien cuando pidan quitar algo o '+
+      'dejar la pagina como estaba. La pagina vuelve a su estado normal al '+
+      'recargar, y tu NO puedes ver que secciones estan puestas: no contestes '+
+      '"ya esta puesta" — vuelve a llamarla, repetirla es inofensivo.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        operacion: {
+          type: 'string',
+          enum: ['mostrar', 'quitar', 'limpiar'],
+          description:
+            'mostrar agrega la seccion (y lleva a la persona hasta ella); '+
+            'quitar retira una; limpiar retira todas las agregadas.',
+        },
+        seccion: {
+          type: 'string',
+          enum: ['proceso', 'preguntas', 'demo'],
+          description: 'Cual seccion. Obligatoria salvo con limpiar.',
+        },
+      },
+      required: ['operacion'],
+    },
+  },
+  {
     name: 'dejar_recado',
     description:
       'Entrega el recado a Daniel sin que la persona salga del chat ni abra ' +
@@ -348,6 +382,34 @@ function ejecutar(nombre, entrada, ajustes) {
         'reinicia si recarga). Dilo en una frase corta, sin codigos de ' +
         'color, y ofrece probar otro o regresarlo.',
       accion: { tipo: 'piel', color: crudo, animo, modo },
+      aviso: null,
+    };
+  }
+
+  if (nombre === 'componer_pagina') {
+    /* El agente elige piezas de un catalogo curado; el marcado es de la casa.
+       El navegador vuelve a validar el nombre contra su propio catalogo
+       antes de montar nada (bloques.js). */
+    const operaciones = ['mostrar', 'quitar', 'limpiar'];
+    const secciones = ['proceso', 'preguntas', 'demo'];
+    const operacion = operaciones.includes(entrada.operacion) ? entrada.operacion : 'mostrar';
+    const seccion = secciones.includes(entrada.seccion) ? entrada.seccion : null;
+    if (operacion !== 'limpiar' && !seccion) {
+      return {
+        resultado: 'Falta la seccion. Vuelve a llamar con proceso, preguntas o demo.',
+        accion: null,
+        aviso: null,
+      };
+    }
+    return {
+      resultado:
+        operacion === 'limpiar'
+          ? 'Listo: la pagina volvio a sus secciones normales.'
+          : operacion === 'quitar'
+            ? 'Listo: la seccion se retiro.'
+            : 'Listo: la seccion aparecio al final de la pagina y la persona ' +
+              'fue llevada hasta ella. Dilo en una frase y sigue la conversacion.',
+      accion: { tipo: 'bloques', operacion, seccion },
       aviso: null,
     };
   }
