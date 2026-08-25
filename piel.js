@@ -141,37 +141,58 @@ function aHex(h, s, l) {
                           .toString(16).padStart(2, '0')).join('');
 }
 
-/* Los cuatro animos. No cambian el tono: cambian el CARACTER —cuanto
-   contraste, cuanto grano, que tan rapido se mueve. */
-const ANIMOS = {
-  claro:  { fondoClaro: true,  sat: 1.00, ruido: 0.10, pulso: 1.00 },
-  oscuro: { fondoClaro: false, sat: 0.95, ruido: 0.30, pulso: 0.90 },
-  duro:   { fondoClaro: false, sat: 1.25, ruido: 0.85, pulso: 1.40 },
-  limpio: { fondoClaro: true,  sat: 0.80, ruido: 0.00, pulso: 0.75 },
-  calido: { fondoClaro: true,  sat: 0.90, ruido: 0.35, pulso: 0.90 },
+/* El MOLDE: la luminosidad y saturacion de cada ficha en la paleta original.
+
+   Esto es lo que se aprendio a golpes. La primera version invertia tinta y
+   papel para los animos oscuros, y el resultado fue 69 elementos ilegibles
+   contra 17 del original.
+
+   La razon: el sitio NO es una superficie plana. Es claro arriba con una
+   seccion oscura de contacto, y ahi `papel-alto` no es fondo sino el COLOR
+   DEL TEXTO. Invertirlo lo vuelve oscuro sobre fondo oscuro. Varias fichas
+   tienen dos papeles segun la region, asi que invertir rompe uno de los dos
+   siempre.
+
+   Por eso ahora **la luminosidad no se toca**: se conserva el molde y solo
+   se mueve el TONO. Asi toda relacion de contraste que Daniel diseno a mano
+   se preserva por construccion, sea cual sea el color que pidan. */
+const MOLDE = {
+  'senal':       { s: 0.99, l: 0.46 },
+  'senal-suave': { s: 1.00, l: 0.75 },
+  'acento':      { s: 0.74, l: 0.78 },
+  'tinta':       { s: 0.76, l: 0.13 },
+  'papel':       { s: 0.62, l: 0.97 },
+  'papel-alto':  { s: 0.68, l: 0.94 },
+  'tenue':       { s: 0.47, l: 0.74 },
+  'fondo-hondo': { s: 0.65, l: 0.03 },
 };
 
-/** De un color y un animo sale la paleta entera. */
+/* Los animos ya NO invierten nada. Sólo ajustan caracter:
+   cuanta saturacion, cuanto grano, que tan rapido se mueve. */
+const ANIMOS = {
+  claro:  { sat: 0.85, ruido: 0.05, pulso: 1.00 },
+  oscuro: { sat: 1.05, ruido: 0.35, pulso: 0.90 },
+  duro:   { sat: 1.30, ruido: 0.85, pulso: 1.40 },
+  limpio: { sat: 0.55, ruido: 0.00, pulso: 0.75 },
+  calido: { sat: 0.90, ruido: 0.35, pulso: 0.90 },
+};
+
+/** De un color y un animo sale la paleta entera, con el molde intacto. */
 export function derivarPiel(color, animo) {
   if (!HEX.test(String(color || '').trim())) return null;
   const a = ANIMOS[animo] || ANIMOS.oscuro;
-  const { h, s, l } = aHsl(color);
-  const sat = Math.max(0.35, Math.min(1, s * a.sat));
-  // El acento va al otro lado de la rueda: es lo que evita que una paleta de
-  // un solo tono se sienta plana.
-  const hA = (h + 152) % 360;
-  return {
-    'senal':       aHex(h, sat, Math.max(0.32, Math.min(0.56, l))),
-    'senal-suave': aHex(h, sat * 0.62, 0.72),
-    'acento':      aHex(hA, sat * 0.70, a.fondoClaro ? 0.55 : 0.68),
-    'tinta':       a.fondoClaro ? aHex(h, 0.55, 0.13) : aHex(h, 0.20, 0.92),
-    'papel':       a.fondoClaro ? aHex(h, 0.22, 0.97) : aHex(h, 0.16, 0.09),
-    'papel-alto':  a.fondoClaro ? aHex(h, 0.24, 0.93) : aHex(h, 0.18, 0.14),
-    'tenue':       aHex(h, 0.22, a.fondoClaro ? 0.68 : 0.52),
-    'fondo-hondo': a.fondoClaro ? aHex(h, 0.45, 0.06) : aHex(h, 0.35, 0.04),
-    'pulso':       String(a.pulso),
-    'ruido':       String(a.ruido),
-  };
+  const { h } = aHsl(color);
+  // El acento se va al otro lado de la rueda: es lo que evita que una paleta
+  // de un solo tono se sienta plana.
+  const hAcento = (h + 152) % 360;
+  const piel = {};
+  for (const [ficha, base] of Object.entries(MOLDE)) {
+    const tono = ficha === 'acento' ? hAcento : h;
+    piel[ficha] = aHex(tono, Math.min(1, base.s * a.sat), base.l);
+  }
+  piel['pulso'] = String(a.pulso);
+  piel['ruido'] = String(a.ruido);
+  return piel;
 }
 /* Se expone en window para que el agente del sitio y la consola puedan
    llamarlo sin importar módulos. */
