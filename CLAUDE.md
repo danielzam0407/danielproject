@@ -115,6 +115,21 @@ python .claude/guardias/pudricion.py            # relleno, correos, ligas
 ```bash
 python .claude/guardias/destrabar.py --si       # libera la cuota diaria topada
 ```
+```bash
+python .claude/guardias/ciclo.py ver            # hallazgos abiertos sin disponer
+```
+
+**El ciclo ya no depende de que alguien se acuerde.** Dos enganches en
+`.claude/settings.json`: al terminar un auditor se abre sola una entrada en
+`.claude/hallazgos.json`, y el `Stop` **bloquea el fin del turno** mientras
+quede algo sin disponer. Se dispone con `ciclo.py cerrar <id> --medida "..."`
+(exige el número re-medido) o `ciclo.py aplazar <id> --motivo "..."` (queda a la
+vista). Ver la frontera 2 en `.claude/fronteras.md`.
+
+**Los enganches se leen al arrancar la sesión**, igual que las fichas de
+subagente: crear o tocar `settings.json` a media sesión no los activa hasta
+reiniciar. Y **no hay `jq` en esta máquina** — cualquier enganche nuevo se
+escribe en Python con la forma `args`, sin shell de por medio.
 
 `.claude/guardias/contraste.js` se pega en la consola del navegador
 (`nervContrasteEstados()`).
