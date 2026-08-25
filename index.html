@@ -89,6 +89,35 @@
   ]
 }
 </script>
+<style id="fichas-nerv">
+/* Fichas de diseño. Son la piel del sitio: el CSS de arriba las consume
+   con var(--nombre, respaldo), así que si este bloque desapareciera la
+   página se vería exactamente igual que antes de existir.
+
+   Aquí es donde escribe el agente. Nunca escribe marcado ni CSS libre:
+   sólo mueve estos valores. Todo resultado posible es uno ya aprobado. */
+:root {
+  --senal:       #0102ec;   /* el azul que manda */
+  --senal-suave: #7f9bff;
+  --acento:      #9ef0e4;
+  --tinta:       #08123a;   /* texto sobre claro */
+  --papel:       #f4f7fc;   /* fondo claro */
+  --papel-alto:  #e6effb;
+  --tenue:       #9db8dc;
+  --fondo-hondo: #03060e;   /* fondo oscuro */
+
+  /* Estas dos no son color: son temperamento. */
+  --pulso: 1;               /* multiplica la velocidad del movimiento */
+  --ruido: 0;               /* 0 a 1, cuánto grano y glitch */
+}
+/* La transición es lo que hace que el cambio se lea como intención y no
+   como un parpadeo. Se apaga para quien pidió menos movimiento. */
+body, body * { transition: background-color .55s ease, color .55s ease,
+                           border-color .55s ease, fill .55s ease; }
+@media (prefers-reduced-motion: reduce) {
+  body, body * { transition: none; }
+}
+</style>
 </head>
 <body>
 <x-dc>
@@ -99,9 +128,9 @@
   <link rel="stylesheet" href="https://unpkg.com/augmented-ui@2/augmented-ui.min.css">
   <style>
     html { scroll-behavior: smooth; }
-    html, body { margin: 0; padding: 0; background: #f4f7fc; }
-    a { color: #0102ec; text-decoration: none; } a:hover { color: #3050ff; }
-    ::selection { background: #0102ec; color: #fff; }
+    html, body { margin: 0; padding: 0; background: var(--papel, #f4f7fc); }
+    a { color: var(--senal, #0102ec); text-decoration: none; } a:hover { color: #3050ff; }
+    ::selection { background: var(--senal, #0102ec); color: #fff; }
     section[id] { scroll-margin-top: 54px; }
 
     /* ---- telemetry / type devices ---------------------------------- */
@@ -110,8 +139,8 @@
     .microtext { font-family: 'IBM Plex Mono', monospace; font-size: 8px; line-height: 1.8; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(8,18,58,.35); word-break: break-all; }
     .microtext.inv { color: rgba(200,220,250,.3); }
     .microtext.kana { word-break: normal; letter-spacing: 3px; text-transform: none; }
-    .terminal-log { font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 2.1; letter-spacing: .5px; color: #08123a; }
-    .terminal-log div::before { content: '> '; color: #0102ec; }
+    .terminal-log { font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 2.1; letter-spacing: .5px; color: var(--tinta, #08123a); }
+    .terminal-log div::before { content: '> '; color: var(--senal, #0102ec); }
     .terminal-log.inv { color: rgba(220,235,255,.85); }
     .ghost-type { position: absolute; font-family: 'Space Grotesk', sans-serif; font-weight: 700; line-height: .8; white-space: nowrap; pointer-events: none; user-select: none; color: rgba(8,18,58,.05); }
     .ghost-type.stroke { color: transparent; -webkit-text-stroke: 1.5px rgba(8,18,58,.08); }
@@ -190,7 +219,7 @@
     .hp-layer { position: absolute; inset: 0; }
     .hp-layer img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .hero-plate::after { content: ''; position: absolute; inset: 0;
-      background: linear-gradient(90deg, #f4f7fc 0%, rgba(244,247,252,.55) 22%, rgba(244,247,252,0) 52%),
+      background: linear-gradient(90deg, var(--papel, #f4f7fc) 0%, rgba(244,247,252,.55) 22%, rgba(244,247,252,0) 52%),
                   repeating-linear-gradient(0deg, rgba(3,6,14,.13) 0 1px, transparent 1px 3px); }
     .matrix-block { width: 74px; height: 74px; flex-shrink: 0; image-rendering: pixelated; display: block; }
 
@@ -245,7 +274,7 @@
     .fui-cur-core, .fui-cur-lag { position: absolute; left: 0; top: 0; will-change: transform; }
     .fui-cur-ring { position: absolute; left: -12px; top: -12px; width: 22px; height: 22px;
       border: 1px solid rgba(8,18,58,.55); border-radius: 50%; transition: transform .12s; }
-    .fui-cur-dot { position: absolute; left: -1.5px; top: -1.5px; width: 3px; height: 3px; background: #0102ec; }
+    .fui-cur-dot { position: absolute; left: -1.5px; top: -1.5px; width: 3px; height: 3px; background: var(--senal, #0102ec); }
     .fui-cur-core i { position: absolute; background: rgba(8,18,58,.6); }
     .fui-cur-core i.n { left: -0.5px; top: -19px; width: 1px; height: 6px; }
     .fui-cur-core i.s { left: -0.5px; top: 13px; width: 1px; height: 6px; }
@@ -264,23 +293,23 @@
     .fui-cur-lab { position: absolute; left: 30px; top: 15px; white-space: nowrap;
       font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
       text-transform: uppercase; color: rgba(8,18,58,.62); }
-    .fui-cur.lock .fui-cur-ring { border-color: #0102ec; }
-    .fui-cur.lock .fui-cur-lag { color: #0102ec; }
-    .fui-cur.lock .fui-cur-lab { color: #0102ec; }
+    .fui-cur.lock .fui-cur-ring { border-color: var(--senal, #0102ec); }
+    .fui-cur.lock .fui-cur-lag { color: var(--senal, #0102ec); }
+    .fui-cur.lock .fui-cur-lab { color: var(--senal, #0102ec); }
     .fui-cur.press .fui-cur-ring { transform: scale(.7); }
     .fui-cur.inv .fui-cur-ring { border-color: rgba(210,230,255,.7); }
     .fui-cur.inv .fui-cur-core i { background: rgba(210,230,255,.7); }
-    .fui-cur.inv .fui-cur-dot { background: #7f9bff; }
+    .fui-cur.inv .fui-cur-dot { background: var(--senal-suave, #7f9bff); }
     .fui-cur.inv .fui-cur-lag { color: rgba(200,220,250,.5); }
     .fui-cur.inv .fui-cur-lab { color: rgba(210,230,255,.75); }
-    .fui-cur.inv.lock .fui-cur-ring { border-color: #7f9bff; }
-    .fui-cur.inv.lock .fui-cur-lag { color: #7f9bff; }
-    .fui-cur.inv.lock .fui-cur-lab { color: #7f9bff; }
+    .fui-cur.inv.lock .fui-cur-ring { border-color: var(--senal-suave, #7f9bff); }
+    .fui-cur.inv.lock .fui-cur-lag { color: var(--senal-suave, #7f9bff); }
+    .fui-cur.inv.lock .fui-cur-lab { color: var(--senal-suave, #7f9bff); }
 
     /* ---- layout containers (responsive) ------------------------------ */
     .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; gap: 34px; height: 54px; padding: 0 34px; background: rgba(244,247,252,.94); border-bottom: 1px solid rgba(8,18,58,.18); }
     .topnav { display: flex; gap: 30px; margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 2px; }
-    .statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; height: 32px; display: flex; align-items: center; gap: 20px; padding: 0 34px; background: #03060e; color: #9db8dc; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+    .statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; height: 32px; display: flex; align-items: center; gap: 20px; padding: 0 34px; background: var(--fondo-hondo, #03060e); color: var(--tenue, #9db8dc); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 34px; }
     .grid-side { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 70px; }
     .grid-side > *, .work-head > * { min-width: 0; }
@@ -294,7 +323,7 @@
     @media (max-width: 1200px) {
       /* narrower viewport pushes the headline over the plate — carry the scrim
          further across so type always sits on flat ground */
-      .hero-plate::after { background: linear-gradient(90deg, #f4f7fc 0%, rgba(244,247,252,.74) 44%, rgba(244,247,252,0) 80%),
+      .hero-plate::after { background: linear-gradient(90deg, var(--papel, #f4f7fc) 0%, rgba(244,247,252,.74) 44%, rgba(244,247,252,0) 80%),
                                        repeating-linear-gradient(0deg, rgba(3,6,14,.13) 0 1px, transparent 1px 3px); }
     }
     @media (max-width: 900px) {
@@ -349,10 +378,10 @@
     }
   </style>
 </helmet>
-<div class="dc-anim" style="font-family: 'Space Grotesk', sans-serif; color: #08123a; background: #f4f7fc; min-height: 100vh; min-height: 100svh;">
+<div class="dc-anim" style="font-family: 'Space Grotesk', sans-serif; color: var(--tinta, #08123a); background: var(--papel, #f4f7fc); min-height: 100vh; min-height: 100svh;">
 
   <header class="topbar">
-    <a href="#top" class="glitch-hover" data-cur="return / top" style="font-weight: 700; font-size: 17px; letter-spacing: 1px; color: #08123a; white-space: nowrap;">nerv.center<span style="color: #0102ec;">_</span></a>
+    <a href="#top" class="glitch-hover" data-cur="return / top" style="font-weight: 700; font-size: 17px; letter-spacing: 1px; color: var(--tinta, #08123a); white-space: nowrap;">nerv.center<span style="color: var(--senal, #0102ec);">_</span></a>
     <span class="microtext hide-sm" style="width: 120px;">nerv.center // v3.0 // do not fold</span>
     <div class="barcode hide-md" style="width: 64px; height: 16px; color: rgba(8,18,58,.7);"></div>
     <nav class="topnav">
@@ -388,10 +417,10 @@
         <div>unit: nerv.center</div>
         <div>state: floating</div>
       </div>
-      <h1 class="glitch-hover rgb-split" style="margin: 0; font-size: clamp(46px, 10.5vw, 116px); font-weight: 700; letter-spacing: -0.035em; line-height: .92; transform: skewX(-6deg);">nerv<span style="color: #0102ec;">.</span>center</h1>
+      <h1 class="glitch-hover rgb-split" style="margin: 0; font-size: clamp(46px, 10.5vw, 116px); font-weight: 700; letter-spacing: -0.035em; line-height: .92; transform: skewX(-6deg);">nerv<span style="color: var(--senal, #0102ec);">.</span>center</h1>
       <div class="hatch draw-x" style="height: 13px; margin-top: 18px; max-width: 420px; color: rgba(8,18,58,.75);"></div>
-      <div class="aug-chip" data-augmented-ui="tl-clip br-clip" style="display: inline-flex; align-items: center; gap: 14px; margin-top: 20px; background: #08123a; color: #e6effb; font-family: 'IBM Plex Mono', monospace; font-size: clamp(10px, 2.2vw, 13px); letter-spacing: 3px; padding: 8px 18px;">status: adrift // motion — web — print<span class="blink" style="display: inline-block; width: 8px; height: 15px; background: #e6effb;"></span></div>
-      <p class="hp-does" style="margin: 24px 0 0; max-width: 560px; border-left: 3px solid #0102ec; padding: 3px 0 3px 15px; font-size: clamp(15px, 3.3vw, 19px); line-height: 1.5; color: #08123a;">Custom sites, designed from scratch — no templates. 3D when the piece asks for it, and a chat agent built in: <b style="font-weight: 600; border-bottom: 2px solid #0102ec;">the one you are using right now</b>.</p>
+      <div class="aug-chip" data-augmented-ui="tl-clip br-clip" style="display: inline-flex; align-items: center; gap: 14px; margin-top: 20px; background: var(--tinta, #08123a); color: var(--papel-alto, #e6effb); font-family: 'IBM Plex Mono', monospace; font-size: clamp(10px, 2.2vw, 13px); letter-spacing: 3px; padding: 8px 18px;">status: adrift // motion — web — print<span class="blink" style="display: inline-block; width: 8px; height: 15px; background: var(--papel-alto, #e6effb);"></span></div>
+      <p class="hp-does" style="margin: 24px 0 0; max-width: 560px; border-left: 3px solid var(--senal, #0102ec); padding: 3px 0 3px 15px; font-size: clamp(15px, 3.3vw, 19px); line-height: 1.5; color: var(--tinta, #08123a);">Custom sites, designed from scratch — no templates. 3D when the piece asks for it, and a chat agent built in: <b style="font-weight: 600; border-bottom: 2px solid var(--senal, #0102ec);">the one you are using right now</b>.</p>
       <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 34px; max-width: 520px;">
         <sc-if value="{{ matrix }}" hint-placeholder-val="{{ true }}">
           <img class="matrix-block" src="{{ matrix }}" alt="">
@@ -403,7 +432,7 @@
     <div class="hairline-row" style="position: absolute; left: 0; right: 0; bottom: 130px; padding: 0 clamp(16px, 3vw, 40px); z-index: 3;">
       <div class="draw-x" style="height: 2px; flex: 1; background: rgba(8,18,58,.45);"></div>
       <div class="draw-x d1" style="width: 34px; height: 8px; background: rgba(8,18,58,.55);"></div>
-      <div class="draw-x d1" style="width: 8px; height: 8px; background: #0102ec;"></div>
+      <div class="draw-x d1" style="width: 8px; height: 8px; background: var(--senal, #0102ec);"></div>
       <div class="draw-x d2" style="width: 90px; height: 4px; background: rgba(8,18,58,.4);"></div>
       <div class="draw-x d2 hide-xs" style="width: 14px; height: 14px; border: 1.5px solid rgba(8,18,58,.55);"></div>
       <div class="draw-x d3 hide-sm" style="height: 1px; width: 120px; background: rgba(8,18,58,.4);"></div>
@@ -418,8 +447,8 @@
     <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}"><div class="scanline-overlay"></div></sc-if>
   </section>
 
-  <div class="ticker-wrap" style="position: relative; background: #08123a; color: #9db8dc; border-top: 1px solid rgba(8,18,58,.3); border-bottom: 1px solid rgba(8,18,58,.3); height: 44px; display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
-    <span style="flex-shrink: 0; z-index: 2; background: #0102ec; color: #fff; padding: 4px 14px; margin-right: 18px; font-size: 10px; letter-spacing: 2px;">fracture mode</span>
+  <div class="ticker-wrap" style="position: relative; background: var(--tinta, #08123a); color: var(--tenue, #9db8dc); border-top: 1px solid rgba(8,18,58,.3); border-bottom: 1px solid rgba(8,18,58,.3); height: 44px; display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
+    <span style="flex-shrink: 0; z-index: 2; background: var(--senal, #0102ec); color: #fff; padding: 4px 14px; margin-right: 18px; font-size: 10px; letter-spacing: 2px;">fracture mode</span>
     <div class="ticker"><span>{{ tickerLine }}</span><span>{{ tickerLine }}</span></div>
   </div>
 
@@ -436,14 +465,14 @@
     <div class="work-head" style="margin-top: 40px; position: relative; z-index: 1;">
       <div>
         <div style="display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap;">
-          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: #0102ec;">[ 01 / work ]</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: var(--senal, #0102ec);">[ 01 / work ]</span>
           <h2 class="rgb-split" style="margin: 0; font-size: clamp(28px, 4.6vw, 44px); font-weight: 700; letter-spacing: -1px;">selected files</h2>
         </div>
         <div class="telemetry" style="margin-top: 14px;">{{ telemC }}</div>
       </div>
       <div class="hide-md">
         <sc-for list="{{ index }}" as="row" hint-placeholder-count="5">
-          <div class="idx-row"><span style="color: #0102ec;">{{ row.n }}</span><span style="margin-left: auto;">{{ row.v }}</span></div>
+          <div class="idx-row"><span style="color: var(--senal, #0102ec);">{{ row.n }}</span><span style="margin-left: auto;">{{ row.v }}</span></div>
         </sc-for>
       </div>
     </div>
@@ -451,7 +480,7 @@
     <div class="draw-w" style="margin-top: 26px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(8,18,58,.28);"></div></div>
     <div class="grid-3" style="margin-top: 40px; position: relative; z-index: 1;">
       <sc-for list="{{ projects }}" as="item" hint-placeholder-count="3">
-        <div class="corner-brackets glitch-hover aug-card" data-augmented-ui="tl-clip br-clip border" data-cur="{{ item.cur }}" onMouseEnter="{{ item.onEnter }}" onMouseLeave="{{ leave }}" style="position: relative; background: #fff; cursor: pointer; color: #08123a;">
+        <div class="corner-brackets glitch-hover aug-card" data-augmented-ui="tl-clip br-clip border" data-cur="{{ item.cur }}" onMouseEnter="{{ item.onEnter }}" onMouseLeave="{{ leave }}" style="position: relative; background: #fff; cursor: pointer; color: var(--tinta, #08123a);">
           <div class="stripes-slot" style="position: relative; height: 210px; border-bottom: 1px solid rgba(8,18,58,.15); overflow: hidden;">
             <sc-if value="{{ item.plate }}" hint-placeholder-val="{{ true }}">
               <div class="plate"><img src="{{ item.plate }}" alt=""></div>
@@ -464,7 +493,7 @@
           </sc-if>
           <div style="padding: 22px 22px 26px; position: relative; overflow: hidden;">
             <div class="ghost-type narrow" style="right: 4px; bottom: -12px; font-size: 132px; font-weight: 900;">{{ item.id }}</div>
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; color: #0102ec; margin-bottom: 10px;">{{ item.id }} // {{ item.tag }}</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--senal, #0102ec); margin-bottom: 10px;">{{ item.id }} // {{ item.tag }}</div>
             <div style="font-size: 27px; font-weight: 700; letter-spacing: -0.5px;">{{ item.name }}</div>
             <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(8,18,58,.6); margin-top: 8px;">{{ item.desc }}</div>
             <div class="microtext" style="margin-top: 16px;">{{ item.micro }}</div>
@@ -485,7 +514,7 @@
     <div class="grid-bg"></div>
     <div class="ghost-type narrow" style="left: 30px; bottom: -66px; font-size: clamp(190px, 42vw, 460px); font-weight: 900;">02</div>
     <div style="display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1;">
-      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: #0102ec;">[ 02 / about ]</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: var(--senal, #0102ec);">[ 02 / about ]</span>
       <h2 class="rgb-split" style="margin: 0; font-size: clamp(28px, 4.6vw, 44px); font-weight: 700; letter-spacing: -1px;">unit data</h2>
     </div>
     <div class="draw-w" style="margin-top: 22px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(8,18,58,.28);"></div></div>
@@ -519,18 +548,18 @@
     <sc-if value="{{ halftone }}" hint-placeholder-val="{{ true }}"><div class="halftone-overlay"></div></sc-if>
   </section>
 
-  <section id="contact" data-screen-label="contact" style="position: relative; overflow: hidden; padding: clamp(84px, 11vw, 120px) clamp(20px, 5vw, 70px) 60px; background: linear-gradient(160deg, #0a1660 0%, #071233 55%, #03060e 100%); color: #e6effb;">
+  <section id="contact" data-screen-label="contact" style="position: relative; overflow: hidden; padding: clamp(84px, 11vw, 120px) clamp(20px, 5vw, 70px) 60px; background: linear-gradient(160deg, #0a1660 0%, #071233 55%, var(--fondo-hondo, #03060e) 100%); color: var(--papel-alto, #e6effb);">
     <div class="grid-bg inv"></div>
     <div class="ghost-type inv narrow" style="right: -40px; top: 0; font-size: clamp(140px, 32vw, 360px); font-weight: 900;">{{ ghostWord }}</div>
     <div style="position: absolute; left: -10%; bottom: -30%; width: 60%; height: 90%; background: radial-gradient(ellipse 50% 50% at 40% 60%, rgba(80,130,240,.28), transparent 70%);"></div>
     <div style="display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1;">
-      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: #7f9bff;">[ 03 / contact ]</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: var(--senal-suave, #7f9bff);">[ 03 / contact ]</span>
       <h2 class="rgb-split" style="margin: 0; font-size: clamp(28px, 4.6vw, 44px); font-weight: 700; letter-spacing: -1px;">say hello.</h2>
     </div>
     <div class="draw-w" style="margin-top: 22px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(200,220,250,.3);"></div></div>
     <div class="ruler inv" style="position: relative; z-index: 1; margin-top: 8px;"></div>
     <div style="position: relative; z-index: 1; margin-top: 40px;">
-      <a href="mailto:dani@nervcenter.online" class="glitch-hover rgb-split" data-cur="compose / transmit" style="display: inline-block; max-width: 100%; font-size: clamp(26px, 7.2vw, 72px); font-weight: 700; letter-spacing: -0.03em; color: #e6effb; transform: skewX(-6deg); word-break: break-word;">dani@nervcenter.online</a>
+      <a href="mailto:dani@nervcenter.online" class="glitch-hover rgb-split" data-cur="compose / transmit" style="display: inline-block; max-width: 100%; font-size: clamp(26px, 7.2vw, 72px); font-weight: 700; letter-spacing: -0.03em; color: var(--papel-alto, #e6effb); transform: skewX(-6deg); word-break: break-word;">dani@nervcenter.online</a>
       <div class="terminal-log inv boot" style="margin-top: 26px;">
         <div>net: @nerv</div>
         <div>channels: chat / whatsapp / mail</div>
@@ -552,9 +581,9 @@
   </section>
 
   <div class="statusbar">
-    <span style="color: #7f9bff;">sel:</span>
+    <span style="color: var(--senal-suave, #7f9bff);">sel:</span>
     <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ readout }}</span>
-    <span class="blink" style="display: inline-block; flex-shrink: 0; width: 7px; height: 13px; background: #9db8dc;"></span>
+    <span class="blink" style="display: inline-block; flex-shrink: 0; width: 7px; height: 13px; background: var(--tenue, #9db8dc);"></span>
     <span style="display: flex; align-items: center; gap: 20px; margin-left: auto; flex-shrink: 0;">
       <span class="hide-md" style="color: rgba(157,184,220,.6);">{{ hex }}</span>
       <span class="hide-sm">{{ frame }}</span>
@@ -1136,25 +1165,25 @@ class Component extends DCLogic {
   #ag-abrir, #ag-directo { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border: 0;
     cursor: pointer; text-decoration: none; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     letter-spacing: 2px; text-transform: uppercase; --aug-tl: 9px; --aug-br: 9px; }
-  #ag-abrir { background: #0102ec; color: #fff; }
+  #ag-abrir { background: var(--senal, #0102ec); color: #fff; }
   #ag-abrir:hover { background: #3050ff; }
-  #ag-abrir .ag-punto { width: 7px; height: 7px; background: #9ef0e4; flex-shrink: 0; }
-  #ag-directo { background: #050b18; color: #9ef0e4; --aug-border-all: 1px; --aug-border-bg: rgba(158,240,228,.5); }
+  #ag-abrir .ag-punto { width: 7px; height: 7px; background: var(--acento, #9ef0e4); flex-shrink: 0; }
+  #ag-directo { background: #050b18; color: var(--acento, #9ef0e4); --aug-border-all: 1px; --aug-border-bg: rgba(158,240,228,.5); }
   #ag-directo:hover { background: #0d1929; color: #c8fff5; }
   #ag-directo[hidden] { display: none; }
 
   #ag-panel { position: fixed; right: 26px; bottom: 54px; z-index: 71; width: 384px; max-width: calc(100vw - 36px);
     height: 540px; max-height: calc(100svh - 108px); display: flex; flex-direction: column; overflow: hidden;
-    background: #050b18; color: #e6effb; --aug-tl: 16px; --aug-br: 16px;
+    background: #050b18; color: var(--papel-alto, #e6effb); --aug-tl: 16px; --aug-br: 16px;
     --aug-border-all: 1px; --aug-border-bg: rgba(200,220,250,.42); }
   #ag-panel[hidden] { display: none; }
 
   .ag-barra { display: flex; align-items: center; gap: 12px; padding: 13px 15px 12px;
     border-bottom: 1px solid rgba(200,220,250,.18); flex-shrink: 0; }
-  .ag-barra .kagi { color: #7f9bff; flex-shrink: 0; }
+  .ag-barra .kagi { color: var(--senal-suave, #7f9bff); flex-shrink: 0; }
   .ag-cerrar { margin-left: auto; background: none; border: 0; cursor: pointer; padding: 4px 8px;
     color: rgba(200,220,250,.65); font-family: 'IBM Plex Mono', monospace; font-size: 15px; line-height: 1; }
-  .ag-cerrar:hover { color: #e6effb; }
+  .ag-cerrar:hover { color: var(--papel-alto, #e6effb); }
 
   .ag-hilo { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px 15px; display: flex;
     flex-direction: column; gap: 15px; }
@@ -1164,22 +1193,22 @@ class Component extends DCLogic {
   .ag-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; line-height: 1.85; white-space: pre-wrap;
     word-break: break-word; }
   .ag-msg.de-agente { color: rgba(230,239,251,.94); }
-  .ag-msg.de-agente::before { content: '> '; color: #7f9bff; }
+  .ag-msg.de-agente::before { content: '> '; color: var(--senal-suave, #7f9bff); }
   .ag-msg.de-visitante { align-self: flex-end; max-width: 86%; padding: 8px 12px; background: rgba(127,155,255,.13);
-    border-left: 2px solid #7f9bff; color: #cfe0ff; }
+    border-left: 2px solid var(--senal-suave, #7f9bff); color: #cfe0ff; }
   .ag-msg.es-error { color: #ff9a8d; }
 
   /* El cursor de escritura es adorno: el texto se escribe igual sin él. */
-  .ag-latido { display: inline-block; width: 7px; height: 12px; background: #7f9bff; vertical-align: -1px;
+  .ag-latido { display: inline-block; width: 7px; height: 12px; background: var(--senal-suave, #7f9bff); vertical-align: -1px;
     animation: ag-parpadeo 1.05s steps(2, start) infinite; }
   @keyframes ag-parpadeo { to { visibility: hidden; } }
 
   .ag-accion { display: flex; flex-direction: column; gap: 5px; padding: 11px 13px; text-decoration: none;
-    background: rgba(127,155,255,.1); color: #e6effb; --aug-tl: 8px; --aug-br: 8px;
+    background: rgba(127,155,255,.1); color: var(--papel-alto, #e6effb); --aug-tl: 8px; --aug-br: 8px;
     --aug-border-all: 1px; --aug-border-bg: rgba(158,240,228,.55); }
   .ag-accion:hover { background: rgba(127,155,255,.2); color: #fff; }
   .ag-accion .rotulo { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px;
-    text-transform: uppercase; color: #9ef0e4; }
+    text-transform: uppercase; color: var(--acento, #9ef0e4); }
   .ag-accion .detalle { font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.65;
     color: rgba(200,220,250,.72); }
 
@@ -1190,17 +1219,17 @@ class Component extends DCLogic {
   .ag-opciones button { text-align: left; padding: 9px 12px; cursor: pointer; background: transparent;
     border: 1px solid rgba(200,220,250,.28); color: #cfe0ff; font-family: 'IBM Plex Mono', monospace;
     font-size: 12px; line-height: 1.5; letter-spacing: .3px; }
-  .ag-opciones button::before { content: '▸ '; color: #7f9bff; }
-  .ag-opciones button:hover { border-color: #7f9bff; background: rgba(127,155,255,.12); color: #fff; }
+  .ag-opciones button::before { content: '▸ '; color: var(--senal-suave, #7f9bff); }
+  .ag-opciones button:hover { border-color: var(--senal-suave, #7f9bff); background: rgba(127,155,255,.12); color: #fff; }
 
   .ag-pie { display: flex; align-items: stretch; gap: 9px; padding: 11px 12px; flex-shrink: 0;
     border-top: 1px solid rgba(200,220,250,.18); }
   .ag-pie textarea { flex: 1; resize: none; background: transparent; border: 1px solid rgba(200,220,250,.26);
-    padding: 9px 11px; color: #e6effb; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    padding: 9px 11px; color: var(--papel-alto, #e6effb); font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
     line-height: 1.5; height: 40px; }
-  .ag-pie textarea:focus { outline: none; border-color: #7f9bff; }
+  .ag-pie textarea:focus { outline: none; border-color: var(--senal-suave, #7f9bff); }
   .ag-pie textarea::placeholder { color: rgba(200,220,250,.4); }
-  .ag-pie button { flex-shrink: 0; padding: 0 15px; border: 0; cursor: pointer; background: #0102ec; color: #fff;
+  .ag-pie button { flex-shrink: 0; padding: 0 15px; border: 0; cursor: pointer; background: var(--senal, #0102ec); color: #fff;
     font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
   .ag-pie button:hover:not(:disabled) { background: #3050ff; }
   .ag-pie button:disabled { background: rgba(200,220,250,.18); color: rgba(200,220,250,.45); cursor: default; }
@@ -1517,9 +1546,9 @@ class Component extends DCLogic {
     color: rgba(8,18,58,.55); font: inherit; letter-spacing: inherit; padding: 4px 9px;
     line-height: 1.4; transition: background .14s, color .14s; }
   .lang-sw button + button { border-left: 1px solid rgba(8,18,58,.28); }
-  .lang-sw button:hover { color: #08123a; }
-  .lang-sw button[aria-pressed="true"] { background: #08123a; color: #e6effb; }
-  .lang-sw button:focus-visible { outline: 2px solid #0102ec; outline-offset: 1px; }
+  .lang-sw button:hover { color: var(--tinta, #08123a); }
+  .lang-sw button[aria-pressed="true"] { background: var(--tinta, #08123a); color: var(--papel-alto, #e6effb); }
+  .lang-sw button:focus-visible { outline: 2px solid var(--senal, #0102ec); outline-offset: 1px; }
 
   /* En pantallas chicas la barra ya venía justa —el logo y el nav solos suman
      más de lo que cabe en 375— así que el interruptor sale de ahí y se ancla
@@ -1527,7 +1556,7 @@ class Component extends DCLogic {
      Se muestra sólo el idioma al que cambiarías: un botón, no dos. */
   @media (max-width: 759px) {
     .lang-sw { position: fixed; left: 12px; bottom: 100px; z-index: 61;
-      background: #f4f7fc; border-color: rgba(8,18,58,.6);
+      background: var(--papel, #f4f7fc); border-color: rgba(8,18,58,.6);
       box-shadow: 3px 3px 0 rgba(8,18,58,.18); }
     .lang-sw button[aria-pressed="true"] { display: none; }
     .lang-sw button + button { border-left: 0; }
@@ -1545,9 +1574,9 @@ class Component extends DCLogic {
   /* Marca cuánto llevas del documento. Un filo duro, no una barra redondeada. */
   .rail { position: fixed; left: 0; top: 0; height: 3px; width: 100%; z-index: 60;
     background: rgba(8,18,58,.12); pointer-events: none; }
-  .rail > i { display: block; height: 100%; width: 100%; background: #0102ec;
+  .rail > i { display: block; height: 100%; width: 100%; background: var(--senal, #0102ec);
     transform: scaleX(0); transform-origin: left center; }
-  .rail > u { position: absolute; top: 0; height: 3px; width: 26px; background: #08123a;
+  .rail > u { position: absolute; top: 0; height: 3px; width: 26px; background: var(--tinta, #08123a);
     left: 0; transform: translateX(-26px); }
 
   /* ── Revelados ───────────────────────────────────────────────────────── */
@@ -1591,13 +1620,13 @@ class Component extends DCLogic {
   /* ── Filo que recorre el borde de la tarjeta al entrar ───────────────── */
   .mv-edge { position: relative; }
   .mv-edge::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px;
-    width: 100%; background: #0102ec; transform: scaleX(0); transform-origin: left center;
+    width: 100%; background: var(--senal, #0102ec); transform: scaleX(0); transform-origin: left center;
     transition: transform .7s cubic-bezier(.16,.84,.3,1); pointer-events: none; z-index: 6; }
   .mv-edge.mv-in::after { transform: scaleX(1); }
 
   /* ── Sección activa en la barra ──────────────────────────────────────── */
-  .topnav a.mv-here { color: #0102ec; }
-  .topnav a.mv-here > span { color: #0102ec; }
+  .topnav a.mv-here { color: var(--senal, #0102ec); }
+  .topnav a.mv-here > span { color: var(--senal, #0102ec); }
 
   /* ── Nada de esto corre si pidieron menos movimiento ─────────────────── */
   @media (prefers-reduced-motion: reduce) {
@@ -1967,14 +1996,14 @@ class Component extends DCLogic {
     z-index: 7; appearance: none; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px;
     padding: 6px 11px 6px 10px; box-sizing: border-box;
-    background: #08123a; border: 1px solid #0102ec; color: #e6effb;
+    background: var(--tinta, #08123a); border: 1px solid var(--senal, #0102ec); color: var(--papel-alto, #e6effb);
     font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
     text-transform: uppercase; line-height: 1;
     box-shadow: 3px 3px 0 rgba(1,2,236,.3);
     transition: background .16s, color .16s, box-shadow .16s, transform .16s; }
-  .reel-go svg { display: block; width: 8px; height: 9px; fill: #0102ec;
+  .reel-go svg { display: block; width: 8px; height: 9px; fill: var(--senal, #0102ec);
     transition: fill .16s; }
-  .reel-go:hover { background: #0102ec; box-shadow: 5px 5px 0 rgba(8,18,58,.28);
+  .reel-go:hover { background: var(--senal, #0102ec); box-shadow: 5px 5px 0 rgba(8,18,58,.28);
     transform: translateX(-50%) translateY(-1px); }
   .reel-go:hover svg { fill: #fff; }
   .reel-go:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -1998,7 +2027,7 @@ class Component extends DCLogic {
      que el margen se recorta al mínimo: cada píxel cuenta. */
   @media (max-width: 600px) { .reel-max { padding: 10px; } }
   .reel-max[hidden] { display: none; }
-  .reel-fondo { position: absolute; inset: 0; background: #03060e; opacity: 0;
+  .reel-fondo { position: absolute; inset: 0; background: var(--fondo-hondo, #03060e); opacity: 0;
     transition: opacity .34s linear; }
   .reel-max.reel-abierto .reel-fondo { opacity: .96; }
   .reel-fondo::after { content: ''; position: absolute; inset: 0;
@@ -2007,10 +2036,10 @@ class Component extends DCLogic {
   .reel-caja { position: relative; z-index: 2; max-width: min(1180px, 100%);
     display: flex; flex-direction: column; gap: 9px; }
   .reel-marco { position: relative; border: 1px solid rgba(200,220,250,.32);
-    background: #03060e; }
+    background: var(--fondo-hondo, #03060e); }
   /* Corchetes de esquina, como los de las tarjetas. */
   .reel-marco::before, .reel-marco::after { content: ''; position: absolute;
-    width: 18px; height: 18px; border: 2px solid #0102ec; pointer-events: none; z-index: 3; }
+    width: 18px; height: 18px; border: 2px solid var(--senal, #0102ec); pointer-events: none; z-index: 3; }
   .reel-marco::before { left: -6px; top: -6px; border-right: 0; border-bottom: 0; }
   .reel-marco::after { right: -6px; bottom: -6px; border-left: 0; border-top: 0; }
 
@@ -2021,7 +2050,7 @@ class Component extends DCLogic {
   .reel-escenario .reel-v { display: block;
     width: min(92vw, 1180px, calc(72vh * 16 / 9));
     aspect-ratio: 16 / 9; height: auto; max-width: 100%;
-    object-fit: contain; background: #03060e; cursor: pointer; }
+    object-fit: contain; background: var(--fondo-hondo, #03060e); cursor: pointer; }
   /* Rayas sobre el video: lo amarra al resto de la página. */
   .reel-escenario::after { content: ''; position: absolute; inset: 0; z-index: 2;
     pointer-events: none;
@@ -2029,31 +2058,31 @@ class Component extends DCLogic {
 
   /* ── La regleta de lectura, ya en grande ──────────────────────────────── */
   .reel-hud { display: flex; align-items: center; gap: 10px;
-    color: #9db8dc; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--tenue, #9db8dc); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     letter-spacing: 2px; }
   .reel-dot { width: 7px; height: 7px; background: #ff3b30; flex-shrink: 0; }
   .reel-max.reel-corriendo .reel-dot { animation: reel-late 1.15s steps(1) infinite; }
   @keyframes reel-late { 50% { opacity: .15; } }
   .reel-tc { flex-shrink: 0; font-variant-numeric: tabular-nums; }
   .reel-bar { flex: 1; height: 2px; background: rgba(157,184,220,.28); min-width: 30px; }
-  .reel-bar > i { display: block; height: 100%; width: 100%; background: #0102ec;
+  .reel-bar > i { display: block; height: 100%; width: 100%; background: var(--senal, #0102ec);
     transform: scaleX(0); transform-origin: left center; }
 
   .reel-pie { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    color: #9db8dc; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--tenue, #9db8dc); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     letter-spacing: 2px; text-transform: uppercase; }
-  .reel-pie b { color: #e6effb; font-weight: 700; letter-spacing: 1px;
+  .reel-pie b { color: var(--papel-alto, #e6effb); font-weight: 700; letter-spacing: 1px;
     text-transform: none; font-size: 15px; }
   .reel-pie .reel-micro { color: rgba(157,184,220,.7); letter-spacing: 1px;
     text-transform: none; flex: 1 1 220px; min-width: 0; }
   .reel-full, .reel-cerrar { appearance: none; background: transparent;
-    border: 1px solid rgba(200,220,250,.45); color: #e6effb; font: inherit;
+    border: 1px solid rgba(200,220,250,.45); color: var(--papel-alto, #e6effb); font: inherit;
     font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
     padding: 8px 13px; cursor: pointer; min-height: 38px;
     box-sizing: border-box; transition: background .14s, border-color .14s; }
   .reel-full { margin-left: auto; }
-  .reel-full:hover, .reel-cerrar:hover { background: #0102ec; border-color: #0102ec; }
-  .reel-full:focus-visible, .reel-cerrar:focus-visible { outline: 2px solid #7f9bff; outline-offset: 2px; }
+  .reel-full:hover, .reel-cerrar:hover { background: var(--senal, #0102ec); border-color: var(--senal, #0102ec); }
+  .reel-full:focus-visible, .reel-cerrar:focus-visible { outline: 2px solid var(--senal-suave, #7f9bff); outline-offset: 2px; }
   @media (pointer: coarse) { .reel-full, .reel-cerrar { min-height: 46px; padding: 8px 16px; } }
 
   /* Mientras hay algo abierto, la página de atrás no se mueve. */
@@ -2352,7 +2381,7 @@ class Component extends DCLogic {
      Vive fuera del bloque <x-dc>, como todo lo demás.                        -->
 <style>
   .frx { position: absolute; inset: 0; z-index: 1; display: block;
-    width: 100%; height: 100%; background: #f4f7fc; }
+    width: 100%; height: 100%; background: var(--papel, #f4f7fc); }
   /* La lámina original se queda debajo: si el canvas no pinta, la tarjeta se
      ve exactamente como antes en vez de quedarse en blanco. */
   .frx-rotulo { position: absolute; left: 10px; bottom: 9px; z-index: 3;
@@ -2366,7 +2395,23 @@ class Component extends DCLogic {
   'use strict';
 
   var PALABRAS = ['fracture', 'adrift', 'eigenlicht', 'develop'];
-  var PAPEL = '#f4f7fc', TINTA = '#08123a', AZUL = '#0102ec', MEDIO = '#9db8dc';
+  /* Los colores del canvas leen las MISMAS fichas que el CSS. Sin esto el
+     agente cambia la piel del sitio y la tarjeta de fracture se queda con la
+     paleta vieja, que es justo donde más se notaría el remiendo. */
+  function ficha(nombre, respaldo) {
+    var v = getComputedStyle(document.documentElement)
+              .getPropertyValue('--' + nombre).trim();
+    return v || respaldo;
+  }
+  var PAPEL, TINTA, AZUL, MEDIO;
+  function leerFichas() {
+    PAPEL = ficha('papel', '#f4f7fc');
+    TINTA = ficha('tinta', '#08123a');
+    AZUL  = ficha('senal', '#0102ec');
+    MEDIO = ficha('tenue', '#9db8dc');
+  }
+  leerFichas();
+  document.addEventListener('nerv:fichas', leerFichas);
 
   var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -2694,5 +2739,6 @@ class Component extends DCLogic {
   <a href="/contact">contacto</a> y, para agentes,
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
+<script type="module" src="./piel.js"></script>
 </body>
 </html>
