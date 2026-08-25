@@ -71,6 +71,14 @@ export function ponerPiel(propuesta) {
   for (const [nombre, valor] of Object.entries(fichas)) {
     raiz.style.setProperty('--' + nombre, valor);
   }
+  /* Muchos micro-textos del sitio usan la tinta CON alpha:
+     rgba(var(--tinta-rgb), .5). El triplete se publica junto con la ficha
+     para que esas medias tintas tambien volteen en modo oscuro. */
+  if (fichas['tinta']) {
+    const nT = parseInt(fichas['tinta'].slice(1), 16);
+    raiz.style.setProperty('--tinta-rgb',
+      ((nT >> 16) & 255) + ', ' + ((nT >> 8) & 255) + ', ' + (nT & 255));
+  }
   if (Object.keys(fichas).length) {
     // El canvas de fracture escucha esto para releer la paleta: sin el aviso,
     // el sitio cambia de piel y la tarjeta se queda con la de antes.
@@ -85,6 +93,7 @@ export function quitarPiel() {
   for (const nombre of Object.keys(FICHAS)) {
     raiz.style.removeProperty('--' + nombre);
   }
+  raiz.style.removeProperty('--tinta-rgb');
   document.dispatchEvent(new CustomEvent('nerv:fichas', { detail: null }));
 }
 

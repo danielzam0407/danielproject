@@ -176,6 +176,10 @@ html::after {
 @media (prefers-reduced-motion: reduce) {
   html::after { animation: none; }
 }
+/* Algunos elementos no declaran color y heredan el negro por defecto del
+   navegador — invisibles sobre el modo oscuro. El color base del documento
+   tambien es una ficha. */
+body { color: var(--tinta, #08123a); }
 /* La transición es lo que hace que el cambio se lea como intención y no
    como un parpadeo. Se apaga para quien pidió menos movimiento. */
 body, body * { transition: background-color .55s ease, color .55s ease,
@@ -200,23 +204,23 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     section[id] { scroll-margin-top: 54px; }
 
     /* ---- telemetry / type devices ---------------------------------- */
-    .telemetry { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; color: rgba(8,20,80,.5); white-space: pre; overflow: hidden; }
+    .telemetry { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; color: rgba(var(--tinta-rgb, 8,20,80),.5); white-space: pre; overflow: hidden; }
     .telemetry.inv { color: rgba(200,220,250,.55); }
-    .microtext { font-family: 'IBM Plex Mono', monospace; font-size: 8px; line-height: 1.8; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(8,18,58,.35); word-break: break-all; }
+    .microtext { font-family: 'IBM Plex Mono', monospace; font-size: 8px; line-height: 1.8; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(var(--tinta-rgb, 8,18,58),.35); word-break: break-all; }
     .microtext.inv { color: rgba(200,220,250,.3); }
     .microtext.kana { word-break: normal; letter-spacing: 3px; text-transform: none; }
     .terminal-log { font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 2.1; letter-spacing: .5px; color: var(--tinta, #08123a); }
     .terminal-log div::before { content: '> '; color: var(--senal, #0102ec); }
     .terminal-log.inv { color: rgba(220,235,255,.85); }
-    .ghost-type { position: absolute; font-family: 'Space Grotesk', sans-serif; font-weight: 700; line-height: .8; white-space: nowrap; pointer-events: none; user-select: none; color: rgba(8,18,58,.05); }
-    .ghost-type.stroke { color: transparent; -webkit-text-stroke: 1.5px rgba(8,18,58,.08); }
+    .ghost-type { position: absolute; font-family: 'Space Grotesk', sans-serif; font-weight: 700; line-height: .8; white-space: nowrap; pointer-events: none; user-select: none; color: rgba(var(--tinta-rgb, 8,18,58),.05); }
+    .ghost-type.stroke { color: transparent; -webkit-text-stroke: 1.5px rgba(var(--tinta-rgb, 8,18,58),.08); }
     .ghost-type.inv { color: rgba(220,235,255,.05); -webkit-text-stroke: 0; }
     /* width-axis type — the tDR condensed/expanded contrast */
     .narrow { font-family: 'Archivo', 'Space Grotesk', sans-serif; font-stretch: 62%; }
     .wide { font-family: 'Archivo', 'Space Grotesk', sans-serif; font-stretch: 125%; }
     /* justified micro-paragraph, tracking wide open ("Eigenlicht" caption block) */
     .justified { font-family: 'IBM Plex Mono', monospace; font-size: 9px; line-height: 2.2; letter-spacing: 2.5px;
-      text-transform: uppercase; text-align: justify; text-align-last: justify; color: rgba(8,18,58,.5); }
+      text-transform: uppercase; text-align: justify; text-align-last: justify; color: rgba(var(--tinta-rgb, 8,18,58),.5); }
     .justified.inv { color: rgba(200,220,250,.45); }
 
     /* ---- registration / framing ------------------------------------ */
@@ -231,8 +235,8 @@ body, body * { transition: background-color .55s ease, color .55s ease,
         linear-gradient(currentColor,currentColor) left bottom / 1.5px 14px no-repeat,
         linear-gradient(currentColor,currentColor) right bottom / 14px 1.5px no-repeat,
         linear-gradient(currentColor,currentColor) right bottom / 1.5px 14px no-repeat; }
-    .crosshair { position: relative; border: 1px solid rgba(8,18,58,.35); border-radius: 50%; }
-    .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(8,18,58,.35); }
+    .crosshair { position: relative; border: 1px solid rgba(var(--tinta-rgb, 8,18,58),.35); border-radius: 50%; }
+    .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(var(--tinta-rgb, 8,18,58),.35); }
     .crosshair::before { left: -12%; right: -12%; top: 50%; height: 1px; }
     .crosshair::after { top: -12%; bottom: -12%; left: 50%; width: 1px; }
     .crosshair.inv { border-color: rgba(200,220,250,.4); }
@@ -250,28 +254,28 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     .kagi::before { left: 0; top: 0; border-width: 1px 0 0 1px; }
     .kagi::after { right: 0; bottom: 0; border-width: 0 1px 1px 0; }
     /* numbered ruler strip (ALTR reference) */
-    .ruler { position: relative; height: 20px; color: rgba(8,18,58,.4);
+    .ruler { position: relative; height: 20px; color: rgba(var(--tinta-rgb, 8,18,58),.4);
       background-image: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 13px), repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 65px);
       background-size: 100% 7px, 100% 15px; background-position: 0 100%, 0 100%; background-repeat: repeat-x; }
     .ruler.inv { color: rgba(200,220,250,.4); }
-    .scale-row { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; color: rgba(8,18,58,.42); margin-top: 5px; }
+    .scale-row { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; color: rgba(var(--tinta-rgb, 8,18,58),.42); margin-top: 5px; }
     .scale-row.inv { color: rgba(200,220,250,.45); }
 
     /* ---- surfaces --------------------------------------------------- */
-    .scanline-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; background: repeating-linear-gradient(0deg, rgba(8,18,58,.045) 0 1px, transparent 1px 3px); }
+    .scanline-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; background: repeating-linear-gradient(0deg, rgba(var(--tinta-rgb, 8,18,58),.045) 0 1px, transparent 1px 3px); }
     .scanline-overlay::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 90px; background: linear-gradient(180deg, transparent, rgba(1,2,236,.06), transparent); animation: om-scan 7s linear infinite; will-change: transform; }
     @keyframes om-scan { from { transform: translateY(-90px); } to { transform: translateY(1300px); } }
     .halftone-overlay { position: absolute; inset: 0; pointer-events: none;
-      background-image: radial-gradient(circle at center, rgba(8,18,58,.5) 1px, transparent 1.4px);
+      background-image: radial-gradient(circle at center, rgba(var(--tinta-rgb, 8,18,58),.5) 1px, transparent 1.4px);
       background-size: 6px 6px;
       -webkit-mask-image: linear-gradient(155deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.18) 38%, transparent 62%);
       mask-image: linear-gradient(155deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.18) 38%, transparent 62%); }
     .halftone-overlay.inv { background-image: radial-gradient(circle at center, rgba(200,225,255,.55) 1px, transparent 1.4px); }
     .grid-bg { position: absolute; inset: 0; pointer-events: none;
-      background-image: linear-gradient(rgba(8,18,58,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(8,18,58,.055) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(var(--tinta-rgb, 8,18,58),.055) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--tinta-rgb, 8,18,58),.055) 1px, transparent 1px);
       background-size: 46px 46px, 46px 46px; }
     .grid-bg.inv { background-image: linear-gradient(rgba(180,205,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(180,205,255,.07) 1px, transparent 1px); }
-    .stripes-slot { background: repeating-linear-gradient(45deg, rgba(8,18,58,.08) 0 10px, transparent 10px 20px), linear-gradient(120deg, #e2eaf6, #c9d8ee); display: flex; align-items: center; justify-content: center; }
+    .stripes-slot { background: repeating-linear-gradient(45deg, rgba(var(--tinta-rgb, 8,18,58),.08) 0 10px, transparent 10px 20px), linear-gradient(120deg, #e2eaf6, #c9d8ee); display: flex; align-items: center; justify-content: center; }
 
     /* ---- baked canvas plates ---------------------------------------- */
     .plate { position: absolute; inset: 0; overflow: hidden; }
@@ -290,7 +294,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     .matrix-block { width: 74px; height: 74px; flex-shrink: 0; image-rendering: pixelated; display: block; }
 
     /* ---- augmented-ui ----------------------------------------------- */
-    .aug-card { --aug-tl: 18px; --aug-br: 18px; --aug-border-all: 1px; --aug-border-bg: rgba(8,18,58,.3); }
+    .aug-card { --aug-tl: 18px; --aug-br: 18px; --aug-border-all: 1px; --aug-border-bg: rgba(var(--tinta-rgb, 8,18,58),.3); }
     .aug-chip { --aug-tl: 7px; --aug-br: 7px; }
     .aug-inv { --aug-border-bg: rgba(200,220,250,.45); }
 
@@ -339,14 +343,14 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     .fui-cur.on { opacity: 1; }
     .fui-cur-core, .fui-cur-lag { position: absolute; left: 0; top: 0; will-change: transform; }
     .fui-cur-ring { position: absolute; left: -12px; top: -12px; width: 22px; height: 22px;
-      border: 1px solid rgba(8,18,58,.55); border-radius: 50%; transition: transform .12s; }
+      border: 1px solid rgba(var(--tinta-rgb, 8,18,58),.55); border-radius: 50%; transition: transform .12s; }
     .fui-cur-dot { position: absolute; left: -1.5px; top: -1.5px; width: 3px; height: 3px; background: var(--senal, #0102ec); }
-    .fui-cur-core i { position: absolute; background: rgba(8,18,58,.6); }
+    .fui-cur-core i { position: absolute; background: rgba(var(--tinta-rgb, 8,18,58),.6); }
     .fui-cur-core i.n { left: -0.5px; top: -19px; width: 1px; height: 6px; }
     .fui-cur-core i.s { left: -0.5px; top: 13px; width: 1px; height: 6px; }
     .fui-cur-core i.w { left: -19px; top: -0.5px; width: 6px; height: 1px; }
     .fui-cur-core i.e { left: 13px; top: -0.5px; width: 6px; height: 1px; }
-    .fui-cur-lag { left: -22px; top: -22px; width: 44px; height: 44px; color: rgba(8,18,58,.45);
+    .fui-cur-lag { left: -22px; top: -22px; width: 44px; height: 44px; color: rgba(var(--tinta-rgb, 8,18,58),.45);
       background:
         linear-gradient(currentColor,currentColor) left top / 11px 1.5px no-repeat,
         linear-gradient(currentColor,currentColor) left top / 1.5px 11px no-repeat,
@@ -358,7 +362,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
         linear-gradient(currentColor,currentColor) right bottom / 1.5px 11px no-repeat; }
     .fui-cur-lab { position: absolute; left: 30px; top: 15px; white-space: nowrap;
       font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
-      text-transform: uppercase; color: rgba(8,18,58,.62); }
+      text-transform: uppercase; color: rgba(var(--tinta-rgb, 8,18,58),.62); }
     .fui-cur.lock .fui-cur-ring { border-color: var(--senal, #0102ec); }
     .fui-cur.lock .fui-cur-lag { color: var(--senal, #0102ec); }
     .fui-cur.lock .fui-cur-lab { color: var(--senal, #0102ec); }
@@ -373,7 +377,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     .fui-cur.inv.lock .fui-cur-lab { color: var(--senal-suave, #7f9bff); }
 
     /* ---- layout containers (responsive) ------------------------------ */
-    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; gap: 34px; height: 54px; padding: 0 34px; background: var(--velo-papel, rgba(244,247,252,.94)); border-bottom: 1px solid rgba(8,18,58,.18); }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; gap: 34px; height: 54px; padding: 0 34px; background: var(--velo-papel, rgba(244,247,252,.94)); border-bottom: 1px solid rgba(var(--tinta-rgb, 8,18,58),.18); }
     .topnav { display: flex; gap: 30px; margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 2px; }
     .statusbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; height: 32px; display: flex; align-items: center; gap: 20px; padding: 0 34px; background: var(--fondo-hondo, #03060e); color: var(--tenue, #9db8dc); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 34px; }
@@ -381,7 +385,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     .grid-side > *, .work-head > * { min-width: 0; }
     .work-head { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 40px; align-items: start; }
     .hairline-row { display: flex; align-items: center; gap: 6px; }
-    .idx-row { display: flex; gap: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: rgba(8,18,58,.5); border-bottom: 1px solid rgba(8,18,58,.13); padding: 5px 0; }
+    .idx-row { display: flex; gap: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: rgba(var(--tinta-rgb, 8,18,58),.5); border-bottom: 1px solid rgba(var(--tinta-rgb, 8,18,58),.13); padding: 5px 0; }
 
     @media (max-width: 1080px) {
       .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -449,11 +453,11 @@ body, body * { transition: background-color .55s ease, color .55s ease,
   <header class="topbar">
     <a href="#top" class="glitch-hover" data-cur="return / top" style="font-weight: 700; font-size: 17px; letter-spacing: 1px; color: var(--tinta, #08123a); white-space: nowrap;">nerv.center<span style="color: var(--senal, #0102ec);">_</span></a>
     <span class="microtext hide-sm" style="width: 120px;">nerv.center // v3.0 // do not fold</span>
-    <div class="barcode hide-md" style="width: 64px; height: 16px; color: rgba(8,18,58,.7);"></div>
+    <div class="barcode hide-md" style="width: 64px; height: 16px; color: rgba(var(--tinta-rgb, 8,18,58),.7);"></div>
     <nav class="topnav">
-      <a href="#work" class="glitch-hover" data-cur="goto 01 / work"><span style="color: rgba(8,18,58,.45);">01</span> work</a>
-      <a href="#about" class="glitch-hover" data-cur="goto 02 / about"><span style="color: rgba(8,18,58,.45);">02</span> about</a>
-      <a href="#contact" class="glitch-hover" data-cur="goto 03 / contact"><span style="color: rgba(8,18,58,.45);">03</span> contact</a>
+      <a href="#work" class="glitch-hover" data-cur="goto 01 / work"><span style="color: rgba(var(--tinta-rgb, 8,18,58),.45);">01</span> work</a>
+      <a href="#about" class="glitch-hover" data-cur="goto 02 / about"><span style="color: rgba(var(--tinta-rgb, 8,18,58),.45);">02</span> about</a>
+      <a href="#contact" class="glitch-hover" data-cur="goto 03 / contact"><span style="color: rgba(var(--tinta-rgb, 8,18,58),.45);">03</span> contact</a>
     </nav>
     <div class="telemetry hide-sm">{{ clock }}</div>
   </header>
@@ -473,7 +477,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     </sc-if>
     <div style="position: absolute; left: -12%; top: -25%; width: 60%; height: 150%; background: radial-gradient(ellipse 42% 50% at 30% 42%, rgba(8,30,120,.32), transparent 70%), radial-gradient(ellipse 60% 38% at 18% 62%, rgba(60,110,200,.2), transparent 70%);"></div>
     <div class="hide-sm" style="position: absolute; left: -4%; top: 30%; width: 40%; height: 5px; background: linear-gradient(90deg, rgba(12,40,140,.45), transparent); transform: rotate(-14deg);"></div>
-    <div class="hide-sm" style="position: absolute; left: 2%; top: 62%; width: 30%; height: 2px; background: linear-gradient(90deg, rgba(8,18,58,.5), transparent); transform: rotate(-24deg);"></div>
+    <div class="hide-sm" style="position: absolute; left: 2%; top: 62%; width: 30%; height: 2px; background: linear-gradient(90deg, rgba(var(--tinta-rgb, 8,18,58),.5), transparent); transform: rotate(-24deg);"></div>
     <div class="ghost-type narrow" style="left: -20px; bottom: -34px; font-size: clamp(150px, 34vw, 380px); letter-spacing: 2px; font-weight: 900;">{{ ghostWord }}</div>
     <div class="telemetry hide-sm" style="position: absolute; top: 66px; left: clamp(20px, 5vw, 70px); right: clamp(20px, 5vw, 70px); z-index: 3;">{{ telemA }}</div>
     <div class="microtext hide-md" style="position: absolute; right: 26px; top: 120px; bottom: 120px; writing-mode: vertical-rl; width: 14px; overflow: hidden; white-space: nowrap; z-index: 3; color: rgba(240,246,255,.8);">develop:mental 29087 · re:assurance · source overflowing · 003:08:22 · nu.nerv · don't look for me. this time.</div>
@@ -484,7 +488,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
         <div>state: floating</div>
       </div>
       <h1 class="glitch-hover rgb-split" style="margin: 0; font-size: clamp(46px, 10.5vw, 116px); font-weight: 700; letter-spacing: -0.035em; line-height: .92; transform: skewX(-6deg);">nerv<span style="color: var(--senal, #0102ec);">.</span>center</h1>
-      <div class="hatch draw-x" style="height: 13px; margin-top: 18px; max-width: 420px; color: rgba(8,18,58,.75);"></div>
+      <div class="hatch draw-x" style="height: 13px; margin-top: 18px; max-width: 420px; color: rgba(var(--tinta-rgb, 8,18,58),.75);"></div>
       <div class="aug-chip" data-augmented-ui="tl-clip br-clip" style="display: inline-flex; align-items: center; gap: 14px; margin-top: 20px; background: var(--tinta, #08123a); color: var(--papel, #f4f7fc); font-family: 'IBM Plex Mono', monospace; font-size: clamp(10px, 2.2vw, 13px); letter-spacing: 3px; padding: 8px 18px;">status: adrift // motion — web — print<span class="blink" style="display: inline-block; width: 8px; height: 15px; background: var(--papel-alto, #e6effb);"></span></div>
       <p class="hp-does" style="margin: 24px 0 0; max-width: 560px; border-left: 3px solid var(--senal, #0102ec); padding: 3px 0 3px 15px; font-size: clamp(15px, 3.3vw, 19px); line-height: 1.5; color: var(--tinta, #08123a);">Custom sites, designed from scratch — no templates. 3D when the piece asks for it, and a chat agent built in: <b style="font-weight: 600; border-bottom: 2px solid var(--senal, #0102ec);">the one you are using right now</b>.</p>
       <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 34px; max-width: 520px;">
@@ -496,29 +500,29 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     </div>
     <div class="reg-mark hide-sm" style="position: absolute; left: 46%; top: 16%; z-index: 3;"></div>
     <div class="hairline-row" style="position: absolute; left: 0; right: 0; bottom: 130px; padding: 0 clamp(16px, 3vw, 40px); z-index: 3;">
-      <div class="draw-x" style="height: 2px; flex: 1; background: rgba(8,18,58,.45);"></div>
-      <div class="draw-x d1" style="width: 34px; height: 8px; background: rgba(8,18,58,.55);"></div>
+      <div class="draw-x" style="height: 2px; flex: 1; background: rgba(var(--tinta-rgb, 8,18,58),.45);"></div>
+      <div class="draw-x d1" style="width: 34px; height: 8px; background: rgba(var(--tinta-rgb, 8,18,58),.55);"></div>
       <div class="draw-x d1" style="width: 8px; height: 8px; background: var(--senal, #0102ec);"></div>
-      <div class="draw-x d2" style="width: 90px; height: 4px; background: rgba(8,18,58,.4);"></div>
-      <div class="draw-x d2 hide-xs" style="width: 14px; height: 14px; border: 1.5px solid rgba(8,18,58,.55);"></div>
-      <div class="draw-x d3 hide-sm" style="height: 1px; width: 120px; background: rgba(8,18,58,.4);"></div>
-      <div class="draw-x d3 hide-xs" style="width: 60px; height: 10px; background: repeating-linear-gradient(90deg, rgba(8,18,58,.5) 0 4px, transparent 4px 8px);"></div>
-      <div class="draw-x d4" style="height: 2px; flex: 2; background: rgba(8,18,58,.45);"></div>
-      <div class="draw-x d5" style="width: 22px; height: 6px; background: rgba(8,18,58,.5);"></div>
+      <div class="draw-x d2" style="width: 90px; height: 4px; background: rgba(var(--tinta-rgb, 8,18,58),.4);"></div>
+      <div class="draw-x d2 hide-xs" style="width: 14px; height: 14px; border: 1.5px solid rgba(var(--tinta-rgb, 8,18,58),.55);"></div>
+      <div class="draw-x d3 hide-sm" style="height: 1px; width: 120px; background: rgba(var(--tinta-rgb, 8,18,58),.4);"></div>
+      <div class="draw-x d3 hide-xs" style="width: 60px; height: 10px; background: repeating-linear-gradient(90deg, rgba(var(--tinta-rgb, 8,18,58),.5) 0 4px, transparent 4px 8px);"></div>
+      <div class="draw-x d4" style="height: 2px; flex: 2; background: rgba(var(--tinta-rgb, 8,18,58),.45);"></div>
+      <div class="draw-x d5" style="width: 22px; height: 6px; background: rgba(var(--tinta-rgb, 8,18,58),.5);"></div>
     </div>
     <div class="telemetry hide-sm" style="position: absolute; bottom: 96px; left: clamp(20px, 5vw, 70px); z-index: 3;">{{ telemB }}</div>
-    <div class="barcode" style="position: absolute; bottom: 60px; left: clamp(20px, 5vw, 70px); width: 140px; height: 22px; color: rgba(8,18,58,.75); z-index: 3;"></div>
+    <div class="barcode" style="position: absolute; bottom: 60px; left: clamp(20px, 5vw, 70px); width: 140px; height: 22px; color: rgba(var(--tinta-rgb, 8,18,58),.75); z-index: 3;"></div>
     <span class="kagi hide-md" style="position: absolute; right: 58px; bottom: 60px; z-index: 3; color: rgba(240,246,255,.85);">eigenlicht / 16161dff</span>
     <sc-if value="{{ halftone }}" hint-placeholder-val="{{ true }}"><div class="halftone-overlay"></div></sc-if>
     <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}"><div class="scanline-overlay"></div></sc-if>
   </section>
 
-  <div class="ticker-wrap" style="position: relative; background: var(--tinta, #08123a); color: var(--tenue, #9db8dc); border-top: 1px solid rgba(8,18,58,.3); border-bottom: 1px solid rgba(8,18,58,.3); height: 44px; display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
+  <div class="ticker-wrap" style="position: relative; background: var(--tinta, #08123a); color: var(--tenue, #9db8dc); border-top: 1px solid rgba(var(--tinta-rgb, 8,18,58),.3); border-bottom: 1px solid rgba(var(--tinta-rgb, 8,18,58),.3); height: 44px; display: flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
     <span style="flex-shrink: 0; z-index: 2; background: var(--senal, #0102ec); color: #fff; padding: 4px 14px; margin-right: 18px; font-size: 10px; letter-spacing: 2px;">fracture mode</span>
     <div class="ticker"><span>{{ tickerLine }}</span><span>{{ tickerLine }}</span></div>
   </div>
 
-  <section id="work" data-screen-label="work" style="position: relative; overflow: hidden; padding: clamp(72px, 9vw, 100px) clamp(20px, 5vw, 70px) clamp(90px, 12vw, 140px); border-top: 1px solid rgba(8,18,58,.2);">
+  <section id="work" data-screen-label="work" style="position: relative; overflow: hidden; padding: clamp(72px, 9vw, 100px) clamp(20px, 5vw, 70px) clamp(90px, 12vw, 140px); border-top: 1px solid rgba(var(--tinta-rgb, 8,18,58),.2);">
     <div class="grid-bg"></div>
     <div class="ghost-type stroke narrow" style="right: -30px; top: 20px; font-size: clamp(110px, 26vw, 300px); font-weight: 900;">WORK</div>
     <div class="microtext kana hide-md" style="position: absolute; right: 22px; top: 250px; height: 340px; writing-mode: vertical-rl; overflow: hidden; white-space: nowrap;">改竄 ／ ダニエル・プロジェクト ／ 個人ファイル ／ 漂流中 ／ 重力は任意 ／ 無限に青い</div>
@@ -543,15 +547,15 @@ body, body * { transition: background-color .55s ease, color .55s ease,
       </div>
     </div>
 
-    <div class="draw-w" style="margin-top: 26px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(8,18,58,.28);"></div></div>
+    <div class="draw-w" style="margin-top: 26px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(var(--tinta-rgb, 8,18,58),.28);"></div></div>
     <div class="grid-3" style="margin-top: 40px; position: relative; z-index: 1;">
       <sc-for list="{{ projects }}" as="item" hint-placeholder-count="3">
         <div class="corner-brackets glitch-hover aug-card" data-augmented-ui="tl-clip br-clip border" data-cur="{{ item.cur }}" onMouseEnter="{{ item.onEnter }}" onMouseLeave="{{ leave }}" style="position: relative; background: var(--carta, #fff); cursor: pointer; color: var(--tinta, #08123a);">
-          <div class="stripes-slot" style="position: relative; height: 210px; border-bottom: 1px solid rgba(8,18,58,.15); overflow: hidden;">
+          <div class="stripes-slot" style="position: relative; height: 210px; border-bottom: 1px solid rgba(var(--tinta-rgb, 8,18,58),.15); overflow: hidden;">
             <sc-if value="{{ item.plate }}" hint-placeholder-val="{{ true }}">
               <div class="plate"><img src="{{ item.plate }}" alt=""></div>
             </sc-if>
-            <span class="kagi" style="position: relative; z-index: 2; background: var(--velo-papel-2, rgba(244,247,252,.88)); color: rgba(8,18,58,.75);">{{ item.slot }}</span>
+            <span class="kagi" style="position: relative; z-index: 2; background: var(--velo-papel-2, rgba(244,247,252,.88)); color: rgba(var(--tinta-rgb, 8,18,58),.75);">{{ item.slot }}</span>
           </div>
           <sc-if value="{{ item.url }}" hint-placeholder-val="{{ true }}">
             <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ item.aria }}"
@@ -561,11 +565,11 @@ body, body * { transition: background-color .55s ease, color .55s ease,
             <div class="ghost-type narrow" style="right: 4px; bottom: -12px; font-size: 132px; font-weight: 900;">{{ item.id }}</div>
             <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--senal, #0102ec); margin-bottom: 10px;">{{ item.id }} // {{ item.tag }}</div>
             <div style="font-size: 27px; font-weight: 700; letter-spacing: -0.5px;">{{ item.name }}</div>
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(8,18,58,.6); margin-top: 8px;">{{ item.desc }}</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: rgba(var(--tinta-rgb, 8,18,58),.6); margin-top: 8px;">{{ item.desc }}</div>
             <div class="microtext" style="margin-top: 16px;">{{ item.micro }}</div>
             <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
-              <div class="barcode" style="flex: 1; height: 14px; color: rgba(8,18,58,.7);"></div>
-              <div class="hatch" style="width: 46px; height: 12px; color: rgba(8,18,58,.6);"></div>
+              <div class="barcode" style="flex: 1; height: 14px; color: rgba(var(--tinta-rgb, 8,18,58),.7);"></div>
+              <div class="hatch" style="width: 46px; height: 12px; color: rgba(var(--tinta-rgb, 8,18,58),.6);"></div>
             </div>
           </div>
         </div>
@@ -576,14 +580,14 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}"><div class="scanline-overlay"></div></sc-if>
   </section>
 
-  <section id="about" data-screen-label="about" style="position: relative; overflow: hidden; padding: clamp(80px, 10vw, 110px) clamp(20px, 5vw, 70px) clamp(86px, 11vw, 130px); background: var(--papel-suave, #e9eff8); border-top: 1px solid rgba(8,18,58,.2);">
+  <section id="about" data-screen-label="about" style="position: relative; overflow: hidden; padding: clamp(80px, 10vw, 110px) clamp(20px, 5vw, 70px) clamp(86px, 11vw, 130px); background: var(--papel-suave, #e9eff8); border-top: 1px solid rgba(var(--tinta-rgb, 8,18,58),.2);">
     <div class="grid-bg"></div>
     <div class="ghost-type narrow" style="left: 30px; bottom: -66px; font-size: clamp(190px, 42vw, 460px); font-weight: 900;">02</div>
     <div style="display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap; position: relative; z-index: 1;">
       <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 3px; color: var(--senal, #0102ec);">[ 02 / about ]</span>
       <h2 class="rgb-split" style="margin: 0; font-size: clamp(28px, 4.6vw, 44px); font-weight: 700; letter-spacing: -1px;">unit data</h2>
     </div>
-    <div class="draw-w" style="margin-top: 22px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(8,18,58,.28);"></div></div>
+    <div class="draw-w" style="margin-top: 22px; position: relative; z-index: 1;"><div class="draw-x" style="height: 1px; background: rgba(var(--tinta-rgb, 8,18,58),.28);"></div></div>
     <div class="grid-side" style="margin-top: 40px; position: relative; z-index: 1;">
       <div>
         <div class="terminal-log boot corner-brackets aug-card" data-augmented-ui="tl-clip br-clip border" style="padding: 24px 26px; background: var(--velo-carta, rgba(255,255,255,.6));">
@@ -597,8 +601,8 @@ body, body * { transition: background-color .55s ease, color .55s ease,
         <div style="display: flex; align-items: center; gap: 24px; margin-top: 46px;">
           <div class="crosshair" style="width: 90px; height: 90px; flex-shrink: 0;"></div>
           <div style="flex: 1; min-width: 0;">
-            <div class="barcode" style="height: 26px; color: rgba(8,18,58,.65);"></div>
-            <div class="hatch" style="height: 11px; margin-top: 8px; color: rgba(8,18,58,.5);"></div>
+            <div class="barcode" style="height: 26px; color: rgba(var(--tinta-rgb, 8,18,58),.65);"></div>
+            <div class="hatch" style="height: 11px; margin-top: 8px; color: rgba(var(--tinta-rgb, 8,18,58),.5);"></div>
           </div>
         </div>
       </div>
@@ -1632,13 +1636,13 @@ class Component extends DCLogic {
      1.4 s se muestra todo de golpe. Es el mismo patrón que ya usa .draw-x.  -->
 <style>
   /* ── Interruptor de idioma ───────────────────────────────────────────── */
-  .lang-sw { display: inline-flex; align-items: stretch; border: 1px solid rgba(8,18,58,.5);
+  .lang-sw { display: inline-flex; align-items: stretch; border: 1px solid rgba(var(--tinta-rgb, 8,18,58),.5);
     font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px;
     text-transform: uppercase; flex-shrink: 0; }
   .lang-sw button { appearance: none; background: transparent; border: 0; cursor: pointer;
-    color: rgba(8,18,58,.55); font: inherit; letter-spacing: inherit; padding: 4px 9px;
+    color: rgba(var(--tinta-rgb, 8,18,58),.55); font: inherit; letter-spacing: inherit; padding: 4px 9px;
     line-height: 1.4; transition: background .14s, color .14s; }
-  .lang-sw button + button { border-left: 1px solid rgba(8,18,58,.28); }
+  .lang-sw button + button { border-left: 1px solid rgba(var(--tinta-rgb, 8,18,58),.28); }
   .lang-sw button:hover { color: var(--tinta, #08123a); }
   .lang-sw button[aria-pressed="true"] { background: var(--tinta, #08123a); color: var(--papel-alto, #e6effb); }
   .lang-sw button:focus-visible { outline: 2px solid var(--senal, #0102ec); outline-offset: 1px; }
@@ -1649,8 +1653,8 @@ class Component extends DCLogic {
      Se muestra sólo el idioma al que cambiarías: un botón, no dos. */
   @media (max-width: 759px) {
     .lang-sw { position: fixed; left: 12px; bottom: 100px; z-index: 61;
-      background: var(--papel, #f4f7fc); border-color: rgba(8,18,58,.6);
-      box-shadow: 3px 3px 0 rgba(8,18,58,.18); }
+      background: var(--papel, #f4f7fc); border-color: rgba(var(--tinta-rgb, 8,18,58),.6);
+      box-shadow: 3px 3px 0 rgba(var(--tinta-rgb, 8,18,58),.18); }
     .lang-sw button[aria-pressed="true"] { display: none; }
     .lang-sw button + button { border-left: 0; }
     /* 46 y no 44: el borde de 1px se come el resto si la caja no es
@@ -1666,7 +1670,7 @@ class Component extends DCLogic {
   /* ── Riel de avance de lectura ───────────────────────────────────────── */
   /* Marca cuánto llevas del documento. Un filo duro, no una barra redondeada. */
   .rail { position: fixed; left: 0; top: 0; height: 3px; width: 100%; z-index: 60;
-    background: rgba(8,18,58,.12); pointer-events: none; }
+    background: rgba(var(--tinta-rgb, 8,18,58),.12); pointer-events: none; }
   .rail > i { display: block; height: 100%; width: 100%; background: var(--senal, #0102ec);
     transform: scaleX(0); transform-origin: left center; }
   .rail > u { position: absolute; top: 0; height: 3px; width: 26px; background: var(--tinta, #08123a);
@@ -2096,7 +2100,7 @@ class Component extends DCLogic {
     transition: background .16s, color .16s, box-shadow .16s, transform .16s; }
   .reel-go svg { display: block; width: 8px; height: 9px; fill: var(--senal, #0102ec);
     transition: fill .16s; }
-  .reel-go:hover { background: var(--senal, #0102ec); box-shadow: 5px 5px 0 rgba(8,18,58,.28);
+  .reel-go:hover { background: var(--senal, #0102ec); box-shadow: 5px 5px 0 rgba(var(--tinta-rgb, 8,18,58),.28);
     transform: translateX(-50%) translateY(-1px); }
   .reel-go:hover svg { fill: #fff; }
   .reel-go:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -2147,7 +2151,7 @@ class Component extends DCLogic {
   /* Rayas sobre el video: lo amarra al resto de la página. */
   .reel-escenario::after { content: ''; position: absolute; inset: 0; z-index: 2;
     pointer-events: none;
-    background: repeating-linear-gradient(180deg, rgba(8,18,58,.14) 0 1px, transparent 1px 3px); }
+    background: repeating-linear-gradient(180deg, rgba(var(--tinta-rgb, 8,18,58),.14) 0 1px, transparent 1px 3px); }
 
   /* ── La regleta de lectura, ya en grande ──────────────────────────────── */
   .reel-hud { display: flex; align-items: center; gap: 10px;
@@ -2479,7 +2483,7 @@ class Component extends DCLogic {
      ve exactamente como antes en vez de quedarse en blanco. */
   .frx-rotulo { position: absolute; left: 10px; bottom: 9px; z-index: 3;
     font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
-    text-transform: uppercase; color: rgba(8,18,58,.72); pointer-events: none;
+    text-transform: uppercase; color: rgba(var(--tinta-rgb, 8,18,58),.72); pointer-events: none;
     background: rgba(244,247,252,.86); padding: 3px 6px; }
 </style>
 
@@ -2581,7 +2585,7 @@ class Component extends DCLogic {
       ctx.lineTo(pieza.hasta, Math.round(pieza.y) + 0.5);
       ctx.stroke();
     } else if (pieza.tipo === 'trama') {
-      ctx.fillStyle = 'rgba(8,18,58,.45)';
+      ctx.fillStyle = 'rgba(var(--tinta-rgb, 8,18,58),.45)';
       for (var y = pieza.y; y < pieza.y + pieza.alto; y += pieza.paso) {
         for (var x = pieza.x; x < pieza.x + pieza.w; x += pieza.paso) {
           ctx.fillRect(x, y, 1.4, 1.4);
@@ -2650,7 +2654,7 @@ class Component extends DCLogic {
       ctx.restore();
 
       // marco de registro, para amarrarlo a la estética de la página
-      ctx.strokeStyle = 'rgba(8,18,58,.28)';
+      ctx.strokeStyle = 'rgba(var(--tinta-rgb, 8,18,58),.28)';
       ctx.lineWidth = 1;
       ctx.strokeRect(6.5, 6.5, w - 13, h - 13);
     }
@@ -2832,6 +2836,6 @@ class Component extends DCLogic {
   <a href="/contact">contacto</a> y, para agentes,
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
-<script type="module" src="./piel.js?v=3"></script>
+<script type="module" src="./piel.js?v=4"></script>
 </body>
 </html>
