@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio · scrubbing con scroll</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root { --tinta:#e8eefc; --papel:#0a0d18; --senal:#6f8cff; --mal:#ff6b6b; --bien:#4ade80; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--papel); color:var(--tinta);
+         font-family:ui-monospace,"Courier New",monospace; line-height:1.5; }
+  header { padding:20px 16px; border-bottom:1px solid rgba(232,238,252,.15); }
+  h1 { font-size:19px; margin:0 0 6px; letter-spacing:-.4px; }
+  .sub { font-size:12px; opacity:.6; margin:0; }
+  main { padding:16px; max-width:760px; margin:0 auto; }
+  .caso { border:1px solid rgba(232,238,252,.16); margin:14px 0; }
+  .caso > h2 { font-size:14px; margin:0; padding:11px 13px; letter-spacing:.5px;
+               background:rgba(232,238,252,.05); }
+  .lienzo { position:relative; background:#000; aspect-ratio:16/9; overflow:hidden; }
+  .lienzo video, .lienzo canvas { width:100%; height:100%; object-fit:cover; display:block; }
+  .datos { padding:11px 13px; font-size:12.5px; }
+  .fila { display:flex; justify-content:space-between; gap:10px; padding:3px 0;
+          border-bottom:1px dotted rgba(232,238,252,.12); }
+  .fila b { font-weight:700; }
+  .bien { color:var(--bien); } .mal { color:var(--mal); }
+  button { font:inherit; background:var(--senal); color:#08123a; border:0;
+           padding:13px 18px; width:100%; font-weight:700; letter-spacing:.5px;
+           cursor:pointer; margin:8px 0 4px; }
+  button[disabled] { opacity:.45; }
+  .nota { font-size:12px; opacity:.62; margin:10px 0 0; }
+  .barra { height:4px; background:rgba(232,238,252,.12); margin-top:8px; }
+  .barra i { display:block; height:100%; background:var(--senal); width:0; transition:width .2s; }
+  #veredicto { margin:18px 0; padding:13px; border:1px solid var(--senal); font-size:13px; }
+  #veredicto:empty { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Scrubbing con scroll — tres t&eacute;cnicas</h1>
+  <p class="sub">&Aacute;brelo en el celular. Toca <b>medir</b> y espera. Los n&uacute;meros salen aqu&iacute; abajo.</p>
+</header>
+
+<main>
+  <button id="correr">medir las tres</button>
+  <div class="barra"><i id="avance"></i></div>
+  <p class="nota">Cada t&eacute;cnica hace 40 saltos de cuadro, como si alguien recorriera la
+  p&aacute;gina con el dedo. Se mide cu&aacute;nto tarda cada salto y cu&aacute;nto se bloquea el hilo
+  principal &mdash; que es lo que se siente como tirones.</p>
+
+  <div id="veredicto"></div>
+
+  <section class="caso">
+    <h2>A &middot; video normal (4 keyframes)</h2>
+    <div class="lienzo"><video id="vA" src="a-original.mp4" muted playsinline preload="auto"></video></div>
+    <div class="datos" id="dA"><div class="fila"><span>estado</span><b>sin medir</b></div></div>
+  </section>
+
+  <section class="caso">
+    <h2>C &middot; video con todos los cuadros keyframe</h2>
+    <div class="lienzo"><video id="vC" src="c-allkey.mp4" muted playsinline preload="auto"></video></div>
+    <div class="datos" id="dC"><div class="fila"><span>estado</span><b>sin medir</b></div></div>
+  </section>
+
+  <section class="caso">
+    <h2>B &middot; secuencia de 60 im&aacute;genes webp</h2>
+    <div class="lienzo"><canvas id="cB"></canvas></div>
+    <div class="datos" id="dB"><div class="fila"><span>estado</span><b>sin medir</b></div></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var PESOS = { A: 1.02, C: 1.96, B: 0.91 };   // MB medidos al generar los archivos
+  var SALTOS = 40;
+
+  /* Bloqueo del hilo principal. Es la medicion que vale: un setTimeout en
+     pestana oculta se throttlea y miente, pero las tareas largas las registra
+     el navegador aparte. Cada una es un tiron que el dedo siente. */
+  var largas = [];
+  try {
+    new PerformanceObserver(function (l) {
+      l.getEntries().forEach(function (e) { largas.push(e.duration); });
+    }).observe({ entryTypes: ['longtask'] });
+  } catch (e) { /* Safari viejo no la tiene; el resto de la medicion sigue */ }
+
+  function pinta(id, filas) {
+    document.getElementById(id).innerHTML = filas.map(function (f) {
+      return '<div class="fila"><span>' + f[0] + '</span><b class="' +
+             (f[2] || '') + '">' + f[1] + '</b></div>';
+    }).join('');
+  }
+
+  function esperarSalto(v) {
+    return new Promise(function (res) {
+      var listo = false;
+      function ok() { if (!listo) { listo = true; v.removeEventListener('seeked', ok); res(); } }
+      v.addEventListener('seeked', ok);
+      setTimeout(ok, 1500);          // si el navegador no avisa, no se cuelga la prueba
+    });
+  }
+
+  function listoMeta(v) {
+    if (v.duration && !isNaN(v.duration)) return Promise.resolve();
+    return new Promise(function (r) {
+      v.addEventListener('loadedmetadata', r, { once: true });
+      setTimeout(r, 5000);
+    });
+  }
+
+  function medirVideo(v) {
+    return listoMeta(v).then(function () {
+      var d = v.duration || 20.5, tiempos = [], i = 0;
+      function paso() {
+        if (i >= SALTOS) return Promise.resolve(tiempos);
+        var t0 = performance.now();
+        v.currentTime = (i / (SALTOS - 1)) * d * 0.98;
+        i++;
+        return esperarSalto(v).then(function () {
+          tiempos.push(performance.now() - t0);
+          return paso();
+        });
+      }
+      return paso();
+    });
+  }
+
+  function medirSecuencia(c) {
+    var n = 60, imgs = [], t0 = performance.now();
+    var cargas = [];
+    for (var k = 0; k < n; k++) {
+      cargas.push((function (i) {
+        return new Promise(function (res) {
+          var im = new Image();
+          im.onload = im.onerror = function () { imgs[i] = im; res(); };
+          im.src = 'seq/' + String(i + 1).padStart(3, '0') + '.webp';
+        });
+      })(k));
+    }
+    return Promise.all(cargas).then(function () {
+      var precarga = performance.now() - t0;
+      var ctx = c.getContext('2d');
+      c.width = (imgs[0] && imgs[0].naturalWidth) || 960;
+      c.height = (imgs[0] && imgs[0].naturalHeight) || 540;
+      var tiempos = [];
+      for (var i = 0; i < SALTOS; i++) {
+        var idx = Math.min(n - 1, Math.round((i / (SALTOS - 1)) * (n - 1)));
+        var a = performance.now();
+        if (imgs[idx]) ctx.drawImage(imgs[idx], 0, 0, c.width, c.height);
+        tiempos.push(performance.now() - a);
+      }
+      return { tiempos: tiempos, precarga: precarga };
+    });
+  }
+
+  function resumen(t) {
+    var o = t.slice().sort(function (a, b) { return a - b; });
+    return { mediana: o[Math.floor(o.length / 2)],
+             p90: o[Math.floor(o.length * 0.9)],
+             peor: o[o.length - 1] };
+  }
+
+  function ms(x) { return x.toFixed(1) + ' ms'; }
+  function tono(x) { return x < 16 ? 'bien' : (x > 50 ? 'mal' : ''); }
+
+  document.getElementById('correr').addEventListener('click', function () {
+    var b = this; b.disabled = true; b.textContent = 'midiendo...';
+    var av = document.getElementById('avance');
+    var r = {};
+
+    largas.length = 0;
+    medirVideo(document.getElementById('vA')).then(function (t) {
+      r.A = resumen(t); r.A.largas = largas.length; av.style.width = '33%';
+      pinta('dA', [['peso', PESOS.A + ' MB'],
+                   ['salto mediano', ms(r.A.mediana), tono(r.A.mediana)],
+                   ['salto p90', ms(r.A.p90), tono(r.A.p90)],
+                   ['peor salto', ms(r.A.peor), tono(r.A.peor)],
+                   ['tareas largas', r.A.largas]]);
+      largas.length = 0;
+      return medirVideo(document.getElementById('vC'));
+    }).then(function (t) {
+      r.C = resumen(t); r.C.largas = largas.length; av.style.width = '66%';
+      pinta('dC', [['peso', PESOS.C + ' MB'],
+                   ['salto mediano', ms(r.C.mediana), tono(r.C.mediana)],
+                   ['salto p90', ms(r.C.p90), tono(r.C.p90)],
+                   ['peor salto', ms(r.C.peor), tono(r.C.peor)],
+                   ['tareas largas', r.C.largas]]);
+      largas.length = 0;
+      return medirSecuencia(document.getElementById('cB'));
+    }).then(function (sb) {
+      r.B = resumen(sb.tiempos); r.B.largas = largas.length; av.style.width = '100%';
+      pinta('dB', [['peso', PESOS.B + ' MB'],
+                   ['precarga de las 60', ms(sb.precarga), sb.precarga > 3000 ? 'mal' : ''],
+                   ['dibujar un cuadro', ms(r.B.mediana), tono(r.B.mediana)],
+                   ['peor dibujo', ms(r.B.peor), tono(r.B.peor)],
+                   ['cuadros disponibles', '60 (el video trae 615)'],
+                   ['tareas largas', r.B.largas]]);
+
+      var gana = ['A', 'C', 'B'].sort(function (x, y) { return r[x].p90 - r[y].p90; })[0];
+      var nombres = { A: 'video normal', C: 'video todo-keyframe', B: 'secuencia de imagenes' };
+      document.getElementById('veredicto').innerHTML =
+        '<b>Mas fluido en este aparato: ' + nombres[gana] + '</b><br>p90 &mdash; ' +
+        'A: ' + ms(r.A.p90) + ' &middot; C: ' + ms(r.C.p90) + ' &middot; B: ' + ms(r.B.p90) +
+        '<br><span style="opacity:.7">Debajo de 16 ms se siente continuo. ' +
+        'Arriba de 50 se ve a tirones.</span>';
+
+      b.textContent = 'medir otra vez'; b.disabled = false;
+    })['catch'](function (e) {
+      b.textContent = 'fallo: ' + e.message; b.disabled = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>
