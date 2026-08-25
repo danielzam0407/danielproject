@@ -1320,7 +1320,27 @@ class Component extends DCLogic {
     return div;
   }
 
+  /* Una piel no es un boton: se aplica sola, en el momento. Ensenarle el
+     cambio a alguien convence mas que ofrecerle un enlace para ir a verlo.
+
+     El agente propone un estilo curado y, a lo mucho, un acento. Aqui se
+     valida otra vez antes de tocar nada: piel.js solo deja pasar hexadecimal
+     de seis digitos y fichas de su lista. Doble reja a proposito, porque lo
+     que llega viene de un modelo que atiende a desconocidos. */
+  function aplicarPiel(accion) {
+    var P = window.nervPiel;
+    if (!P) return;
+    if (accion.estilo === 'origen') { P.quitarPiel(); return; }
+    var base = P.PIELES[accion.estilo];
+    if (!base) return;
+    var fichas = {};
+    for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) fichas[k] = base[k];
+    if (accion.acento) fichas['senal'] = accion.acento;
+    P.ponerPiel(fichas);
+  }
+
   function boton(accion) {
+    if (accion && accion.tipo === 'piel') { aplicarPiel(accion); return; }
     var a = document.createElement('a');
     a.className = 'ag-accion';
     a.href = accion.url;

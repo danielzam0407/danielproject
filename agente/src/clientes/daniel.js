@@ -200,6 +200,37 @@ const HERRAMIENTAS = [
     },
   },
   {
+    name: 'cambiar_piel',
+    description:
+      'Cambia la apariencia del sitio en vivo, delante de quien te escribe. '+
+      'Usala cuando pidan verlo de otro color, mas oscuro, mas agresivo, mas '+
+      'limpio, mas calido, o cuando pregunten si puedes trabajar en su '+
+      'estilo: enseñarselo convence mas que describirlo. Tambien para '+
+      'regresarlo a como estaba. No la uses sin que lo pidan.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        estilo: {
+          type: 'string',
+          enum: ['origen', 'brutal', 'quirofano', 'ambar'],
+          description:
+            'origen = el azul de siempre. brutal = rojo y negro, duro y ruidoso. '+
+            'quirofano = turquesa frio, limpio, sin grano. ambar = calido, '+
+            'terroso, como papel viejo.',
+        },
+        acento: {
+          type: 'string',
+          description:
+            'Opcional. Color de acento en hexadecimal de seis digitos, por '+
+            'ejemplo #ff2d20. Solo si piden un color concreto. El resto de la '+
+            'paleta no se toca: cambiar todo a capricho produce combinaciones '+
+            'feas y eso es peor que no cambiar nada.',
+        },
+      },
+      required: ['estilo'],
+    },
+  },
+  {
     name: 'dejar_recado',
     description:
       'Entrega el recado a Daniel sin que la persona salga del chat ni abra ' +
@@ -254,6 +285,29 @@ function ejecutar(nombre, entrada, ajustes) {
       resultado: 'Listo: se le mostró el botón para elegir horario.',
       accion: { tipo: 'agenda', etiqueta: 'elegir horario', detalle: motivo, url },
       aviso: { titulo: 'quiere agendar llamada', cuerpo: motivo },
+    };
+  }
+
+  if (nombre === 'cambiar_piel') {
+    /* El agente NO manda colores sueltos: elige una piel curada y, a lo mucho,
+       cambia el acento. La restriccion es el producto — un agente que puede
+       cualquier paleta produce, tarde o temprano, algo feo delante de un
+       prospecto, y el criterio visual es justo lo que no se puede copiar.
+
+       El navegador valida otra vez antes de aplicar (piel.js). Esto es lo que
+       propone; alla se decide si entra. */
+    const estilos = ['origen', 'brutal', 'quirofano', 'ambar'];
+    const estilo = estilos.includes(entrada.estilo) ? entrada.estilo : 'origen';
+    const crudo = String(entrada.acento || '').trim();
+    const acento = /^#[0-9a-fA-F]{6}$/.test(crudo) ? crudo.toLowerCase() : null;
+    return {
+      resultado:
+        estilo === 'origen'
+          ? 'Listo: el sitio volvio a su apariencia normal.'
+          : `Listo: el sitio ya se ve en "${estilo}". Dilo en una frase corta y` +
+            ' ofrece regresarlo o probar otro.',
+      accion: { tipo: 'piel', estilo, acento },
+      aviso: null,
     };
   }
 
