@@ -22,6 +22,7 @@ import { porOrigen } from './clientes/index.js';
 import * as almacen from './almacen.js';
 import * as avisos from './avisos.js';
 import * as bandeja from './bandeja.js';
+import * as tablero from './tablero.js';
 import { verificar } from './verificador.js';
 import { vigilar } from './vigilante.js';
 
@@ -110,9 +111,17 @@ export default {
   async fetch(peticion, env, contexto) {
     const ruta = new URL(peticion.url).pathname;
 
-    // La bandeja va antes del control de origen: no es un cliente, eres tú.
+    // La bandeja y el tablero van antes del control de origen: no son
+    // clientes, eres tú. El tablero reusa la puerta de la bandeja —el mismo
+    // token, la misma función— porque dos copias de un control de acceso
+    // divergen, y la que se queda vieja es la que abre.
     const deBandeja = await bandeja.atender(peticion, env, ruta);
     if (deBandeja) return deBandeja;
+
+    const deTablero = await tablero.atender(
+      peticion, env, ruta, bandeja.autorizado, bandeja.json
+    );
+    if (deTablero) return deTablero;
 
     // El origen decide de quién es esta petición. Si no es de nadie, 403 sin
     // llegar a la API — el navegador no decide esto, lo decide el servidor.

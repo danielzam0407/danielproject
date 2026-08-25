@@ -23,14 +23,16 @@ function igual(a, b) {
   return d === 0;
 }
 
-function autorizado(peticion, env) {
+/* Exportada para el tablero. Se comparte la función, no se copia: dos copias
+   de un control de acceso divergen, y la que se queda vieja es la que abre. */
+export function autorizado(peticion, env) {
   if (!env.BANDEJA_TOKEN) return false;
   const cabecera = peticion.headers.get('authorization') || '';
   const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7) : '';
   return igual(token, env.BANDEJA_TOKEN);
 }
 
-function json(cuerpo, estado = 200) {
+export function json(cuerpo, estado = 200) {
   return new Response(JSON.stringify(cuerpo), {
     status: estado,
     headers: {

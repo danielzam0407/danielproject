@@ -89,6 +89,14 @@ para poder distinguir *"revisado hace 3 h, limpio"* de *"nunca corrió"*.
 Para dispararlo sin esperar al cron: `POST /bandeja/vigilancia` con el token de
 la bandeja (misma puerta, a propósito: una puerta nueva es superficie nueva).
 
+**`/tablero`** es donde se ve todo junto: estado de los guardias y sus hallazgos,
+conversaciones del día, leads sin abrir, **avisos perdidos** (la cifra más cara:
+un lead que existió y no te llegó), cuota del día contra el tope, y el correo
+frío. Mismo token que la bandeja y **la misma función** `autorizado` — se
+comparte, no se copia: dos copias de un control de acceso divergen, y la que se
+queda vieja es la que abre. Trae un botón "Revisar ahora" que dispara al
+vigilante. Ninguna consulta del tablero toca la API del modelo: cuesta cero.
+
 **El escuadrón es la escalación, no el motor.** Lo que se puede comparar fuente
 contra fuente lo hace el cron gratis; lo que exige criterio —si una cifra es
 sostenible, si un texto miente— es lo único que vale gastar en un agente.
