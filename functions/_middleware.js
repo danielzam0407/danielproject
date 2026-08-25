@@ -20,6 +20,31 @@ const EQUIVALENTES = {
   '/privacy.html': '/privacy.md',
 };
 
+/* Lo que es taller, no sitio.
+
+   Cloudflare Pages publica la raíz del repo entera, así que el código del
+   worker quedaba servido bajo el dominio: `/agente/src/clientes/daniel.js`
+   devolvía 200 con el perfil y las instrucciones completas del agente, y
+   `wrangler.toml` con los ids de KV y D1.
+
+   Eso NO los volvía secretos —el repo es público en GitHub y ahí siguen— pero
+   este sitio está hecho a propósito para que los agentes lo rastreen (llms.txt,
+   sitemap, negociación de markdown). Servirles el taller significa que se lo
+   tragan como si fuera una página más del portfolio. Son cosas distintas: una
+   es código que alguien puede ir a leer, la otra es código que el sitio ofrece.
+
+   Va aquí y no en `_headers` porque `_headers` sólo pone cabeceras; no puede
+   negar una ruta. */
+const TALLER = [
+  /^\/agente(\/|$)/i,        // el worker completo: prompt, perfil, herramientas
+  /^\/functions(\/|$)/i,     // este mismo archivo
+  /^\/CLAUDE\.md$/i,         // las reglas de la casa
+  /^\/\.claude(\/|$)/i,      // el escuadrón
+  /^\/lab(\/|$)/i,           // pruebas a medio hacer, no son obra publicada
+  /\.(py|toml|lock)$/i,      // herramientas y candados de dependencias
+  /^\/(package|package-lock)\.json$/i,
+];
+
 /** ¿El cliente prefiere markdown sobre html? Lee las calidades del Accept. */
 function prefiereMarkdown(accept) {
   if (!accept) return false;
@@ -42,6 +67,23 @@ function prefiereMarkdown(accept) {
 export async function onRequest(context) {
   const { request, env, next } = context;
   const url = new URL(request.url);
+
+  /* El taller se niega con el 404 de verdad, no con uno pelado: quien llegue
+     ahí —persona o rastreador— recibe la misma página que cualquier ruta
+     inexistente, con sus enlaces al sitemap y a llms.txt. Un 403 confirmaría
+     que el archivo existe; un 404 no dice nada. */
+  if (TALLER.some((patron) => patron.test(url.pathname))) {
+    const cuatro = await env.ASSETS.fetch(new Request(new URL('/404.html', url)));
+    return new Response(cuatro.body, {
+      status: 404,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'x-robots-tag': 'noindex',
+        vary: 'Accept, Accept-Encoding',
+      },
+    });
+  }
+
   const equivalente = EQUIVALENTES[url.pathname];
 
   if (equivalente && prefiereMarkdown(request.headers.get('accept'))) {
