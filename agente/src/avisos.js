@@ -47,11 +47,16 @@ export async function porTelegram(env, aviso, conversacion) {
   }
 }
 
-/* El parte del verificador. Va por el mismo canal pero no es un lead, así que
-   se marca distinto: si se mezclan, dejas de leer los dos. */
-export async function parte(env, lineas) {
+/* El parte de un guardia. Va por el mismo canal pero no es un lead, así que se
+   marca distinto: si se mezclan, dejas de leer los dos.
+
+   `quien` es el guardia que lo manda. Son dos y encuentran cosas de naturaleza
+   distinta —el verificador, incoherencias de la base; el vigilante, cosas
+   podridas en público— y el primer renglón es lo único que deja saber cuál
+   pide qué antes de abrirlo. */
+export async function parte(env, lineas, quien = 'verificador') {
   if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) return false;
-  const texto = `verificador\n\n${lineas.join('\n')}`;
+  const texto = `${quien}\n\n${lineas.join('\n')}`;
   try {
     const r = await fetch(`${TELEGRAM}/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
       method: 'POST',

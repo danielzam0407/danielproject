@@ -495,7 +495,15 @@ export default {
     'https://danielzam0407.github.io',
     'https://nervcenter.online',
     'https://www.nervcenter.online',
+  ],
+
+  /* Sólo valen con MODO_DEV puesto, que el worker desplegado no tiene. Vivían
+     arriba, revueltos con los de producción, y eso hacía que cualquiera pudiera
+     mandar `Origin: http://localhost:4322` y gastar cuota. Ver clientes/index.js. */
+  origenesDev: [
     'http://localhost:4322',
+    'http://localhost:8787',
+    'http://127.0.0.1:4322',
   ],
 
   sistema: SISTEMA,

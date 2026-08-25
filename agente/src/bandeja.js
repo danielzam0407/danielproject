@@ -11,6 +11,7 @@
 
 import * as almacen from './almacen.js';
 import { todas } from './clientes/index.js';
+import { vigilar } from './vigilante.js';
 
 /* Comparación sin salida temprana: un `===` normal devuelve antes en cuanto
    dos caracteres difieren, y eso filtra por tiempo cuánto acertaste. */
@@ -61,6 +62,31 @@ export async function atender(peticion, env, ruta) {
   // de cuál preguntar. Por eso se atiende antes de exigir el parámetro.
   if (ruta === '/bandeja/clientes') {
     return json({ clientes: todas().map((f) => ({ id: f.id, nombre: f.nombre })) });
+  }
+
+  /* La vigilancia. Va montada aquí y no en una ruta propia por una razón de
+     seguridad, no de comodidad: el token de la bandeja ya existe y ya está
+     probado. Una puerta nueva en un endpoint público es superficie nueva de
+     autenticación, y ésas se abren una vez y se quedan abiertas.
+
+     No lleva `cliente`: el vigilante mira los sitios y el worker, que son de
+     la casa, no de una empresa. Por eso se atiende antes de exigirlo. */
+  if (ruta === '/bandeja/vigilancia') {
+    if (peticion.method === 'POST') {
+      // A demanda. El cron corre a las 9:00 UTC; esto es para no esperar un
+      // día entero cuando acabas de cambiar algo y quieres saber si aguantó.
+      const hallazgos = await vigilar(env);
+      return json({ cuando: new Date().toISOString(), hallazgos });
+    }
+    const filas = await env.DB
+      .prepare('SELECT cuando, hallazgos FROM vigilancia ORDER BY id DESC LIMIT 20')
+      .all();
+    return json({
+      corridas: (filas.results || []).map((f) => ({
+        cuando: f.cuando,
+        hallazgos: JSON.parse(f.hallazgos || '[]'),
+      })),
+    });
   }
 
   const url = new URL(peticion.url);

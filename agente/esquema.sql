@@ -49,3 +49,15 @@ CREATE TABLE IF NOT EXISTS avisos (
 
 CREATE INDEX IF NOT EXISTS avisos_sin_entregar
   ON avisos (entregado, cuando);
+
+-- Cada corrida del vigilante. Se guarda encuentre o no: el tablero necesita
+-- poder distinguir "revisado hace 3 h, limpio" de "nunca corrio", que es la
+-- diferencia entre un guardia vivo y uno que se murio sin avisar.
+CREATE TABLE IF NOT EXISTS vigilancia (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  cuando     TEXT NOT NULL,
+  hallazgos  TEXT NOT NULL             -- JSON: [] cuando todo cuadra
+);
+
+CREATE INDEX IF NOT EXISTS vigilancia_por_fecha
+  ON vigilancia (cuando DESC);

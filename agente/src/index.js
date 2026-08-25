@@ -23,6 +23,7 @@ import * as almacen from './almacen.js';
 import * as avisos from './avisos.js';
 import * as bandeja from './bandeja.js';
 import { verificar } from './verificador.js';
+import { vigilar } from './vigilante.js';
 
 const BASE = 'https://api.deepseek.com/anthropic';
 const MODELO = 'deepseek-v4-pro';
@@ -116,7 +117,7 @@ export default {
     // El origen decide de quién es esta petición. Si no es de nadie, 403 sin
     // llegar a la API — el navegador no decide esto, lo decide el servidor.
     const origen = peticion.headers.get('origin');
-    const ficha = porOrigen(origen);
+    const ficha = porOrigen(origen, env);
 
     if (peticion.method === 'OPTIONS') {
       return ficha
@@ -341,17 +342,33 @@ export default {
     });
   },
 
-  /* El verificador. Corre por cron y sólo te escribe si algo no cuadra. */
+  /* Los dos guardias. Corren por cron y sólo te escriben si algo no cuadra.
+
+     `verificar` mira hacia adentro: la base contra sí misma, KV contra D1.
+     `vigilar` mira hacia afuera: los sitios publicados, el control de origen,
+     el taller que no debe servirse, los rebotes del correo frío.
+
+     Van en paralelo y con `allSettled` a propósito: son independientes, y que
+     uno reviente no puede dejar al otro sin correr. Un guardia que se cae
+     callado es peor que no tenerlo — ésa es justo la falla que vienen a cerrar. */
   async scheduled(evento, env, contexto) {
     contexto.waitUntil(
-      verificar(env)
-        .then((hallazgos) => {
+      Promise.allSettled([
+        verificar(env).then((h) => ['verificador', h]),
+        vigilar(env).then((h) => ['vigilante', h]),
+      ]).then((resultados) => {
+        for (const r of resultados) {
+          if (r.status === 'rejected') {
+            console.error('un guardia falló:', r.reason);
+            continue;
+          }
+          const [quien, hallazgos] = r.value;
           // Al log siempre, no sólo a Telegram: si el bot no está configurado
           // —o falla— los hallazgos no pueden evaporarse en silencio.
-          if (hallazgos.length) console.warn('verificador:', hallazgos.join(' | '));
-          else console.log('verificador: todo cuadra');
-        })
-        .catch((e) => console.error('el verificador falló:', e))
+          if (hallazgos.length) console.warn(`${quien}:`, hallazgos.join(' | '));
+          else console.log(`${quien}: todo cuadra`);
+        }
+      })
     );
   },
 };

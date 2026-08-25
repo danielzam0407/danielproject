@@ -70,6 +70,38 @@ en la raíz, sin build.
 - Humo post-deploy: `python verificar-agentes.py` (o el subagente
   `verificador-humo`).
 
+## Los dos guardias que corren solos
+
+En el worker, por cron a las 9:00 UTC. No necesitan sesión abierta, ni laptop
+prendida, ni tokens de nadie — y por eso son el lugar correcto para todo lo que
+no es trabajo de juicio.
+
+- **`verificador.js`** mira hacia adentro: la base contra sí misma, KV contra D1,
+  leads sin entregar, mensajes huérfanos.
+- **`vigilante.js`** mira hacia afuera: los cuatro sitios publicados (relleno,
+  correos muertos), que el taller siga cerrado, el control de origen, y los
+  rebotes de Resend (sólo si existe `RESEND_API_KEY` como secreto).
+
+Los dos callan si todo cuadra — un parte diario de "todo bien" se vuelve ruido.
+Cada corrida del vigilante queda en la tabla `vigilancia` de D1, encuentre o no,
+para poder distinguir *"revisado hace 3 h, limpio"* de *"nunca corrió"*.
+
+Para dispararlo sin esperar al cron: `POST /bandeja/vigilancia` con el token de
+la bandeja (misma puerta, a propósito: una puerta nueva es superficie nueva).
+
+**El escuadrón es la escalación, no el motor.** Lo que se puede comparar fuente
+contra fuente lo hace el cron gratis; lo que exige criterio —si una cifra es
+sostenible, si un texto miente— es lo único que vale gastar en un agente.
+
+### `origenesDev` no es cosmético
+
+Los orígenes de desarrollo van en `origenesDev` de la ficha, **nunca** en
+`origenes`. Sólo cuentan con `MODO_DEV` puesto, que el worker desplegado no
+tiene. El 2026-08-25 se encontró `http://localhost:4322` entre los de
+producción: `curl -H 'Origin: http://localhost:4322' .../chat` devolvía **200** y
+gastaba cuota. La cabecera Origin la pone el navegador, pero cualquier cosa que
+no sea un navegador la escribe a mano.
+
 ## El escuadrón
 
 Cinco subagentes en `.claude/agents/`. La política que todos respetan está en

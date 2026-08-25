@@ -15,6 +15,7 @@ const FICHAS = [daniel];
 
 /* origen -> ficha. Se arma una vez al arrancar el worker, no por petición. */
 const POR_ORIGEN = new Map();
+const POR_ORIGEN_DEV = new Map();
 for (const ficha of FICHAS) {
   for (const origen of ficha.origenes) {
     if (POR_ORIGEN.has(origen)) {
@@ -24,13 +25,39 @@ for (const ficha of FICHAS) {
     }
     POR_ORIGEN.set(origen, ficha);
   }
+  for (const origen of ficha.origenesDev || []) {
+    POR_ORIGEN_DEV.set(origen, ficha);
+  }
 }
 
 /* Devuelve la ficha del cliente dueño de ese origen, o null. Null significa
-   403: no es un cliente nuestro. */
-export function porOrigen(origen) {
+   403: no es un cliente nuestro.
+
+   `origenesDev` sólo cuenta si `env.MODO_DEV` está puesto, y en el worker
+   desplegado NO lo está. Antes los orígenes de desarrollo vivían revueltos con
+   los de producción, y `http://localhost:4322` —el servidor estático con el que
+   se ve el sitio en la laptop— era un origen válido en el worker público.
+
+   La cabecera Origin la pone el navegador, pero cualquier cliente que no sea un
+   navegador la escribe a mano. Medido el 2026-08-25 contra el worker en vivo:
+   `curl -H 'Origin: http://localhost:4322' .../chat` devolvía 200 y gastaba
+   cuota de DeepSeek. El control de origen —que es LA llave del molde
+   multicliente— tenía una puerta que abría cualquiera que leyera el repo.
+
+   Para trabajar en local se levanta el worker en local (`launch.json`, config
+   `agente`) y ahí sí hay MODO_DEV. */
+export function porOrigen(origen, env) {
   if (!origen) return null;
-  return POR_ORIGEN.get(origen) || null;
+  const suyo = POR_ORIGEN.get(origen);
+  if (suyo) return suyo;
+  if (env && env.MODO_DEV) return POR_ORIGEN_DEV.get(origen) || null;
+  return null;
+}
+
+/* Para el vigilante: los orígenes de producción, tal cual, para que pueda
+   revisar que ninguno sea de desarrollo. */
+export function origenesDeProduccion() {
+  return [...POR_ORIGEN.keys()];
 }
 
 /* Para el verificador, que revisa a todos. */
