@@ -94,7 +94,7 @@ revisar('/robots.txt existe', est == 200, 'HTTP %s' % est)
 revisar('robots.txt anuncia el sitemap', 'sitemap' in rb.lower())
 
 # 9. Paginas de confianza
-for ruta in ['/about.html', '/contact.html', '/privacy.html']:
+for ruta in ['/about', '/contact', '/privacy']:
     est, _, h = pedir(ruta)
     t = ' '.join(re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ',
                         h, flags=re.S).split())

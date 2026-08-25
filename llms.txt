@@ -42,9 +42,9 @@ del sitio: ahí puede agendar una llamada sin intermediarios.
 ## Páginas
 
 - [Inicio](https://nervcenter.online/): trabajo, proceso y el agente en vivo
-- [Quiénes somos](https://nervcenter.online/about.html): qué es nerv y quién lo opera
-- [Contacto](https://nervcenter.online/contact.html): correo, chat y agenda
-- [Privacidad](https://nervcenter.online/privacy.html): qué datos guarda el agente
+- [Quiénes somos](https://nervcenter.online/about): qué es nerv y quién lo opera
+- [Contacto](https://nervcenter.online/contact): correo, chat y agenda
+- [Privacidad](https://nervcenter.online/privacy): qué datos guarda el agente
 
 ## Trabajo publicado
 

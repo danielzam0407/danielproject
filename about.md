@@ -48,4 +48,4 @@ redes sociales, ni reventa de plantillas.
 
 - Correo: dani@nervcenter.online
 - Chat con agente que agenda: https://nervcenter.online
-- Detalles: https://nervcenter.online/contact.html
+- Detalles: https://nervcenter.online/contact

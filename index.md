@@ -54,7 +54,7 @@ funcionando.
 
 ## Más
 
-- [Quiénes somos](https://nervcenter.online/about.html)
-- [Contacto](https://nervcenter.online/contact.html)
-- [Privacidad](https://nervcenter.online/privacy.html)
+- [Quiénes somos](https://nervcenter.online/about)
+- [Contacto](https://nervcenter.online/contact)
+- [Privacidad](https://nervcenter.online/privacy)
 - [Guía para agentes](https://nervcenter.online/llms.txt)
