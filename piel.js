@@ -29,6 +29,13 @@ const FICHAS = {
   'fondo-hondo': 'color',
   'pulso':       'numero',
   'ruido':       'numero',
+  /* El giro de tono de los MEDIOS horneados. El heroe y las laminas de las
+     tarjetas no son fotos: las genera el motor del sitio al cargar, en azul,
+     y quedan como blobs que no saben nada de fichas. Regenerarlas vive dentro
+     del componente (que una sincronizacion repinta), asi que desde fuera se
+     les gira el tono con CSS para que sigan al color pedido. */
+  'giro':        'grados',
+  'medios-sat':  'numero',
 };
 
 /* Sólo hexadecimal. Nada de nombres, nada de rgb(), nada de url().
@@ -46,6 +53,9 @@ export function depurar(propuesta) {
     if (tipo === 'color') {
       const v = String(valor).trim();
       if (HEX.test(v)) limpio[nombre] = v.toLowerCase();
+    } else if (tipo === 'grados') {
+      const n = parseFloat(valor);
+      if (!isNaN(n)) limpio[nombre] = String(Math.max(-360, Math.min(360, n)));
     } else {
       const n = parseFloat(valor);
       if (!isNaN(n)) limpio[nombre] = String(Math.max(0, Math.min(2, n)));
@@ -278,6 +288,14 @@ export function derivarPiel(color, animo, modo) {
   }
   piel['pulso'] = String(a.pulso);
   piel['ruido'] = String(a.ruido);
+  /* 239.7 es el tono del azul original: los medios estan horneados en el.
+     El giro es la distancia mas corta hasta el tono pedido; en una paleta
+     neutra no hay tono que girar y los medios se desaturan en su lugar. */
+  let giro = neutro ? 0 : (h - 239.7);
+  if (giro > 180) giro -= 360;
+  if (giro < -180) giro += 360;
+  piel['giro'] = String(Math.round(giro));
+  piel['medios-sat'] = neutro ? '0.15' : '1';
   return piel;
 }
 

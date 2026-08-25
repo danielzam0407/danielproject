@@ -110,6 +110,22 @@
   --pulso: 1;               /* multiplica la velocidad del movimiento */
   --ruido: 0;               /* 0 a 1, cuánto grano y glitch */
 }
+/* Los medios horneados siguen al color pedido.
+
+   El heroe y las laminas de las tarjetas NO son fotos: las genera el motor
+   del sitio al cargar (ART.plate), en azul, y quedan como blobs. Cuando el
+   agente repinta el sitio, esos pixeles se quedaban azules — era lo unico
+   que no seguia, y con un rojo se notaba muchisimo.
+
+   Girarles el tono desde CSS vive FUERA del componente y sobrevive a sus
+   repintados. Los blobs se seleccionan por src^="blob:" —todo lo horneado
+   sale asi— y los videos de los carretes entran tambien. El canvas de
+   fracture NO: ese ya se repinta solo leyendo las fichas, y girarlo lo
+   corregiria dos veces. */
+#dc-root img[src^="blob:"], video {
+  filter: hue-rotate(calc(var(--giro, 0) * 1deg)) saturate(var(--medios-sat, 1));
+  transition: filter .55s ease;
+}
 /* El grano. --ruido y --pulso existian como fichas pero NADA los consumia:
    el animo "duro" prometia mas textura y no pasaba nada. Esto los vuelve
    reales.
