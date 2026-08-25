@@ -210,27 +210,35 @@ const ANIMOS = {
 
 /** De un color y un animo sale la paleta entera, con el molde intacto. */
 export function derivarPiel(color, animo) {
-  if (!HEX.test(String(color || '').trim())) return null;
+  const pedido = String(color || '').trim().toLowerCase();
+  if (!HEX.test(pedido)) return null;
   const a = ANIMOS[animo] || ANIMOS.oscuro;
-  const { h } = aHsl(color);
-  // El acento cruza la rueda: evita que una paleta de un solo tono se aplane.
-  const hAcento = (h + 152) % 360;
-  /* Se intento darle libertad de brillo a `senal` —la unica ficha que la gente
-     nombra— para que un "verde limon" no saliera olivo oscuro. Se midio y se
-     descarto: subio las fallas de contraste de 17 a 22.
+  const { h, s: sPedida } = aHsl(pedido);
 
-     La razon es que `senal` esta restringida por AMBOS lados: es texto sobre
-     papel claro, y tambien FONDO de los chips con texto claro encima.
-     Aclararla arregla un lado y rompe el otro. El azul original esta justo en
-     el punto donde ambas cosas funcionan.
+  /* Un color sin tono NO tiene tono. Suena obvio y es el bug que Daniel vio:
+     `aHsl` devuelve h=0 para negro, blanco y gris —porque no hay angulo que
+     devolver— y usar ese 0 los pintaba a los tres de ROJO. Tres peticiones
+     distintas daban la misma paleta equivocada.
 
-     Precio aceptado: un limon brillante sale verde profundo. A cambio, ninguna
-     piel puede ser menos legible que la original. Se prefirio asi porque la
-     queja fue de textos que no se veian, no de colores apagados. */
+     Ahora, si lo que piden es practicamente neutro, la paleta sale
+     monocromatica de verdad. Es lo que alguien espera al decir "negro". */
+  const neutro = sPedida < 0.12;
+
+  /* Y la saturacion del pedido tambien se respeta. Antes solo se tomaba el
+     tono, asi que un morado palido y uno intenso daban lo mismo. El molde
+     manda la proporcion entre fichas; el pedido manda cuanta hay. */
+  const fuerza = neutro ? 0 : 0.40 + Math.min(1, sPedida) * 0.60;
+
+  /* El acento cruza la rueda para que una paleta de un solo tono no se aplane.
+     En una neutra no hay rueda que cruzar: se queda en gris, y el contraste lo
+     sigue dando la luminancia. */
+  const hAcento = neutro ? h : (h + 152) % 360;
+
   const piel = {};
   for (const [ficha, base] of Object.entries(PERFIL)) {
     const tono = ficha === 'acento' ? hAcento : h;
-    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat), base.luz);
+    const sat = Math.min(1, base.s * a.sat * fuerza);
+    piel[ficha] = conLuminancia(tono, sat, base.luz);
   }
   piel['pulso'] = String(a.pulso);
   piel['ruido'] = String(a.ruido);

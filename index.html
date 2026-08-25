@@ -110,6 +110,38 @@
   --pulso: 1;               /* multiplica la velocidad del movimiento */
   --ruido: 0;               /* 0 a 1, cuánto grano y glitch */
 }
+/* El grano. --ruido y --pulso existian como fichas pero NADA los consumia:
+   el animo "duro" prometia mas textura y no pasaba nada. Esto los vuelve
+   reales.
+
+   Va en html::after y no en body: el componente repinta el body y se lo
+   llevaria. Y `.corner-brackets::after` ya esta ocupado por los corchetes de
+   las tarjetas, asi que ese no se toca.
+
+   El ruido es una textura SVG generada en el momento, sin pedir un archivo. */
+html::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: calc(var(--ruido, 0) * 0.42);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  animation: nerv-grano calc(0.9s / var(--pulso, 1)) steps(3) infinite;
+  transition: opacity .55s ease;
+}
+/* El desplazamiento es lo que evita que el grano se vea como una calca fija.
+   Su velocidad la manda --pulso: eso es lo que hace que "duro" se sienta duro. */
+@keyframes nerv-grano {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(-3%, 2%); }
+  66%  { transform: translate(2%, -3%); }
+  100% { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html::after { animation: none; }
+}
 /* La transición es lo que hace que el cambio se lea como intención y no
    como un parpadeo. Se apaga para quien pidió menos movimiento. */
 body, body * { transition: background-color .55s ease, color .55s ease,
