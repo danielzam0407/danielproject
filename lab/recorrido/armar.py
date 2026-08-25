@@ -28,8 +28,12 @@ import sys
 
 SEG_POR_RENDER = 3.5     # cuanto dura cada toma
 SEG_FUNDIDO = 0.9        # traslape entre una y la siguiente
-ANCHO = 768              # 768 y crf 32 fue el punto medido: 1.96 MB, 30 ms
-FPS = 30
+ANCHO = 1152             # medido: mas pixeles con mas compresion gana a
+                         # menos pixeles con menos compresion. 960/crf26 pesa
+                         # MAS que 1152/crf31 y se ve peor.
+FPS = 20                 # el dedo marca el ritmo, no el reloj: 30 fps es
+                         # desperdicio en un recorrido que controla el scroll.
+                         # Bajar a 20 libera bits para resolucion.
 EXTS = ('.jpg', '.jpeg', '.png', '.webp')
 
 
@@ -98,7 +102,8 @@ def para_scrub(entrada, salida):
     -sc_threshold 0 sin keyframes extra por deteccion de corte
     """
     ffmpeg(['-i', entrada, '-c:v', 'libx264', '-g', '1', '-keyint_min', '1',
-            '-sc_threshold', '0', '-crf', '32', '-preset', 'slow', '-an',
+            '-sc_threshold', '0', '-crf', '31', '-preset', 'veryslow', '-an',
+            '-r', str(FPS),
             '-movflags', '+faststart', '-vf', 'scale=%d:-2' % ANCHO, salida])
 
 
@@ -134,7 +139,7 @@ def main():
     print('  %.2f MB  ·  ~%.1f s  ·  ~%d cuadros de recorrido'
           % (mb, dur, int(dur * FPS)))
     print('')
-    print('Si pesa mas de 3 MB, baja ANCHO o sube el crf de para_scrub().')
+    print('Si pesa mas de 4 MB, baja ANCHO o sube el crf de para_scrub().')
     print('Los prospectos lo abren con datos moviles.')
 
 

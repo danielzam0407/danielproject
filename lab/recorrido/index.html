@@ -54,6 +54,21 @@
   .cierre h2 { margin:0; font-size:clamp(22px,5vw,34px); letter-spacing:-1px; }
   .cierre p { margin:0; max-width:38em; opacity:.8; font-size:15px; }
   .cierre a { color:var(--senal); }
+
+  /* Compuerta de carga. El recorrido pesa ~3.6 MB y se navega saltando de
+     cuadro: si el dedo llega a un tramo que todavía no ha bajado, el video se
+     atora sin avisar y se lee como roto. Más honesto decir "cargando".
+     FALLA ABIERTA a propósito: si el navegador nunca reporta que está listo,
+     a los 8 s se abre igual. Nada se queda esperando para siempre. */
+  .compuerta { position:absolute; inset:0; z-index:5; background:var(--papel);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; transition:opacity .5s ease; font-size:12px; letter-spacing:2px;
+    text-transform:uppercase; }
+  .compuerta[hidden] { display:none; }
+  .compuerta.se-va { opacity:0; pointer-events:none; }
+  .compuerta .aro { width:120px; height:2px; background:rgba(232,238,252,.2); }
+  .compuerta .aro i { display:block; height:100%; width:0; background:var(--senal);
+    transition:width .3s ease; }
 </style>
 </head>
 <body>
@@ -64,6 +79,11 @@
   <div class="marco">
     <video id="video" src="recorrido.mp4" muted playsinline preload="auto"
            disablepictureinpicture></video>
+
+    <div class="compuerta" id="compuerta">
+      <span id="compuertaTexto">cargando recorrido</span>
+      <div class="aro"><i id="compuertaBarra"></i></div>
+    </div>
 
     <div class="hud">
       <div class="marca">nerv <b>/</b> recorrido</div>
@@ -143,6 +163,43 @@ const motor = recorrido({
 });
 
 window.nervRecorrido = motor;   // para inspeccionar desde la consola
+
+/* --- compuerta de carga ------------------------------------------------ */
+const video     = document.getElementById('video');
+const compuerta = document.getElementById('compuerta');
+const barra     = document.getElementById('compuertaBarra');
+const texto     = document.getElementById('compuertaTexto');
+let abierta = false;
+
+function abrir(motivo) {
+  if (abierta) return;
+  abierta = true;
+  if (motivo) texto.textContent = motivo;
+  compuerta.classList.add('se-va');
+  setTimeout(() => { compuerta.hidden = true; }, 520);
+}
+
+function bajado() {
+  // Cuánto del video ya está en el navegador, de 0 a 1.
+  if (!video.duration || !video.buffered.length) return 0;
+  let fin = 0;
+  for (let i = 0; i < video.buffered.length; i++) {
+    fin = Math.max(fin, video.buffered.end(i));
+  }
+  return Math.min(1, fin / video.duration);
+}
+
+const reloj = setInterval(() => {
+  const p = bajado();
+  barra.style.width = (p * 100).toFixed(0) + '%';
+  // Con 90% basta: el resto llega antes de que el dedo alcance el final.
+  if (p >= 0.9 || video.readyState >= 4) { clearInterval(reloj); abrir(); }
+}, 150);
+
+// La red puede estar lenta o el navegador puede no reportar nunca. A los 8 s
+// se abre de todos modos: es mejor un recorrido que se atora un momento que
+// una pantalla que nunca deja pasar.
+setTimeout(() => { clearInterval(reloj); abrir(); }, 8000);
 </script>
 </body>
 </html>
