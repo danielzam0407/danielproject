@@ -89,6 +89,21 @@ corridas con consecuencia dejan línea en `.claude/bitacora/`.
 **Cuatro de los cinco no pueden escribir**, a propósito: un auditor que arregla
 lo que encuentra deja de ser segunda opinión.
 
+### Si sale `Agent type 'X' not found`
+
+El registro de subagentes se toma **al arrancar la sesión**: una ficha creada o
+renombrada a media sesión no es invocable hasta reiniciar. No hay comando de
+recarga, y `/agents` ya no abre panel (desde 2.1.198 sólo imprime rutas).
+
+**Para verificar que cargaron:** pídele al agente principal *"comprueba qué
+subagentes tienes disponibles"*. Intenta una invocación y la lista sale del
+resultado. Preguntar "status de los agentes" NO dispara ninguno — sus
+descripciones se activan con trabajo real, no con preguntas sobre sí mismos.
+
+**Mientras no carguen**, el rodeo probado es lanzar `general-purpose`
+diciéndole que lea su ficha en `.claude/agents/` y la siga. Se pierde sólo el
+acotamiento por el campo `tools:`.
+
 Las herramientas que ejecutan:
 
 ```bash
