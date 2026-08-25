@@ -36,19 +36,23 @@ en la raíz, sin build.
 10. **Contraste con línea base medida** (`.claude/guardias/contraste.js`, en la
     consola del navegador → `nervContrasteEstados()`):
 
-        claro original ....... 49 bajo 4.5:1   (10 con texto >=14px)
-        modo oscuro .......... 33              (7)
-        morado sobre claro ... 49   <- idéntico a su base
-        rojo sobre oscuro .... 33   <- idéntico a su base
+        claro original ....... 41 bajo 4.5:1   (6 de lectura)
+        modo oscuro .......... 34              (6)
+        morado sobre claro ... 41   <- idéntico a su base
+        cian sobre oscuro .... 34   <- idéntico a su base
 
     **Lo que se protege no es el número, es la última columna:** una piel
     derivada debe dar EXACTAMENTE el mismo conteo que su modo base. Si da más,
     se rompió el motor de luminancia — ése es el hallazgo. Auditar TODOS los
     pares reales de color, no sólo tinta/papel.
 
-    Los `17 / 11` que circulaban salieron de un barrido que nunca se guardó, con
-    otra regla. No son comparables (aunque la relación coincide: 49:33 y 17:11
-    son ambos ≈1.5). **Compara contra 49/33.**
+    **La columna de lectura vale más que el total.** Las 6 son siempre las
+    mismas y ninguna es texto de leer ("ADRIFT" 360/380px, "001/002/003" 132px,
+    "02" 460px). Hoy no hay ni una falla real. Si sube de 6, es hallazgo.
+
+    Números muertos: el `49/33` traía tres falsos positivos de contacto (el
+    barrido no leía degradados); el `17/11` es de una regla más vieja.
+    **Compara contra 41/34.**
 
 11. **Para cambiar de modo se usa `fijar({modo:'oscuro'}, false)`, nunca
     `ponerModo()`.** ponerModo aplica las fichas pero no pone `data-piel`, que
