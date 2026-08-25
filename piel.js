@@ -160,7 +160,24 @@ function aHex(h, s, l) {
    —la misma magnitud con la que se calcula el contraste WCAG—. Asi toda
    relacion que Daniel diseno a mano se preserva por construccion, sea cual
    sea el tono que pidan. */
-const MOLDE = {
+/* Se auditaron los usos reales y salio algo tranquilizador: de las fichas que
+   parecian tener dos papeles, TODAS las excepciones eran puntos de 7px —
+   cursores parpadeantes y marcas decorativas—. Eso no es superficie, es tinta.
+
+   Asi que los papeles estan limpios:
+
+     SUPERFICIES  papel (region clara)  ·  fondo-hondo (seccion de contacto)
+     TINTA        tinta (sobre papel)   ·  papel-alto (sobre fondo-hondo)
+                  senal · senal-suave · tenue · acento
+
+   Por eso el modo oscuro SI se puede: voltear `papel` y `tinta`, y aclarar
+   `senal` para que siga leyendose. Todo lo demas ya vivia sobre oscuro, porque
+   la seccion de contacto siempre fue oscura.
+
+   Lo que NO se puede es derivar el modo oscuro invirtiendo luminancias a lo
+   bruto: se probo, dio 69 elementos ilegibles. Por eso son DOS moldes escritos
+   a mano, y el motor solo les cambia el tono. */
+const MOLDE_CLARO = {
   'senal':       '#0102ec',
   'senal-suave': '#7f9bff',
   'acento':      '#9ef0e4',
@@ -171,6 +188,19 @@ const MOLDE = {
   'fondo-hondo': '#03060e',
 };
 
+/* El molde oscuro. `senal` sube de luminancia porque ahora vive sobre una
+   superficie oscura; `tinta` y `papel` se intercambian de papel. El resto
+   apenas se mueve: ya estaba pensado para leerse sobre negro. */
+const MOLDE_OSCURO = {
+  'senal':       '#6f8cff',
+  'senal-suave': '#a8bcff',
+  'acento':      '#9ef0e4',
+  'tinta':       '#e6effb',
+  'papel':       '#0b1020',
+  'papel-alto':  '#eef3fd',
+  'tenue':       '#8fa3c4',
+  'fondo-hondo': '#05070f',
+};
 /** Luminancia relativa (WCAG). Es la magnitud que decide el contraste. */
 function luminancia(hex) {
   const n = parseInt(hex.slice(1), 16);
@@ -181,12 +211,17 @@ function luminancia(hex) {
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 }
 
-/* La luminancia objetivo y la saturacion de cada ficha, sacadas del molde. */
-const PERFIL = Object.fromEntries(Object.entries(MOLDE).map(([k, hex]) => {
-  const { s } = aHsl(hex);
-  return [k, { luz: luminancia(hex), s }];
-}));
-
+/* La luminancia objetivo y la saturacion de cada ficha, sacadas de un molde. */
+function perfilDe(molde) {
+  return Object.fromEntries(Object.entries(molde).map(([k, hex]) => {
+    const { s } = aHsl(hex);
+    return [k, { luz: luminancia(hex), s }];
+  }));
+}
+const PERFILES = {
+  claro:  perfilDe(MOLDE_CLARO),
+  oscuro: perfilDe(MOLDE_OSCURO),
+};
 /** Busca la L que da la luminancia pedida, para ESE tono y saturacion.
     Busqueda binaria: 18 pasos bastan para clavarla. */
 function conLuminancia(h, s, objetivo) {
@@ -209,41 +244,131 @@ const ANIMOS = {
 };
 
 /** De un color y un animo sale la paleta entera, con el molde intacto. */
-export function derivarPiel(color, animo) {
+/** De un color, un animo y un modo sale la paleta entera.
+
+    modo  'claro' | 'oscuro'  — la ESTRUCTURA: que superficie es fondo.
+    animo  el CARACTER: cuanta saturacion, cuanto grano, que tan rapido.
+
+    Son cosas distintas a proposito. Antes 'oscuro' era solo un animo y no
+    oscurecia nada, que es justo lo que confundia: pedir negro daba una paleta
+    monocromatica sobre fondo blanco. */
+export function derivarPiel(color, animo, modo) {
   const pedido = String(color || '').trim().toLowerCase();
   if (!HEX.test(pedido)) return null;
   const a = ANIMOS[animo] || ANIMOS.oscuro;
+  const perfil = PERFILES[modo === 'oscuro' ? 'oscuro' : 'claro'];
   const { h, s: sPedida } = aHsl(pedido);
 
-  /* Un color sin tono NO tiene tono. Suena obvio y es el bug que Daniel vio:
-     `aHsl` devuelve h=0 para negro, blanco y gris —porque no hay angulo que
-     devolver— y usar ese 0 los pintaba a los tres de ROJO. Tres peticiones
-     distintas daban la misma paleta equivocada.
-
-     Ahora, si lo que piden es practicamente neutro, la paleta sale
-     monocromatica de verdad. Es lo que alguien espera al decir "negro". */
+  /* Un color sin tono NO tiene tono. `aHsl` devuelve h=0 para negro, blanco y
+     gris —porque no hay angulo que devolver— y usar ese 0 los pintaba a los
+     tres de ROJO. Ahora, si el pedido es neutro, la paleta sale monocromatica
+     de verdad, que es lo que alguien espera al decir "negro". */
   const neutro = sPedida < 0.12;
 
-  /* Y la saturacion del pedido tambien se respeta. Antes solo se tomaba el
-     tono, asi que un morado palido y uno intenso daban lo mismo. El molde
-     manda la proporcion entre fichas; el pedido manda cuanta hay. */
+  /* La saturacion del pedido tambien se respeta: el molde manda la proporcion
+     entre fichas, el pedido manda cuanta hay. Sin esto, un morado palido y uno
+     intenso daban el mismo resultado. */
   const fuerza = neutro ? 0 : 0.40 + Math.min(1, sPedida) * 0.60;
-
-  /* El acento cruza la rueda para que una paleta de un solo tono no se aplane.
-     En una neutra no hay rueda que cruzar: se queda en gris, y el contraste lo
-     sigue dando la luminancia. */
   const hAcento = neutro ? h : (h + 152) % 360;
 
   const piel = {};
-  for (const [ficha, base] of Object.entries(PERFIL)) {
+  for (const [ficha, base] of Object.entries(perfil)) {
     const tono = ficha === 'acento' ? hAcento : h;
-    const sat = Math.min(1, base.s * a.sat * fuerza);
-    piel[ficha] = conLuminancia(tono, sat, base.luz);
+    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat * fuerza), base.luz);
   }
   piel['pulso'] = String(a.pulso);
   piel['ruido'] = String(a.ruido);
   return piel;
 }
+
+/** El modo sin cambiar de color: mantiene el tono actual y solo voltea la
+    estructura. Es lo que usa el interruptor visible. */
+export function ponerModo(modo, color, animo) {
+  const base = HEX.test(String(color || '')) ? color : MOLDE_CLARO['senal'];
+  return ponerPiel(derivarPiel(base, animo || 'claro', modo));
+}
+
+/* ---- memoria de sesion e interruptor -----------------------------------
+
+   La eleccion sigue al visitante entre paginas: si pide oscuro en la portada
+   y entra a /about, sigue oscuro. Vive en sessionStorage —no localStorage— a
+   proposito: se borra al cerrar la pestana, asi que el sitio siempre se ve
+   como Daniel lo diseno la PRIMERA vez que alguien llega. La primera
+   impresion es el instrumento de venta; el cambio es un momento, no un
+   ajuste permanente.
+
+   Y por eso tampoco se respeta `prefers-color-scheme`: si alguien con el
+   telefono en oscuro llegara a un sitio ya oscuro, pedirle al agente que lo
+   oscurezca no haria nada, y la demostracion se cae justo cuando debia
+   impresionar. */
+
+const LLAVE = 'nerv:piel';
+let estado = { modo: 'claro', color: null, animo: null };
+
+function guardar() {
+  try { sessionStorage.setItem(LLAVE, JSON.stringify(estado)); } catch (e) {}
+}
+
+/** Aplica un estado completo y lo recuerda. Es la unica puerta de entrada. */
+export function fijar(nuevo) {
+  estado = Object.assign({}, estado, nuevo || {});
+  if (!estado.color && estado.modo === 'claro') quitarPiel();
+  else ponerPiel(derivarPiel(estado.color || MOLDE_CLARO['senal'],
+                             estado.animo || 'claro', estado.modo));
+  document.documentElement.dataset.piel = estado.modo;
+  if (boton) boton.textContent = estado.modo === 'oscuro' ? 'claro' : 'oscuro';
+  guardar();
+  return estado;
+}
+
+export function estadoActual() { return Object.assign({}, estado); }
+
+/* El interruptor. Existe porque hacer que alguien tenga que CONVERSAR con un
+   agente para no lastimarse los ojos de noche es mal diseno. Un clic basta. */
+let boton = null;
+
+function montarBoton() {
+  if (boton || !document.body) return;
+  boton = document.createElement('button');
+  boton.type = 'button';
+  boton.id = 'nerv-modo';
+  boton.setAttribute('aria-label', 'Cambiar entre modo claro y oscuro');
+  boton.textContent = estado.modo === 'oscuro' ? 'claro' : 'oscuro';
+  boton.style.cssText = [
+    'position:fixed', 'left:14px', 'bottom:14px', 'z-index:9999',
+    'font:700 10px/1 ui-monospace,"Courier New",monospace',
+    'letter-spacing:2px', 'text-transform:uppercase',
+    'padding:9px 11px', 'min-height:34px', 'cursor:pointer',
+    'color:var(--papel-alto,#e6effb)', 'background:var(--fondo-hondo,#03060e)',
+    'border:1px solid var(--senal,#0102ec)', 'opacity:.72',
+    'transition:opacity .2s ease',
+  ].join(';');
+  boton.addEventListener('mouseenter', () => { boton.style.opacity = '1'; });
+  boton.addEventListener('mouseleave', () => { boton.style.opacity = '.72'; });
+  boton.addEventListener('click', () => {
+    fijar({ modo: estado.modo === 'oscuro' ? 'claro' : 'oscuro' });
+  });
+  document.body.appendChild(boton);
+}
+
+/* Se restaura ANTES de montar el boton para que ya nazca con la etiqueta
+   correcta, y se aplica sin esperar animacion: regla de la casa, nada queda
+   invisible esperando un frame. */
+function arrancar() {
+  try {
+    const g = JSON.parse(sessionStorage.getItem(LLAVE) || 'null');
+    if (g && typeof g === 'object') estado = Object.assign(estado, g);
+  } catch (e) {}
+  if (estado.modo === 'oscuro' || estado.color) fijar({});
+  montarBoton();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', arrancar);
+} else {
+  arrancar();
+}
 /* Se expone en window para que el agente del sitio y la consola puedan
    llamarlo sin importar módulos. */
-window.nervPiel = { ponerPiel, quitarPiel, depurar, derivarPiel, PIELES };
+window.nervPiel = { ponerPiel, quitarPiel, depurar, derivarPiel, ponerModo,
+                    fijar, estadoActual, PIELES };

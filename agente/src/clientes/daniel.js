@@ -224,6 +224,16 @@ const HERRAMIENTAS = [
             '("mas oscuro", "mas rudo"), escoge tu un color que le quede. '+
             'Usa la palabra origen para regresar el sitio a su azul normal.',
         },
+        modo: {
+          type: 'string',
+          enum: ['claro', 'oscuro'],
+          description:
+            'La ESTRUCTURA del sitio, no el color. oscuro = fondo negro con '+
+            'texto claro; claro = el fondo blanco de siempre. USA oscuro '+
+            'siempre que pidan que el sitio se vea oscuro, en negro, nocturno, '+
+            'de noche, o "modo oscuro". Es distinto de mandar un color negro: '+
+            'eso solo quitaria el tono y dejaria el fondo blanco.',
+        },
         animo: {
           type: 'string',
           enum: ['claro', 'oscuro', 'duro', 'limpio', 'calido'],
@@ -310,7 +320,7 @@ function ejecutar(nombre, entrada, ajustes) {
     if (crudo === 'origen' || crudo === 'normal') {
       return {
         resultado: 'Listo: el sitio volvio a su azul de siempre.',
-        accion: { tipo: 'piel', color: null, animo: null },
+        accion: { tipo: 'piel', color: null, animo: null, modo: 'claro' },
         aviso: null,
       };
     }
@@ -323,13 +333,14 @@ function ejecutar(nombre, entrada, ajustes) {
         aviso: null,
       };
     }
+    const modo = entrada.modo === 'oscuro' ? 'oscuro' : 'claro';
     const animos = ['claro', 'oscuro', 'duro', 'limpio', 'calido'];
     const animo = animos.includes(entrada.animo) ? entrada.animo : 'oscuro';
     return {
       resultado:
         'Listo: el sitio ya esta repintado. Dilo en una frase corta, sin ' +
         'mencionar codigos de color, y ofrece probar otro o regresarlo.',
-      accion: { tipo: 'piel', color: crudo, animo },
+      accion: { tipo: 'piel', color: crudo, animo, modo },
       aviso: null,
     };
   }

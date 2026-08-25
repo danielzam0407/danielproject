@@ -1362,9 +1362,11 @@ class Component extends DCLogic {
   function aplicarPiel(accion) {
     var P = window.nervPiel;
     if (!P) return;
-    if (!accion.color) { P.quitarPiel(); return; }
-    var fichas = P.derivarPiel(accion.color, accion.animo);
-    if (fichas) P.ponerPiel(fichas);
+    // `fijar` es la unica puerta: aplica, marca el modo en el documento,
+    // actualiza el interruptor y lo recuerda para las demas paginas.
+    P.fijar({ color: accion.color || null,
+              animo: accion.animo || null,
+              modo:  accion.modo === 'oscuro' ? 'oscuro' : 'claro' });
   }
   function boton(accion) {
     if (accion && accion.tipo === 'piel') { aplicarPiel(accion); return; }

@@ -1,13 +1,19 @@
 /* Hoja compartida de las páginas de texto (about, contact, 404).
    La portada NO la usa: esa la pinta su propio componente. */
 
+/* Las mismas fichas que la portada, con los mismos nombres. Asi el
+   interruptor y el agente pintan todo el sitio, no solo el inicio. */
 :root {
   --tinta:  #08123a;
   --papel:  #f4f7fc;
   --senal:  #0102ec;
   --linea:  rgba(8, 18, 58, .16);
 }
-
+/* Cuando el modo oscuro esta puesto, la linea tambien tiene que voltearse:
+   un borde oscuro sobre fondo oscuro no se ve. */
+:root[data-piel="oscuro"] {
+  --linea: rgba(232, 238, 252, .20);
+}
 * { box-sizing: border-box; }
 
 body {
@@ -69,11 +75,12 @@ footer {
   border-top: 1px solid var(--linea); font-size: 13px; opacity: .7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tinta: #e8eefc;
-    --papel: #0a0d18;
-    --senal: #6f8cff;
-    --linea: rgba(232, 238, 252, .18);
-  }
-}
+/* NO se respeta `prefers-color-scheme` a proposito.
+
+   El sitio es el instrumento de venta: la estetica clara con ese azul ES lo
+   que Daniel vende, y si media visita la ve en una variante, esta juzgando su
+   trabajo por el plato B. Ademas mataria el momento del agente: quien ya tenga
+   el telefono en oscuro pediria "ponlo oscuro" y no pasaria nada.
+
+   La comodidad se resuelve con el interruptor visible que monta piel.js, no
+   quitandole al visitante la primera impresion. */
