@@ -1375,14 +1375,24 @@ class Component extends DCLogic {
      valida otra vez antes de tocar nada: piel.js solo deja pasar hexadecimal
      de seis digitos y fichas de su lista. Doble reja a proposito, porque lo
      que llega viene de un modelo que atiende a desconocidos. */
+  /* Un fallo aqui NO puede tumbar el chat: esta funcion corre dentro del
+     lector del stream, y un TypeError suyo se reporta como "Connection
+     dropped" — paso con un piel.js viejo en cache que no tenia fijar().
+     Por eso: try alrededor de todo, y respaldo si fijar no existe. */
   function aplicarPiel(accion) {
-    var P = window.nervPiel;
-    if (!P) return;
-    // `fijar` es la unica puerta: aplica, marca el modo en el documento,
-    // actualiza el interruptor y lo recuerda para las demas paginas.
-    P.fijar({ color: accion.color || null,
-              animo: accion.animo || null,
-              modo:  accion.modo === 'oscuro' ? 'oscuro' : 'claro' });
+    try {
+      var P = window.nervPiel;
+      if (!P) return;
+      var estado = { color: accion.color || null,
+                     animo: accion.animo || null,
+                     modo:  accion.modo === 'oscuro' ? 'oscuro' : 'claro' };
+      if (P.fijar) { P.fijar(estado); return; }
+      if (!estado.color) { P.quitarPiel && P.quitarPiel(); return; }
+      if (P.derivarPiel && P.ponerPiel) {
+        var fichas = P.derivarPiel(estado.color, estado.animo, estado.modo);
+        if (fichas) P.ponerPiel(fichas);
+      }
+    } catch (e) { /* la piel es opcional; el chat no */ }
   }
   function boton(accion) {
     if (accion && accion.tipo === 'piel') { aplicarPiel(accion); return; }
@@ -2804,6 +2814,6 @@ class Component extends DCLogic {
   <a href="/contact">contacto</a> y, para agentes,
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
-<script type="module" src="./piel.js"></script>
+<script type="module" src="./piel.js?v=3"></script>
 </body>
 </html>

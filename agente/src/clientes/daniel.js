@@ -211,7 +211,13 @@ const HERRAMIENTAS = [
       'su estilo o con los colores de su marca: ensenarselo convence mucho '+
       'mas que describirlo, y es gratis. '+
       'Ante la duda, USALA: pintar el sitio no rompe nada y siempre se puede '+
-      'regresar. Quedarse sin hacer nada si desperdicia el momento.',
+      'regresar. Quedarse sin hacer nada si desperdicia el momento. '+
+      'IMPORTANTE: tu NO puedes ver el sitio. La piel vive en el navegador '+
+      'de la persona y se reinicia si recarga la pagina, asi que tu memoria '+
+      'de la conversacion NO dice como se ve ahora. Nunca contestes "ya '+
+      'esta en ese color": llama la herramienta otra vez. Repetirla es '+
+      'inofensiva; negarte deja a la persona viendo un sitio que no '+
+      'coincide con lo que dices.',
     input_schema: {
       type: 'object',
       properties: {
@@ -338,8 +344,9 @@ function ejecutar(nombre, entrada, ajustes) {
     const animo = animos.includes(entrada.animo) ? entrada.animo : 'oscuro';
     return {
       resultado:
-        'Listo: el sitio ya esta repintado. Dilo en una frase corta, sin ' +
-        'mencionar codigos de color, y ofrece probar otro o regresarlo.',
+        'Aplicado en la pantalla de la persona (no es permanente: se ' +
+        'reinicia si recarga). Dilo en una frase corta, sin codigos de ' +
+        'color, y ofrece probar otro o regresarlo.',
       accion: { tipo: 'piel', color: crudo, animo, modo },
       aviso: null,
     };
