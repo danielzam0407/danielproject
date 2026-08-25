@@ -337,19 +337,102 @@ function guardar() {
 }
 
 /** Aplica un estado completo y lo recuerda. Es la unica puerta de entrada. */
-export function fijar(nuevo) {
+export function fijar(nuevo, persistir) {
   estado = Object.assign({}, estado, nuevo || {});
   if (!estado.color && estado.modo === 'claro') quitarPiel();
   else ponerPiel(derivarPiel(estado.color || MOLDE_CLARO['senal'],
                              estado.animo || 'claro', estado.modo));
   document.documentElement.dataset.piel = estado.modo;
   if (boton) boton.textContent = estado.modo === 'oscuro' ? 'claro' : 'oscuro';
-  guardar();
+  // La vista previa aplica sin guardar: si la persona navega a otra pagina a
+  // media cuenta regresiva, no debe llevarse un estado que iba a expirar.
+  if (persistir !== false) guardar();
   return estado;
 }
 
 export function estadoActual() { return Object.assign({}, estado); }
 
+/* ---- vista previa efimera ---------------------------------------------
+
+   El gesto de demo: el sitio entero se transforma, corre una cuenta
+   regresiva con la opcion de conservarlo, y si nadie decide, vuelve solo.
+   Ensenar sin comprometer — nadie se queda atorado en un look que solo
+   queria ver, y conservar es UNA decision consciente, no la inercia. */
+
+let previaAntes = null;
+let previaTimers = [];
+
+function matarPrevia() {
+  previaTimers.forEach(clearInterval);
+  previaTimers.forEach(clearTimeout);
+  previaTimers = [];
+  const o = document.getElementById('nerv-previa');
+  if (o) o.remove();
+}
+
+export function previa(nuevo, segundos) {
+  const total = Math.max(3, Math.min(60, parseFloat(segundos) || 10));
+  // Si encadenan vistas previas, el punto de retorno sigue siendo el
+  // estado REAL, no la previa anterior.
+  if (previaAntes === null) previaAntes = estadoActual();
+  matarPrevia();
+  if (previaAntes === null) previaAntes = estadoActual();
+  fijar(nuevo, false);
+
+  const o = document.createElement('div');
+  o.id = 'nerv-previa';
+  o.style.cssText = [
+    'position:fixed', 'top:14px', 'left:50%', 'transform:translateX(-50%)',
+    'z-index:10000', 'display:flex', 'gap:14px', 'align-items:center',
+    'font:700 11px/1 ui-monospace,"Courier New",monospace',
+    'letter-spacing:2px', 'text-transform:uppercase', 'padding:10px 14px',
+    'color:var(--papel-alto,#e6effb)', 'background:var(--fondo-hondo,#03060e)',
+    'border:1px solid var(--senal,#0102ec)',
+  ].join(';');
+
+  const rotulo = document.createElement('span');
+  const cuenta = document.createElement('b');
+  cuenta.style.color = 'var(--senal-suave,#7f9bff)';
+  const es = (document.documentElement.lang || 'en').startsWith('es');
+  rotulo.textContent = es ? '[ vista previa ]' : '[ preview ]';
+
+  function botonsito(texto, accion) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = texto;
+    b.style.cssText = 'font:inherit;letter-spacing:inherit;cursor:pointer;' +
+      'background:none;border:1px solid currentColor;color:inherit;' +
+      'padding:6px 9px;min-height:30px';
+    b.addEventListener('click', accion);
+    return b;
+  }
+
+  const conservar = botonsito(es ? 'conservar' : 'keep', () => {
+    matarPrevia();
+    previaAntes = null;
+    guardar();                       // AHORA si es una decision: se guarda
+  });
+  const volver = botonsito(es ? 'volver' : 'revert', () => terminar());
+
+  o.appendChild(rotulo); o.appendChild(cuenta);
+  o.appendChild(conservar); o.appendChild(volver);
+  document.body.appendChild(o);
+
+  let restante = total;
+  cuenta.textContent = restante + 's';
+  function terminar() {
+    const regreso = previaAntes;
+    previaAntes = null;
+    matarPrevia();
+    if (regreso) fijar(regreso);
+  }
+  previaTimers.push(setInterval(() => {
+    restante -= 1;
+    if (restante > 0) cuenta.textContent = restante + 's';
+  }, 1000));
+  previaTimers.push(setTimeout(terminar, total * 1000));
+  return total;
+}
 /* El interruptor. Existe porque hacer que alguien tenga que CONVERSAR con un
    agente para no lastimarse los ojos de noche es mal diseno. Un clic basta. */
 let boton = null;
@@ -398,4 +481,4 @@ if (document.readyState === 'loading') {
 /* Se expone en window para que el agente del sitio y la consola puedan
    llamarlo sin importar módulos. */
 window.nervPiel = { ponerPiel, quitarPiel, depurar, derivarPiel, ponerModo,
-                    fijar, estadoActual, PIELES };
+                    fijar, estadoActual, previa, PIELES };

@@ -1408,6 +1408,7 @@ class Component extends DCLogic {
       var estado = { color: accion.color || null,
                      animo: accion.animo || null,
                      modo:  accion.modo === 'oscuro' ? 'oscuro' : 'claro' };
+      if (accion.duracion && P.previa) { P.previa(estado, accion.duracion); return; }
       if (P.fijar) { P.fijar(estado); return; }
       if (!estado.color) { P.quitarPiel && P.quitarPiel(); return; }
       if (P.derivarPiel && P.ponerPiel) {
@@ -2848,7 +2849,7 @@ class Component extends DCLogic {
   <a href="/contact">contacto</a> y, para agentes,
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
-<script type="module" src="./piel.js?v=4"></script>
+<script type="module" src="./piel.js?v=5"></script>
 <script type="module" src="./bloques.js?v=2"></script>
 </body>
 </html>

@@ -249,6 +249,16 @@ const HERRAMIENTAS = [
             'calido es fondo claro con mas textura. Si no lo dicen, elige el '+
             'que mejor le quede a lo que pidieron.',
         },
+        duracion: {
+          type: 'number',
+          description:
+            'Opcional, en segundos (5 a 30). Ponla cuando la persona quiera '+
+            'VER como se veria sin comprometerse — "a ver", "ensename", '+
+            '"como se veria", "pruebalo": el sitio entero se transforma, '+
+            'corre una cuenta regresiva con boton de conservar, y regresa '+
+            'solo. 10 es un buen default. Si piden directamente ponerlo '+
+            '("ponlo", "cambialo", "dejalo"), omitela.',
+        },
       },
       required: ['color'],
     },
@@ -381,7 +391,11 @@ function ejecutar(nombre, entrada, ajustes) {
         'Aplicado en la pantalla de la persona (no es permanente: se ' +
         'reinicia si recarga). Dilo en una frase corta, sin codigos de ' +
         'color, y ofrece probar otro o regresarlo.',
-      accion: { tipo: 'piel', color: crudo, animo, modo },
+      accion: {
+        tipo: 'piel', color: crudo, animo, modo,
+        duracion: (typeof entrada.duracion === 'number' && entrada.duracion > 0)
+          ? Math.max(5, Math.min(30, entrada.duracion)) : null,
+      },
       aviso: null,
     };
   }
