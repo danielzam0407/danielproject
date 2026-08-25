@@ -215,10 +215,25 @@ export function derivarPiel(color, animo) {
   const { h } = aHsl(color);
   // El acento cruza la rueda: evita que una paleta de un solo tono se aplane.
   const hAcento = (h + 152) % 360;
+  /* `senal` es la unica ficha que la gente nombra de verdad ("ponlo verde").
+     Clavarla a la luminancia del azul original convertia un verde limon en un
+     olivo oscuro: tecnicamente legible, pero se siente como si no hubieran
+     sido escuchados.
+
+     Asi que a esa ficha se le deja seguir su propio brillo, con TECHO: nunca
+     mas clara de lo que permita 4.5:1 contra el papel. Libertad donde se nota,
+     piso donde importa. */
+  const luzPapel = PERFIL['papel'].luz;
+  const techoSenal = (luzPapel + 0.05) / 4.5 - 0.05;
+  const luzPedida = luminancia(color.trim().toLowerCase());
+
   const piel = {};
   for (const [ficha, base] of Object.entries(PERFIL)) {
     const tono = ficha === 'acento' ? hAcento : h;
-    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat), base.luz);
+    const luz = ficha === 'senal'
+      ? Math.max(0.012, Math.min(techoSenal, luzPedida))
+      : base.luz;
+    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat), luz);
   }
   piel['pulso'] = String(a.pulso);
   piel['ruido'] = String(a.ruido);
