@@ -215,25 +215,22 @@ export function derivarPiel(color, animo) {
   const { h } = aHsl(color);
   // El acento cruza la rueda: evita que una paleta de un solo tono se aplane.
   const hAcento = (h + 152) % 360;
-  /* `senal` es la unica ficha que la gente nombra de verdad ("ponlo verde").
-     Clavarla a la luminancia del azul original convertia un verde limon en un
-     olivo oscuro: tecnicamente legible, pero se siente como si no hubieran
-     sido escuchados.
+  /* Se intento darle libertad de brillo a `senal` —la unica ficha que la gente
+     nombra— para que un "verde limon" no saliera olivo oscuro. Se midio y se
+     descarto: subio las fallas de contraste de 17 a 22.
 
-     Asi que a esa ficha se le deja seguir su propio brillo, con TECHO: nunca
-     mas clara de lo que permita 4.5:1 contra el papel. Libertad donde se nota,
-     piso donde importa. */
-  const luzPapel = PERFIL['papel'].luz;
-  const techoSenal = (luzPapel + 0.05) / 4.5 - 0.05;
-  const luzPedida = luminancia(color.trim().toLowerCase());
+     La razon es que `senal` esta restringida por AMBOS lados: es texto sobre
+     papel claro, y tambien FONDO de los chips con texto claro encima.
+     Aclararla arregla un lado y rompe el otro. El azul original esta justo en
+     el punto donde ambas cosas funcionan.
 
+     Precio aceptado: un limon brillante sale verde profundo. A cambio, ninguna
+     piel puede ser menos legible que la original. Se prefirio asi porque la
+     queja fue de textos que no se veian, no de colores apagados. */
   const piel = {};
   for (const [ficha, base] of Object.entries(PERFIL)) {
     const tono = ficha === 'acento' ? hAcento : h;
-    const luz = ficha === 'senal'
-      ? Math.max(0.012, Math.min(techoSenal, luzPedida))
-      : base.luz;
-    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat), luz);
+    piel[ficha] = conLuminancia(tono, Math.min(1, base.s * a.sat), base.luz);
   }
   piel['pulso'] = String(a.pulso);
   piel['ruido'] = String(a.ruido);
