@@ -125,6 +125,28 @@ export async function datos(env) {
           cuenta.abiertos++;
         }
       }
+      /* ¿Los "0 abiertos" significan que nadie abrió, o que no estamos
+         midiendo? Resend trae el rastreo de apertura APAGADO por defecto, y
+         con él apagado un correo leído se queda en `delivered` para siempre.
+
+         Sin esta consulta, el tablero enseñaría un 0 que parece un veredicto
+         sobre el mensaje cuando en realidad es un hueco en el instrumento. Es
+         la misma regla que arriba: un cero que significa "no miré" es peor que
+         decir que no miraste. */
+      try {
+        const rd = await fetch('https://api.resend.com/domains', {
+          headers: { authorization: `Bearer ${env.RESEND_API_KEY}` },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (rd.ok) {
+          const dd = await rd.json();
+          const dominios = dd.data || [];
+          cuenta.rastreaAperturas = dominios.some((x) => x.open_tracking === true);
+        }
+      } catch {
+        // Se queda undefined: "no sé", que es distinto de true y de false.
+      }
+
       salida.correo = { configurado: true, ...cuenta, malos: malos.slice(0, 20) };
     } catch (e) {
       salida.correo = { configurado: true, error: String(e) };
@@ -293,12 +315,25 @@ function pintarCorreo(m) {
   if (m.error) {
     return seccion('Correo frío', '<p class="nada">' + esc(m.error) + '</p>');
   }
+  // Si el rastreo está apagado, "abiertos" no es un número: es un hueco. Se
+  // pinta como hueco, porque un 0 ahí se lee como veredicto sobre el mensaje.
+  var abiertos = m.rastreaAperturas === false
+    ? cifra('—', 'abiertos: sin medir')
+    : cifra(m.abiertos, 'abiertos', m.abiertos ? 'bien' : '');
+
   var dentro = '<div class="cifras">' +
     cifra(m.enviados, 'enviados') +
     cifra(m.entregados, 'entregados', 'bien') +
     cifra(m.rebotados, 'rebotados', m.rebotados ? 'mal' : '') +
-    cifra(m.abiertos, 'abiertos', m.abiertos ? 'bien' : '') +
+    abiertos +
     '</div>';
+
+  if (m.rastreaAperturas === false) {
+    dentro += '<p class="nada">El rastreo de apertura está <b>apagado</b> en Resend' +
+      ' (viene así por defecto). Los entregados pueden haberse leído todos y aquí' +
+      ' no se vería. Resend recomienda dejarlo apagado en correo que no es' +
+      ' campaña: el pixel de rastreo es señal de marketing.</p>';
+  }
   if (m.malos && m.malos.length) {
     dentro += '<table>' + m.malos.map(function (x) {
       return '<tr><td>' + esc(x.a) + '</td><td>' + esc(x.estado) + '</td></tr>';
