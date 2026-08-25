@@ -102,6 +102,77 @@ export const PIELES = {
   },
 };
 
+
+/* ---- motor de paleta ---------------------------------------------------
+
+   Enumerar pieles no escala: si alguien dice "morado" y no hay piel morada,
+   el agente prefiere no hacer nada. Y ese fue justo el sintoma.
+
+   Aqui la paleta se DERIVA de un color. Las reglas de armonia son fijas y
+   son las de la casa; lo unico que pone quien habla es el tono. Sigue siendo
+   un sistema cerrado —no puede salir cualquier cosa— pero admite cualquier
+   color en vez de cuatro. */
+
+function aHsl(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  const l = (max + min) / 2;
+  const sat = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  return { h, s: sat, l };
+}
+
+function aHex(h, s, l) {
+  s = Math.max(0, Math.min(1, s));
+  l = Math.max(0, Math.min(1, l));
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const t = h < 60 ? [c,x,0] : h < 120 ? [x,c,0] : h < 180 ? [0,c,x]
+          : h < 240 ? [0,x,c] : h < 300 ? [x,0,c] : [c,0,x];
+  return '#' + t.map(v => Math.round((v + m) * 255)
+                          .toString(16).padStart(2, '0')).join('');
+}
+
+/* Los cuatro animos. No cambian el tono: cambian el CARACTER —cuanto
+   contraste, cuanto grano, que tan rapido se mueve. */
+const ANIMOS = {
+  claro:  { fondoClaro: true,  sat: 1.00, ruido: 0.10, pulso: 1.00 },
+  oscuro: { fondoClaro: false, sat: 0.95, ruido: 0.30, pulso: 0.90 },
+  duro:   { fondoClaro: false, sat: 1.25, ruido: 0.85, pulso: 1.40 },
+  limpio: { fondoClaro: true,  sat: 0.80, ruido: 0.00, pulso: 0.75 },
+  calido: { fondoClaro: true,  sat: 0.90, ruido: 0.35, pulso: 0.90 },
+};
+
+/** De un color y un animo sale la paleta entera. */
+export function derivarPiel(color, animo) {
+  if (!HEX.test(String(color || '').trim())) return null;
+  const a = ANIMOS[animo] || ANIMOS.oscuro;
+  const { h, s, l } = aHsl(color);
+  const sat = Math.max(0.35, Math.min(1, s * a.sat));
+  // El acento va al otro lado de la rueda: es lo que evita que una paleta de
+  // un solo tono se sienta plana.
+  const hA = (h + 152) % 360;
+  return {
+    'senal':       aHex(h, sat, Math.max(0.32, Math.min(0.56, l))),
+    'senal-suave': aHex(h, sat * 0.62, 0.72),
+    'acento':      aHex(hA, sat * 0.70, a.fondoClaro ? 0.55 : 0.68),
+    'tinta':       a.fondoClaro ? aHex(h, 0.55, 0.13) : aHex(h, 0.20, 0.92),
+    'papel':       a.fondoClaro ? aHex(h, 0.22, 0.97) : aHex(h, 0.16, 0.09),
+    'papel-alto':  a.fondoClaro ? aHex(h, 0.24, 0.93) : aHex(h, 0.18, 0.14),
+    'tenue':       aHex(h, 0.22, a.fondoClaro ? 0.68 : 0.52),
+    'fondo-hondo': a.fondoClaro ? aHex(h, 0.45, 0.06) : aHex(h, 0.35, 0.04),
+    'pulso':       String(a.pulso),
+    'ruido':       String(a.ruido),
+  };
+}
 /* Se expone en window para que el agente del sitio y la consola puedan
    llamarlo sin importar módulos. */
-window.nervPiel = { ponerPiel, quitarPiel, depurar, PIELES };
+window.nervPiel = { ponerPiel, quitarPiel, depurar, derivarPiel, PIELES };

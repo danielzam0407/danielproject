@@ -202,32 +202,39 @@ const HERRAMIENTAS = [
   {
     name: 'cambiar_piel',
     description:
-      'Cambia la apariencia del sitio en vivo, delante de quien te escribe. '+
-      'Usala cuando pidan verlo de otro color, mas oscuro, mas agresivo, mas '+
-      'limpio, mas calido, o cuando pregunten si puedes trabajar en su '+
-      'estilo: enseñarselo convence mas que describirlo. Tambien para '+
-      'regresarlo a como estaba. No la uses sin que lo pidan.',
+      'Repinta el sitio entero en vivo, delante de quien te escribe. '+
+      'DISPARALA APENAS alguien mencione un color, un animo o una estetica, '+
+      'aunque sea UNA SOLA PALABRA y aunque no lo pida como orden. '+
+      'Ejemplos que la disparan: "rojo", "morado", "mas oscuro", "algo mas '+
+      'limpio", "que se vea rudo", "como Evangelion", "y en verde?", '+
+      '"no me gusta el azul". Tambien cuando pregunten si puedes trabajar en '+
+      'su estilo o con los colores de su marca: ensenarselo convence mucho '+
+      'mas que describirlo, y es gratis. '+
+      'Ante la duda, USALA: pintar el sitio no rompe nada y siempre se puede '+
+      'regresar. Quedarse sin hacer nada si desperdicia el momento.',
     input_schema: {
       type: 'object',
       properties: {
-        estilo: {
+        color: {
           type: 'string',
-          enum: ['origen', 'brutal', 'quirofano', 'ambar'],
           description:
-            'origen = el azul de siempre. brutal = rojo y negro, duro y ruidoso. '+
-            'quirofano = turquesa frio, limpio, sin grano. ambar = calido, '+
-            'terroso, como papel viejo.',
+            'El color en hexadecimal de seis digitos, por ejemplo #7b3fa0 '+
+            'para morado. TRADUCELO TU del nombre que hayan dicho; no le '+
+            'pidas a nadie un codigo. Si describen un animo sin nombrar color '+
+            '("mas oscuro", "mas rudo"), escoge tu un color que le quede. '+
+            'Usa la palabra origen para regresar el sitio a su azul normal.',
         },
-        acento: {
+        animo: {
           type: 'string',
+          enum: ['claro', 'oscuro', 'duro', 'limpio', 'calido'],
           description:
-            'Opcional. Color de acento en hexadecimal de seis digitos, por '+
-            'ejemplo #ff2d20. Solo si piden un color concreto. El resto de la '+
-            'paleta no se toca: cambiar todo a capricho produce combinaciones '+
-            'feas y eso es peor que no cambiar nada.',
+            'El caracter, no el tono. claro y limpio dejan fondo claro; '+
+            'oscuro y duro lo ponen oscuro; duro sube contraste y grano; '+
+            'calido es fondo claro con mas textura. Si no lo dicen, elige el '+
+            'que mejor le quede a lo que pidieron.',
         },
       },
-      required: ['estilo'],
+      required: ['color'],
     },
   },
   {
@@ -289,24 +296,40 @@ function ejecutar(nombre, entrada, ajustes) {
   }
 
   if (nombre === 'cambiar_piel') {
-    /* El agente NO manda colores sueltos: elige una piel curada y, a lo mucho,
-       cambia el acento. La restriccion es el producto — un agente que puede
-       cualquier paleta produce, tarde o temprano, algo feo delante de un
-       prospecto, y el criterio visual es justo lo que no se puede copiar.
+    /* El agente manda UN color y un animo. La paleta completa la deriva el
+       navegador con las reglas de armonia de la casa (piel.js).
 
-       El navegador valida otra vez antes de aplicar (piel.js). Esto es lo que
-       propone; alla se decide si entra. */
-    const estilos = ['origen', 'brutal', 'quirofano', 'ambar'];
-    const estilo = estilos.includes(entrada.estilo) ? entrada.estilo : 'origen';
-    const crudo = String(entrada.acento || '').trim();
-    const acento = /^#[0-9a-fA-F]{6}$/.test(crudo) ? crudo.toLowerCase() : null;
+       Antes esto era una lista de cuatro pieles y el sintoma fue claro: si
+       alguien decia "morado" y no habia piel morada, el modelo prefería no
+       hacer nada. Derivar en vez de enumerar admite cualquier color sin
+       soltar el control de como se combinan.
+
+       Sigue siendo sistema cerrado: aqui se acota, y alla se valida otra vez
+       antes de tocar el documento. */
+    const crudo = String(entrada.color || '').trim().toLowerCase();
+    if (crudo === 'origen' || crudo === 'normal') {
+      return {
+        resultado: 'Listo: el sitio volvio a su azul de siempre.',
+        accion: { tipo: 'piel', color: null, animo: null },
+        aviso: null,
+      };
+    }
+    if (!/^#[0-9a-f]{6}$/.test(crudo)) {
+      return {
+        resultado:
+          'Ese color no vino en hexadecimal de seis digitos. Traducelo tu ' +
+          '(morado = #7b3fa0) y vuelve a llamar la herramienta.',
+        accion: null,
+        aviso: null,
+      };
+    }
+    const animos = ['claro', 'oscuro', 'duro', 'limpio', 'calido'];
+    const animo = animos.includes(entrada.animo) ? entrada.animo : 'oscuro';
     return {
       resultado:
-        estilo === 'origen'
-          ? 'Listo: el sitio volvio a su apariencia normal.'
-          : `Listo: el sitio ya se ve en "${estilo}". Dilo en una frase corta y` +
-            ' ofrece regresarlo o probar otro.',
-      accion: { tipo: 'piel', estilo, acento },
+        'Listo: el sitio ya esta repintado. Dilo en una frase corta, sin ' +
+        'mencionar codigos de color, y ofrece probar otro o regresarlo.',
+      accion: { tipo: 'piel', color: crudo, animo },
       aviso: null,
     };
   }

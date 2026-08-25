@@ -1330,15 +1330,10 @@ class Component extends DCLogic {
   function aplicarPiel(accion) {
     var P = window.nervPiel;
     if (!P) return;
-    if (accion.estilo === 'origen') { P.quitarPiel(); return; }
-    var base = P.PIELES[accion.estilo];
-    if (!base) return;
-    var fichas = {};
-    for (var k in base) if (Object.prototype.hasOwnProperty.call(base, k)) fichas[k] = base[k];
-    if (accion.acento) fichas['senal'] = accion.acento;
-    P.ponerPiel(fichas);
+    if (!accion.color) { P.quitarPiel(); return; }
+    var fichas = P.derivarPiel(accion.color, accion.animo);
+    if (fichas) P.ponerPiel(fichas);
   }
-
   function boton(accion) {
     if (accion && accion.tipo === 'piel') { aplicarPiel(accion); return; }
     var a = document.createElement('a');
