@@ -92,7 +92,8 @@ const NOMBRES = Object.keys(CATALOGO);
 /* ---- estilos, autocontenidos e idempotentes --------------------------- */
 
 const CSS = `
-#nerv-bloques { font-family: 'IBM Plex Mono', ui-monospace, monospace;
+#nerv-bloques { position: relative; z-index: 2;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
   background: var(--papel, #f4f7fc); color: var(--tinta, #08123a); }
 #nerv-bloques .bloque { max-width: 1080px; margin: 0 auto;
   padding: 56px 24px 64px; border-top: 1px solid rgba(var(--tinta-rgb, 8,18,58), .16);
@@ -167,12 +168,16 @@ function contenedor() {
   if (!c) {
     c = document.createElement('div');
     c.id = 'nerv-bloques';
-    /* Después del componente: sus secciones son suyas y se repintan solas;
-       pelear por meterse entre ellas es perder. Los anexos van al final. */
-    const xdc = document.querySelector('x-dc');
-    (xdc && xdc.parentNode)
-      ? xdc.parentNode.insertBefore(c, xdc.nextSibling)
-      : document.body.appendChild(c);
+    /* Después del componente RENDERIZADO. La etiqueta <x-dc> es sólo la
+       semilla — el árbol vivo está en #dc-root, y montarse tras la etiqueta
+       dejaba los anexos encimados a media página, con los tickers absolutos
+       del componente atravesándolos. Ese bug ya salió en producción. */
+    const raiz = document.getElementById('dc-root');
+    if (raiz && raiz.parentNode) {
+      raiz.parentNode.insertBefore(c, raiz.nextSibling);
+    } else {
+      document.body.appendChild(c);
+    }
   }
   return c;
 }
