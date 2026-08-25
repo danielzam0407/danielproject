@@ -6,6 +6,7 @@
 <title>nerv — motion / web / print</title>
 <meta name="description" content="Custom sites with 3D and a chat agent built in. Interfaces, motion and sound — mostly blue ones.">
 <link rel="canonical" href="https://nervcenter.online/">
+<link rel="alternate" type="text/markdown" href="https://nervcenter.online/index.md">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f7fc'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%2308123a' stroke-width='2'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%230102ec'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="nerv">
@@ -21,6 +22,73 @@
 <meta name="twitter:description" content="Custom sites with 3D and a chat agent built in. Interfaces, motion and sound — mostly blue ones.">
 <meta name="twitter:image" content="https://nervcenter.online/og-nerv.jpg">
 <script src="./support.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://nervcenter.online/#organizacion",
+      "name": "nerv",
+      "alternateName": "nerv.center",
+      "url": "https://nervcenter.online/",
+      "description": "Estudio de diseño y desarrollo web en Monterrey, México. Sitios a la medida —sin plantillas— con 3D cuando la pieza lo pide y un agente de chat propio ya integrado.",
+      "email": "dani@nervcenter.online",
+      "logo": "https://nervcenter.online/og-nerv.jpg",
+      "image": "https://nervcenter.online/og-nerv.jpg",
+      "founder": {
+        "@type": "Person",
+        "name": "Daniel Zambrano"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Monterrey",
+        "addressRegion": "Nuevo León",
+        "addressCountry": "MX"
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "sales",
+          "email": "dani@nervcenter.online",
+          "availableLanguage": [
+            "es",
+            "en"
+          ],
+          "areaServed": "MX"
+        }
+      ],
+      "knowsLanguage": [
+        "es",
+        "en"
+      ],
+      "sameAs": [
+        "https://github.com/danielzam0407"
+      ],
+      "knowsAbout": [
+        "Diseño web a la medida",
+        "Agentes de chat para sitios web",
+        "3D en el navegador",
+        "Cloudflare Workers",
+        "Gráficos generativos en canvas"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://nervcenter.online/#sitio",
+      "url": "https://nervcenter.online/",
+      "name": "nerv",
+      "inLanguage": [
+        "es",
+        "en"
+      ],
+      "publisher": {
+        "@id": "https://nervcenter.online/#organizacion"
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
 <x-dc>
@@ -2586,5 +2654,45 @@ class Component extends DCLogic {
 })();
 </script>
 
+<!-- Resumen para clientes sin JavaScript: rastreadores y agentes. Va FUERA del
+     bloque <x-dc> a propósito (una sincronización desde Claude Design regenera
+     el componente y se lleva lo que esté adentro). Un navegador con JS nunca lo
+     muestra; el contenido dice lo mismo que la página, sólo en texto plano. -->
+<noscript>
+  <h2>nerv — estudio de diseño y desarrollo web</h2>
+  <p>nerv hace sitios web con diseño a la medida, sin plantillas ni
+  constructores visuales, con 3D cuando la pieza lo pide y un agente de chat
+  propio ya integrado. Con base en Monterrey, Nuevo León, México. Lo opera
+  Daniel Zambrano; trabaja en español e inglés.</p>
+
+  <h3>El agente de chat viene incluido</h3>
+  <p>Cada sitio se entrega con su agente y su forma de contacto integrados. El
+  chat de este sitio no es una maqueta: conoce el trabajo del estudio, agenda
+  en un calendario real y avisa de cada interesado. Es la demostración del
+  servicio, funcionando.</p>
+
+  <h3>Cómo está construido</h3>
+  <p>A mano y cerca del navegador: canvas, 3D en CSS puro, agentes sobre
+  Cloudflare Workers. Sin librerías pesadas, porque el peso de la página se
+  nota en el celular de quien la abre con datos móviles.</p>
+
+  <h3>Trabajo publicado</h3>
+  <ul>
+    <li><strong>fracture</strong> — escribes una palabra y se convierte en una
+    portada. Motor generativo sobre canvas con semilla determinista.
+    <a href="https://danielzam0407.github.io/fracture/">Verlo</a>.</li>
+    <li><strong>work2</strong> — portafolio que se navega como menú de
+    videojuego: pasillo 3D en CSS puro, sin WebGL.
+    <a href="https://danielzam0407.github.io/menu-pasillo/">Verlo</a>.</li>
+    <li><strong>work3</strong> — sitio que se maneja con el teclado, con menú
+    de comando en cuatro secciones. Sin liga pública.</li>
+  </ul>
+
+  <h3>Contacto</h3>
+  <p>Correo: <a href="mailto:dani@nervcenter.online">dani@nervcenter.online</a>.
+  Más en <a href="/about.html">quiénes somos</a>,
+  <a href="/contact.html">contacto</a> y, para agentes,
+  <a href="/llms.txt">llms.txt</a>.</p>
+</noscript>
 </body>
 </html>

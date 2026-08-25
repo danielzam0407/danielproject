@@ -1,0 +1,17 @@
+# Cabeceras estáticas de Cloudflare Pages.
+# La negociación por Accept la hace functions/_middleware.js; esto es el
+# respaldo para cuando alguien pide un .md directo, sin negociar.
+
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+  Vary: Accept, Accept-Encoding
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Vary: Accept, Accept-Encoding
+
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+
+/robots.txt
+  Content-Type: text/plain; charset=utf-8

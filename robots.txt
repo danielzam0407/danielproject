@@ -1,0 +1,7 @@
+# nerv — https://nervcenter.online
+# Estudio de diseño y desarrollo web. Monterrey, México.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://nervcenter.online/sitemap.xml
