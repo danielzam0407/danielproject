@@ -58,9 +58,11 @@
   Cloudflare Workers with its database. Cloudflare keeps its own server logs and
   acts as a provider working for Daniel, not on its own account.</p>
   <p>The site does remember a few small things in your browser so it behaves the
-  way you left it: the language you picked, and — if you open the chat — the id
-  of your conversation and any appearance change you asked the agent for. They
-  stay on your device and are not sent anywhere else.</p>
+  way you left it: the language you picked, and — once you write in the chat —
+  the id of your conversation and any appearance change you asked the agent for.
+  The language and the appearance never leave your device. The conversation id
+  does: your browser sends it back with every message, which is how the agent
+  picks the thread up where you left it.</p>
 
   <h2>If you use the chat</h2>
   <p>The chat sends what you type to a small server run by Daniel, which passes

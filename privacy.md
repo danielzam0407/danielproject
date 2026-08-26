@@ -23,9 +23,11 @@ con su base de datos. Cloudflare guarda sus propios registros de servidor y
 actúa como proveedor de Daniel, no por cuenta propia.
 
 El sitio sí recuerda un par de cosas pequeñas en tu navegador para comportarse
-como lo dejaste: el idioma que elegiste y —si abres el chat— el id de tu
-conversación y cualquier cambio de apariencia que le hayas pedido al agente. Se
-quedan en tu dispositivo y no se mandan a ningún lado.
+como lo dejaste: el idioma que elegiste y —en cuanto escribes en el chat— el id
+de tu conversación y cualquier cambio de apariencia que le hayas pedido al
+agente. El idioma y la apariencia nunca salen de tu dispositivo. El id de la
+conversación sí: tu navegador lo manda de vuelta con cada mensaje, y es así como
+el agente retoma el hilo donde lo dejaste.
 
 ## Si usas el chat
 
