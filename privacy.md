@@ -7,8 +7,9 @@ Actualizada el 26 de agosto de 2026
 
 Versión corta: éste es el sitio de un estudio de una persona. No tiene
 analítica y no pone cookies. Si nunca usas el chat, lo único que ocurre es que
-carga una página web y el sitio recuerda qué idioma elegiste. Si usas el chat,
-la conversación se guarda — eso está más abajo.
+carga una página web y tu navegador guarda dos ajustes pequeños: el idioma en el
+que se te está mostrando y, si usas el botón de modo oscuro, esa elección. Si
+usas el chat, la conversación se guarda — eso está más abajo.
 
 ## Qué se carga al abrir la página
 
@@ -23,11 +24,13 @@ con su base de datos. Cloudflare guarda sus propios registros de servidor y
 actúa como proveedor de Daniel, no por cuenta propia.
 
 El sitio sí recuerda un par de cosas pequeñas en tu navegador para comportarse
-como lo dejaste: el idioma que elegiste y —en cuanto escribes en el chat— el id
-de tu conversación y cualquier cambio de apariencia que le hayas pedido al
-agente. El idioma y la apariencia nunca salen de tu dispositivo. El id de la
-conversación sí: tu navegador lo manda de vuelta con cada mensaje, y es así como
-el agente retoma el hilo donde lo dejaste.
+como lo dejaste: el idioma en el que se te está mostrando —tomado de la
+configuración de tu propio navegador en la primera visita, y cambiado si usas el
+interruptor—, la apariencia, si activaste el modo oscuro o le pediste un cambio
+al agente, y, en cuanto escribes en el chat, el id de tu conversación. El idioma
+y la apariencia nunca salen de tu dispositivo. El id de la conversación sí: tu
+navegador lo manda de vuelta con cada mensaje, y es así como el agente retoma el
+hilo donde lo dejaste.
 
 ## Si usas el chat
 
