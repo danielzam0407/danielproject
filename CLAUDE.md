@@ -110,6 +110,90 @@ producción: `curl -H 'Origin: http://localhost:4322' .../chat` devolvía **200*
 gastaba cuota. La cabecera Origin la pone el navegador, pero cualquier cosa que
 no sea un navegador la escribe a mano.
 
+## Qué skill se activa con qué
+
+Hay ~85 skills cargadas y sólo dos son de la casa. Esta lista es para
+activarlas **sin que se pidan**, y sobre todo para no arrastrar a este repo las
+que pertenecen a otro stack.
+
+**Una skill no reemplaza a un guardia.** El orden es: la skill hace el trabajo,
+el subagente da el visto bueno. `security-review` no exime de `auditor-rojo`
+(regla 7); ninguna skill de diseño exime de `critico-visual`.
+
+### Obligatorias, por disparador
+
+- **Tocar `agente/`** — prompt, herramientas, ids de modelo, SDK → `claude-api`
+  **antes de abrir el archivo**. Es lo que impide "arreglar" el import de
+  Anthropic sobre DeepSeek (regla 8) y lo que trae los ids vigentes en vez de
+  los que yo recuerde. Después del cambio: `auditor-rojo`.
+- **Cambio con consecuencia pública** — worker, endpoints, CORS, tokens,
+  `origenes` → `security-review` sobre el diff, antes de desplegar. Complementa
+  al auditor: uno lee el código, el otro ataca lo que ya está en vivo.
+- **Antes de empujar cualquier diff** → `code-review`. Con `ultra` si toca la
+  puerta de bandeja/tablero, `autorizado`, o el motor de fichas.
+- **Cara nueva del sitio** — `index.html`, `piel.js`, `bloques.js`, pieles,
+  modo oscuro → `industrial-brutalist-ui` o `frontend-design` para proponerla,
+  `critico-visual` para medirla. Canto duro y rejilla, no vidrio.
+- **Gráficas del `/tablero`** → `dataviz` antes de la primera línea de chart, y
+  la misma línea base de contraste: 41/34, columna de lectura en 6.
+- **Tocar `.claude/settings.json`** — enganches, permisos, env →
+  `update-config`. No hay `jq`, y los enganches sólo se leen al arrancar.
+- **Un reporte o informe que va a leer alguien más** → `artifact-design` antes
+  de escribir el HTML.
+
+### Útiles cuando aplican
+
+- `simplify` — limpieza de código ya escrito. Calidad, no cacería de bugs.
+- `skill-creator` — cuando un trabajo se repitió tres veces **y salió igual las
+  tres**. Si salió distinto al menos una, es agente (`fabrica-de-agentes`).
+- `docx` / `pdf` / `xlsx` / `pptx` — entregables a cliente. No entran al repo.
+- `responder-del-stack` / `reextraer-guia` — preguntas de stack de HAILO.
+- `consolidate-memory` / `explain-usage` — mantenimiento, sólo si se piden.
+- `watch-and-learn` — convertir un video en skill.
+
+### Las que NO aplican aquí
+
+**Todo `vercel:*` y todo `clerk:*`.** Esto es Cloudflare Pages + Workers, sin
+build y sin auth de usuarios. Si una de ésas aparece en este repo, me equivoqué
+de proyecto: pertenecen a `taller-hailo` y a T Dental. El MCP de Vercel además
+no está autorizado en esta sesión.
+
+**`loop` y `schedule` para vigilar.** Ya hay dos guardias en cron del worker a
+las 9:00 UTC que corren sin sesión abierta ni laptop prendida. Un `/loop` que
+vigile lo mismo es peor: se muere al cerrar la terminal. Programar sólo lo que
+exige criterio — comparar fuente contra fuente ya lo hace el cron gratis.
+
+**`run` e `init`.** No hay servidor de desarrollo, es estático: se abre con el
+Browser pane, y con la regla 9 presente — el pane no compone.
+
+### El encargo: de un objetivo a trabajo corriendo
+
+Cuando el pedido no es una tarea sino un objetivo —*"quiero hacer todo esto,
+haz los prompts necesarios y ejecútalos"*— la entrada es **`/encargo`**
+(`.claude/skills/encargo/SKILL.md`). Parte el objetivo en piezas, le asigna a
+cada una su skill y su guardia, y las corre con el workflow homónimo
+(`.claude/workflows/encargo.js`). Daniel dice el objetivo; las tareas, los
+prompts y los comandos son trabajo mío.
+
+Lo que lo separa de "lanzar agentes y ver qué sale":
+
+- **El paralelismo es por archivos disjuntos**, no por worktree. Dos piezas que
+  comparten archivo se serializan solas. El worktree no sirve aquí: `.claude/`
+  está en `.gitignore`, así que un agente aislado se queda sin fronteras y sin
+  guardias.
+- **Los guardias en vivo corren UNA vez por encargo**, contra el estado final.
+  13 ataques son 13 de los 40 del día (frontera 7): uno por pieza sería vaciar
+  la cuota midiendo pasos intermedios.
+- **El workflow no despliega.** Construye y mide; aplicar, commitear, desplegar
+  y verificar lo cierra el principal, que sí está en la conversación.
+- **Tope de 6 piezas** — son 2 agentes cada una y el techo de sesión es 15. Más
+  que eso son varios encargos en fila, y entre uno y otro se corrige el rumbo.
+
+**La frontera de los constructores es de papel.** Un guardia invocado por
+`agentType` no tiene `Write` por su ficha; los agentes que construyen tienen
+todo, y lo único que les impide desplegar es el preámbulo del script. Si una
+pieza es peligrosa, no se delega.
+
 ## El escuadrón
 
 Cinco subagentes en `.claude/agents/`. La política que todos respetan está en
