@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>privacy — daniel.project</title>
-<meta name="description" content="What this site does with data. Short, because it does very little.">
-<link rel="canonical" href="https://danielzam0407.github.io/danielproject/privacy.html">
+<title>Privacy — nerv</title>
+<meta name="description" content="What nerv does with your data: what the chat stores, who can see it, and how to have it deleted.">
+<link rel="canonical" href="https://nervcenter.online/privacy">
+<link rel="alternate" type="text/markdown" href="https://nervcenter.online/privacy.md">
 <meta name="robots" content="index, follow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f7fc'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%2308123a' stroke-width='2'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%230102ec'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,20 +39,28 @@
 
   <span class="kagi">privacy</span>
   <h1>What this site does with data.</h1>
-  <p class="fecha">Last updated 24 August 2026</p>
+  <p class="fecha">Last updated 26 August 2026</p>
 
   <hr>
 
-  <p>Short version: this is a personal portfolio. It has no analytics, sets no
-  cookies, and stores nothing in your browser. If you never use the chat, the
-  only thing that happens is that a web page loads.</p>
+  <p>Short version: this is the site of a one-person studio. It has no
+  analytics and sets no cookies. If you never use the chat, the only thing that
+  happens is that a web page loads and the site remembers which language you
+  picked. If you do use the chat, the conversation is stored — that part is
+  below.</p>
 
   <h2>What loads when you open the page</h2>
-  <p>Fonts come from Google Fonts and one stylesheet comes from unpkg. Loading a
-  file from someone else's server means that server sees your IP address — that
-  is how the web works, and it is true of any site using a font CDN. Neither is
-  used to identify you here.</p>
-  <p>The page itself is served by GitHub Pages, which keeps its own server logs.</p>
+  <p>Fonts come from Google Fonts. On the home page one stylesheet also comes
+  from unpkg. Loading a file from someone else's server means that server sees
+  your IP address — that is how the web works, and it is true of any site using
+  a font CDN. Neither is used to identify you here.</p>
+  <p>The page itself is served by Cloudflare Pages, and the chat runs on
+  Cloudflare Workers with its database. Cloudflare keeps its own server logs and
+  acts as a provider working for Daniel, not on its own account.</p>
+  <p>The site does remember a few small things in your browser so it behaves the
+  way you left it: the language you picked, and — if you open the chat — the id
+  of your conversation and any appearance change you asked the agent for. They
+  stay on your device and are not sent anywhere else.</p>
 
   <h2>If you use the chat</h2>
   <p>The chat sends what you type to a small server run by Daniel, which passes
@@ -59,18 +68,26 @@
   Your message and the conversation so far are processed there so an answer can
   come back.</p>
   <ul>
-    <li><strong>Your IP address</strong> is counted, so one person cannot run the
-    bill up. The counter is a number per address per day and is deleted
-    automatically after 48 hours. It is not linked to your messages.</li>
-    <li><strong>Nothing is stored</strong> otherwise. Conversations live in your
-    browser tab while it is open and are gone when you close it.</li>
+    <li><strong>The conversation is stored.</strong> Your messages and the
+    agent's replies are saved in a database run by Daniel on Cloudflare, so the
+    thread survives a reload and so he can read what you asked for. He is the
+    only person who can open it.</li>
+    <li><strong>Your IP address is recorded in two places.</strong> One is a
+    daily counter, so a single person cannot run the bill up; that one is
+    deleted automatically after 48 hours. The other sits on the conversation
+    itself, so an abusive session can be traced back, and it lasts as long as
+    the conversation does.</li>
+    <li><strong>Conversations do not expire on their own today.</strong> They
+    stay until Daniel deletes them. Asking him to delete yours is one message —
+    see below.</li>
   </ul>
 
   <h2>If you ask to be put in touch</h2>
   <p>When the conversation turns into contact — booking a call, opening WhatsApp,
-  or leaving a message — Daniel gets a notification with what you asked for and
-  the recent part of the conversation, so he can answer you properly. If you
-  leave your name and email, those reach him too.</p>
+  or leaving a message — Daniel gets a notification through Telegram with what
+  you asked for and the last few turns of the conversation, so he can answer you
+  properly. If you leave your name and email, those reach him too, and they are
+  kept in the same database as the conversation.</p>
   <p>He keeps that the way anyone keeps an email from a potential client. It is
   not sold, shared, or fed into any advertising system.</p>
   <p>Booking a time uses Google Calendar's own booking page, which is covered by
@@ -87,16 +104,17 @@
   from them.</p>
 
   <h2>Asking for your data back</h2>
-  <p>If you have written to Daniel and want that deleted, ask him and he will
-  delete it. Since nothing else is stored, there is usually nothing else to
-  delete.</p>
-  <p>The way to reach him is on the <a href="./#contact">contact section</a> of
-  the site, or through the chat itself.</p>
+  <p>If you have chatted with the agent or written to Daniel and want that
+  deleted, ask him and he will delete it — the conversation, the notification it
+  produced, and anything you left with it.</p>
+  <p>Write to <a href="mailto:dani@nervcenter.online">dani@nervcenter.online</a>,
+  or use the <a href="/contact">contact page</a> or the chat itself. Say what you
+  want deleted and it gets deleted.</p>
 
   <h2>Changes</h2>
   <p>If this changes, the date at the top changes with it.</p>
 
-  <a class="volver" href="./">&larr; back to daniel.project</a>
+  <a class="volver" href="/">&larr; back to nerv</a>
 
 </div>
 </body>

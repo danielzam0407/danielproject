@@ -60,6 +60,14 @@ revisar('Accept: text/markdown devuelve markdown', 'markdown' in ct.lower(), ct)
 revisar('Vary incluye Accept', 'accept' in vary.lower().split(','[0])
         and re.search(r'\baccept\b', vary, re.I) is not None, vary)
 
+# Toda ruta que el middleware promete en markdown tiene que cumplirlo. Arriba
+# solo se miraba la portada, y por eso /privacy estuvo mapeado en EQUIVALENTES
+# sin su .md: caia con gracia al HTML, con estado 200, y nadie se quejaba.
+for ruta in ['/about', '/contact', '/privacy']:
+    _, cab, _ = pedir(ruta, {'Accept': 'text/markdown'})
+    ct = cab.get('Content-Type', '')
+    revisar('%s negocia markdown' % ruta, 'markdown' in ct.lower(), ct)
+
 # 5 y 8. JSON-LD y Organization
 m = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
 revisar('hay JSON-LD en la portada', m is not None)
