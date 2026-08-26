@@ -1728,27 +1728,22 @@ class Component extends DCLogic {
     .lang-sw button, .lang-sw .l-t { transition: none; }
   }
 
-  /* El relevo del idioma: una banda que cruza la pantalla, hermana del barrido
-     del modo pero más rápida y más delgada.
+  /* El relevo del idioma: el contenido da un paso corto y vuelve, mientras el
+     texto se cambia por debajo. No es un fundido suave — es un desplazamiento
+     de 6px, del mismo carácter que el barrido del modo.
 
-     NO se anima el contenido. La primera versión le ponía un `transform` a
-     `#dc-root` — y un ancestro con transform deja de ser el viewport para un
-     hijo `position: fixed`: el interruptor de idioma, que vive dentro de la
-     topbar y por tanto dentro de `#dc-root`, pasaba a medirse contra esa caja
-     y se iba a `62,-1600`. Medido. Basta con que el transform sea la matriz
-     identidad para que ocurra.
-
-     Por eso la banda cuelga del `<body>`, fuera del componente: así no cambia
-     el bloque contenedor de nadie. */
-  #nerv-relevo { position: fixed; inset: 0; z-index: 9997; pointer-events: none;
-    background: var(--senal, #0102ec); opacity: .9; transform: translateX(-101%); }
-  #nerv-relevo.va { animation: nerv-relevo .42s cubic-bezier(.65,0,.35,1) forwards; }
-  @keyframes nerv-relevo {
-    0%   { transform: translateX(-101%); }
-    100% { transform: translateX(101%); }
+     Regla de la casa: el estado final no depende de la animación. La clase se
+     quita con temporizador, no con `animationend`; si el evento no llega, el
+     texto ya está cambiado y sólo se pierde el efecto. */
+  .relevo-idioma { animation: relevo .34s cubic-bezier(.65,0,.35,1); }
+  @keyframes relevo {
+    0%   { opacity: 1; transform: none; }
+    45%  { opacity: .15; transform: translateX(-6px); }
+    46%  { opacity: .15; transform: translateX(6px); }
+    100% { opacity: 1; transform: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    #nerv-relevo.va { animation: none; }
+    .relevo-idioma { animation: none; }
   }
 
   /* Dedo, no ratón: nada que se toque baja de 44px. */
@@ -1956,25 +1951,22 @@ class Component extends DCLogic {
      corre: la animación no espera a nadie ni decide nada, sólo acompaña.
 
      Se salta en la primera pintada —nadie cambió nada todavía— y con
-     movimiento reducido. La banda se limpia por temporizador y no por
+     movimiento reducido. La clase se quita por temporizador y no por
      `animationend`: si el evento no llega (pestaña de fondo, navegador viejo)
-     la clase se quedaría puesta y la banda tapando la página. */
+     la clase se iría acumulando y el nodo quedaría con una animación colgada. */
   var primeraPintada = true;
   function relevo() {
     if (primeraPintada) { primeraPintada = false; return; }
     try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
-    if (!document.body) return;
-    var banda = document.getElementById('nerv-relevo');
-    if (!banda) {
-      banda = document.createElement('div');
-      banda.id = 'nerv-relevo';
-      banda.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(banda);
+    var zonas = document.querySelectorAll('#dc-root, .topbar');
+    for (var i = 0; i < zonas.length; i++) {
+      (function (z) {
+        z.classList.remove('relevo-idioma');
+        void z.offsetWidth;
+        z.classList.add('relevo-idioma');
+        setTimeout(function () { z.classList.remove('relevo-idioma'); }, 420);
+      })(zonas[i]);
     }
-    banda.classList.remove('va');
-    void banda.offsetWidth;                 /* reinicia la animación */
-    banda.classList.add('va');
-    setTimeout(function () { banda.classList.remove('va'); }, 520);
   }
 
   function idiomaInicial() {
@@ -2172,6 +2164,27 @@ class Component extends DCLogic {
     observar();
   }
 
+  /* El relevo del cambio de idioma. El texto YA está cambiado cuando esto
+     corre: la animación no espera a nadie ni decide nada, sólo acompaña.
+
+     Se salta en la primera pintada —nadie cambió nada todavía— y con
+     movimiento reducido. La clase se quita por temporizador y no por
+     `animationend`: si el evento no llega (pestaña de fondo, navegador viejo)
+     la clase se iría acumulando y el nodo quedaría con una animación colgada. */
+  var primeraPintada = true;
+  function relevo() {
+    if (primeraPintada) { primeraPintada = false; return; }
+    try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+    var zonas = document.querySelectorAll('#dc-root, .topbar');
+    for (var i = 0; i < zonas.length; i++) {
+      (function (z) {
+        z.classList.remove('relevo-idioma');
+        void z.offsetWidth;
+        z.classList.add('relevo-idioma');
+        setTimeout(function () { z.classList.remove('relevo-idioma'); }, 420);
+      })(zonas[i]);
+    }
+  }
 
   function idiomaInicial() {
     var g = null;
