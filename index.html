@@ -137,9 +137,7 @@
 
    Girarles el tono desde CSS vive FUERA del componente y sobrevive a sus
    repintados. Los blobs se seleccionan por src^="blob:" —todo lo horneado
-   sale asi— y los videos de los carretes entran tambien. El canvas de
-   fracture NO: ese ya se repinta solo leyendo las fichas, y girarlo lo
-   corregiria dos veces. */
+   sale asi— y los videos de los carretes entran tambien. */
 #dc-root img[src^="blob:"], video {
   filter: hue-rotate(calc(var(--giro, 0) * 1deg)) saturate(var(--medios-sat, 1));
   transition: filter .55s ease;
@@ -557,10 +555,6 @@ body, body * { transition: background-color .55s ease, color .55s ease,
             </sc-if>
             <span class="kagi" style="position: relative; z-index: 2; background: var(--velo-papel-2, rgba(244,247,252,.88)); color: rgba(var(--tinta-rgb, 8,18,58),.75);">{{ item.slot }}</span>
           </div>
-          <sc-if value="{{ item.url }}" hint-placeholder-val="{{ true }}">
-            <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ item.aria }}"
-               style="position: absolute; inset: 0; z-index: 5;"></a>
-          </sc-if>
           <div style="padding: 22px 22px 26px; position: relative; overflow: hidden;">
             <div class="ghost-type narrow" style="right: 4px; bottom: -12px; font-size: 132px; font-weight: 900;">{{ item.id }}</div>
             <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--senal, #0102ec); margin-bottom: 10px;">{{ item.id }} // {{ item.tag }}</div>
@@ -1161,20 +1155,17 @@ class Component extends DCLogic {
     var coordY = (-8.4 + Math.cos(n / 900) * 2).toFixed(2);
     var drift = (Math.sin(n / 900) * 4).toFixed(2);
     var plates = [st.p0, st.p1, st.p2];
-    // Where the real projects live. A visitor clicking a portfolio card should
-    // land on the working thing, not on source code — the repo is one click from
-    // there.
-    var FRACTURE_URL = 'https://danielzam0407.github.io/fracture/';
-    var MENU_URL = 'https://danielzam0407.github.io/menu-pasillo/';
+    // Cada tarjeta enseña su pieza en video, aquí mismo. Ninguna manda a otro
+    // sitio: el trabajo se ve sin salir de la página, y quien quiera más lo
+    // pide por el chat. El carrete lo monta el bloque de más abajo.
     var projects = [
-      { id: '001', name: 'fracture', tag: 'tool', desc: 'type a word — it becomes the cover', slot: 'fracture / plate 01', micro: 'canvas bake · offscreen worker · deterministic seed · export 3000px · status internal', url: FRACTURE_URL },
-      { id: '002', name: 'work2', tag: 'web', desc: 'a portfolio you walk, like a game menu', slot: 'work2 / room 02', micro: 'css 3d · webgl no · five rooms · keys 1-5 · status live', url: MENU_URL },
+      { id: '001', name: 'console', tag: '3d', desc: 'a 3D model, rendered inside the terminal', slot: 'console / rig 01', micro: 'local console · three screens · live agent · 3d portrait · status internal' },
+      { id: '002', name: 'work2', tag: 'web', desc: 'a portfolio you walk, like a game menu', slot: 'work2 / room 02', micro: 'css 3d · webgl no · five rooms · keys 1-5 · status live' },
       { id: '003', name: 'work3', tag: 'web', desc: 'a personal site you drive with the keyboard', slot: 'work3 / screen 03', micro: 'command menu · arrow keys · four sections · status internal' }
     ].map(function (p, i) {
       p.onEnter = function () { self.setState({ sel: i }); };
       p.plate = plates[i];
-      p.cur = p.id + (p.url ? ' / open ' + p.tag + ' ↗' : ' / ' + p.tag);
-      p.aria = p.url ? p.name + ' — abrir proyecto en una pestaña nueva' : p.name;
+      p.cur = p.id + ' / play ' + p.tag + ' ▸';
       return p;
     });
     var sel = this.state.sel;
@@ -1417,8 +1408,34 @@ class Component extends DCLogic {
       }
     } catch (e) { /* la piel es opcional; el chat no */ }
   }
+  /* Lo que el agente alcanza a ver de esta pantalla. Sin esto trabaja a
+     ciegas: repinta el sitio y al turno siguiente ya no sabe como quedo, asi
+     que o lo pregunta o se lo inventa. Todo es opcional — si piel o bloques
+     no cargaron, se manda lo que haya y el worker se arregla con eso. */
+  function contextoPagina() {
+    var d = {};
+    try {
+      if (window.nervPiel && window.nervPiel.estadoActual) {
+        var e = window.nervPiel.estadoActual();
+        d.piel = { color: e.color || null, modo: e.modo || 'claro' };
+      }
+    } catch (e) {}
+    try {
+      if (window.nervBloques && window.nervBloques.montados) {
+        d.bloques = window.nervBloques.montados();
+      }
+    } catch (e) {}
+    return d;
+  }
+
   function boton(accion) {
     if (accion && accion.tipo === 'piel') { aplicarPiel(accion); return; }
+    if (accion && accion.tipo === 'carrete') {
+      // Mismo contrato que la piel y los bloques: el carrete es opcional, el
+      // chat no. El id se vuelve a validar del otro lado antes de abrir nada.
+      try { if (window.nervReel) window.nervReel.abrir(accion.proyecto); } catch (e) {}
+      return;
+    }
     if (accion && accion.tipo === 'bloques') {
       // Mismo contrato que la piel: componer es opcional, el chat no.
       try {
@@ -1525,7 +1542,7 @@ class Component extends DCLogic {
       var r = await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ mensaje: texto, sesion: sesion })
+        body: JSON.stringify({ mensaje: texto, sesion: sesion, contexto: contextoPagina() })
       });
 
       if (!r.ok) {
@@ -2092,9 +2109,13 @@ class Component extends DCLogic {
      El video de cada proyecto. Fuera del bloque <x-dc>, igual que todo lo
      demás, para que una sincronización no se lo lleve.
 
-     La tarjeta no reproduce nada: sobre la lámina hay un botón, y al picarlo la
-     lámina *crece* hasta el centro de la pantalla y ahí corre el video. El
-     vocabulario es de sala de proyección — carrete, transporte, timecode.
+     La tarjeta no reproduce nada: sobre la lámina hay un botón, y al picarlo
+     —o al picar la tarjeta en cualquier parte— la lámina *crece* hasta el
+     centro de la pantalla y ahí corre el video. El vocabulario es de sala de
+     proyección: carrete, transporte, timecode.
+
+     Éste es el único destino del clic. Las tarjetas ya no enlazan a ningún
+     otro sitio: el trabajo se ve aquí.
 
      Nada carga hasta que alguien lo pide: preload="none". Una visita que no
      abre ningún carrete no descarga un solo byte de video.                   -->
@@ -2153,13 +2174,16 @@ class Component extends DCLogic {
   .reel-marco::before { left: -6px; top: -6px; border-right: 0; border-bottom: 0; }
   .reel-marco::after { right: -6px; bottom: -6px; border-left: 0; border-top: 0; }
 
-  .reel-escenario { display: block; line-height: 0; position: relative; }
+  /* La proporción por defecto. Un carrete que no sea 16:9 la reescribe al
+     abrirse, y así llena el marco en vez de quedarse con barras. */
+  .reel-escenario { display: block; line-height: 0; position: relative;
+    --reel-arw: 16; --reel-arh: 9; }
   /* El tamaño se declara, no se hereda del archivo: con preload="none" el video
      no tiene tamaño propio (videoWidth = 0) y `width:auto` cae al 300x150 que
-     el navegador usa por defecto. object-fit acomoda lo que no sea 16:9. */
+     el navegador usa por defecto. object-fit acomoda lo que no cuadre. */
   .reel-escenario .reel-v { display: block;
-    width: min(92vw, 1180px, calc(72vh * 16 / 9));
-    aspect-ratio: 16 / 9; height: auto; max-width: 100%;
+    width: min(92vw, 1180px, calc(72vh * var(--reel-arw) / var(--reel-arh)));
+    aspect-ratio: var(--reel-arw) / var(--reel-arh); height: auto; max-width: 100%;
     object-fit: contain; background: var(--fondo-hondo, #03060e); cursor: pointer; }
   /* Rayas sobre el video: lo amarra al resto de la página. */
   .reel-escenario::after { content: ''; position: absolute; inset: 0; z-index: 2;
@@ -2211,8 +2235,9 @@ class Component extends DCLogic {
   /* Qué carrete va en qué tarjeta. Cambiar el reparto es cambiar esta tabla —
      nada más. La clave es el id que ya usa el proyecto en su ficha. */
   var CARRETES = {
-    // 001 (fracture) no lleva video: lleva su propio motor corriendo en vivo,
-    // que es lo que de verdad enseña qué hace. Ver el bloque de abajo.
+    // `ar` sólo hace falta cuando el video no es 16:9. La consola se grabó en
+    // 4:3 y sin decirlo saldría con dos barras a los lados.
+    '001': { src: 'media/work1.mp4', ar: [4, 3] },
     '002': { src: 'media/work2.mp4' },
     '003': { src: 'media/work3.mp4' }
   };
@@ -2248,6 +2273,8 @@ class Component extends DCLogic {
     if (!cuna) return;
 
     tarjeta.setAttribute('data-carrete', id);
+    tarjeta.setAttribute('data-arw', ficha.ar ? ficha.ar[0] : 16);
+    tarjeta.setAttribute('data-arh', ficha.ar ? ficha.ar[1] : 9);
     cuna.classList.add('reel-hay');
 
     // ── el video: vive escondido aquí y sólo sale cuando se agranda ───────
@@ -2269,14 +2296,18 @@ class Component extends DCLogic {
     boton.setAttribute('aria-label', 'Ver el video del proyecto ' + id + ' en grande');
     cuna.appendChild(boton);
 
-    /* La tarjeta entera es un enlace que abre el proyecto: hay un <a> con
-       inset:0 encima de todo. Sin frenar el evento aquí, tocar el botón te
-       sacaría del sitio en vez de abrir el carrete. */
     boton.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
       agrandar(v, cuna, tarjeta);
     });
+
+    /* Y la tarjeta entera también. Antes había un <a> con inset:0 que se
+       llevaba el clic a otro sitio; hoy el trabajo se ve aquí, así que el
+       destino del clic es el video. Sin role ni tabindex a propósito: el
+       botón de arriba ya es el control accesible, y envolver la tarjeta en un
+       role="button" aplastaría su texto en una sola etiqueta. */
+    tarjeta.addEventListener('click', function () { agrandar(v, cuna, tarjeta); });
 
     v._volver = function () { cuna.insertBefore(v, cuna.firstChild); };
   }
@@ -2337,6 +2368,11 @@ class Component extends DCLogic {
     var escenario = caja.querySelector('.reel-escenario');
     var tc = caja.querySelector('.reel-tc');
     var avance = caja.querySelector('.reel-bar > i');
+
+    /* La proporción de ESTE carrete, antes de medir nada: el FLIP compara el
+       hueco de la lámina contra la caja final, y la caja final sale de aquí. */
+    escenario.style.setProperty('--reel-arw', tarjeta.getAttribute('data-arw') || '16');
+    escenario.style.setProperty('--reel-arh', tarjeta.getAttribute('data-arh') || '9');
 
     // Los datos del proyecto, sacados de la propia tarjeta.
     var titulo = tarjeta.querySelector('div[style*="font-size: 27px"]');
@@ -2417,6 +2453,12 @@ class Component extends DCLogic {
       v.style.transform = '';
       v.style.transformOrigin = '';
       if (v._volver) v._volver();      // vuelve a su tarjeta, escondido
+      /* Si mientras se cerraba ya se abrió otro carrete, el telón dejó de ser
+         nuestro: bajarlo apagaría el que la persona acaba de pedir. Antes casi
+         no se alcanzaba, porque abrir era picar un botón de 24 px; hoy la
+         tarjeta entera abre —y el agente también—, así que cerrar y abrir
+         seguido es lo normal. */
+      if (abierto) return;
       caja.hidden = true;
       caja.classList.remove('reel-abierto');
       raiz.classList.remove('reel-fijo');
@@ -2451,6 +2493,24 @@ class Component extends DCLogic {
      así que esto es idempotente y se vuelve a correr cuando el árbol cambia. */
   window.__montarCarretes = montar;
 
+  /* La puerta del agente. Mismo trato que la piel y los bloques: lo que llega
+     del modelo es un id, y aquí se vuelve a buscar contra las tarjetas que de
+     verdad existen — nunca se toma tal cual. Devuelve false si no hay tal
+     carrete, y el worker se lo dice al modelo para que no presuma de haberlo
+     puesto. */
+  window.nervReel = {
+    abrir: function (id) {
+      var clave = String(id || '').replace(/[^0-9]/g, '');
+      if (!CARRETES[clave] || abierto) return false;
+      var t = document.querySelector('#work .aug-card[data-carrete="' + clave + '"]');
+      if (!t) return false;
+      var v = t.querySelector('.reel-v'), cuna = t.querySelector('.stripes-slot');
+      if (!v || !cuna) return false;
+      agrandar(v, cuna, t);
+      return true;
+    }
+  };
+
   var intentos = 0;
   (function esperar() {
     if (document.querySelector('#work .aug-card')) { montar(); vigilar(); return; }
@@ -2478,337 +2538,6 @@ class Component extends DCLogic {
   }
 })();
 </script>
-
-
-<!-- ══ FRACTURE, EN VIVO ═════════════════════════════════════════════════════
-     La tarjeta 001 no lleva video: lleva la herramienta trabajando.
-
-     fracture convierte una palabra en una portada, con semilla determinista —
-     la misma palabra da siempre la misma imagen. Enseñar eso con una grabación
-     sería enseñar el resultado; esto enseña el mecanismo: teclea, hornea, lee
-     la semilla, limpia, y otra vez con otra palabra.
-
-     Vive fuera del bloque <x-dc>, como todo lo demás.                        -->
-<style>
-  .frx { position: absolute; inset: 0; z-index: 1; display: block;
-    width: 100%; height: 100%; background: var(--papel, #f4f7fc); }
-  /* La lámina original se queda debajo: si el canvas no pinta, la tarjeta se
-     ve exactamente como antes en vez de quedarse en blanco. */
-  .frx-rotulo { position: absolute; left: 10px; bottom: 9px; z-index: 3;
-    font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px;
-    text-transform: uppercase; color: rgba(var(--tinta-rgb, 8,18,58),.72); pointer-events: none;
-    background: rgba(244,247,252,.86); padding: 3px 6px; }
-</style>
-
-<script>
-(function () {
-  'use strict';
-
-  var PALABRAS = ['fracture', 'adrift', 'eigenlicht', 'develop'];
-  /* Los colores del canvas leen las MISMAS fichas que el CSS. Sin esto el
-     agente cambia la piel del sitio y la tarjeta de fracture se queda con la
-     paleta vieja, que es justo donde más se notaría el remiendo. */
-  function ficha(nombre, respaldo) {
-    var v = getComputedStyle(document.documentElement)
-              .getPropertyValue('--' + nombre).trim();
-    return v || respaldo;
-  }
-  var PAPEL, TINTA, AZUL, MEDIO;
-  function leerFichas() {
-    PAPEL = ficha('papel', '#f4f7fc');
-    TINTA = ficha('tinta', '#08123a');
-    AZUL  = ficha('senal', '#0102ec');
-    MEDIO = ficha('tenue', '#9db8dc');
-  }
-  leerFichas();
-  document.addEventListener('nerv:fichas', leerFichas);
-
-  var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* Semilla determinista: la misma palabra da siempre los mismos números, que
-     es justo la promesa de la herramienta. */
-  function dado(palabra) {
-    var h = 1779033703 ^ palabra.length;
-    for (var i = 0; i < palabra.length; i++) {
-      h = Math.imul(h ^ palabra.charCodeAt(i), 3432918353);
-      h = (h << 13) | (h >>> 19);
-    }
-    return function () {
-      h = Math.imul(h ^ (h >>> 16), 2246822507);
-      h = Math.imul(h ^ (h >>> 13), 3266489909);
-      h ^= h >>> 16;
-      return (h >>> 0) / 4294967296;
-    };
-  }
-
-  /* La partitura de una portada: qué piezas la componen y en qué orden entran.
-     Se calcula una vez por palabra; dibujar sólo la lee. */
-  function componer(palabra, w, h) {
-    var d = dado(palabra), piezas = [];
-    var n = 4 + Math.floor(d() * 3);
-
-    // esquirlas: triángulos de canto, nunca curvas
-    for (var i = 0; i < n; i++) {
-      var x = d() * w, y = d() * h, s = (0.16 + d() * 0.36) * Math.min(w, h) * 1.6;
-      var giro = d() * Math.PI * 2;
-      piezas.push({ tipo: 'esquirla', x: x, y: y, s: s, giro: giro,
-        color: d() < 0.72 ? TINTA : AZUL, alfa: 0.5 + d() * 0.5 });
-    }
-    // barras macizas
-    for (var j = 0; j < 2 + Math.floor(d() * 2); j++) {
-      piezas.push({ tipo: 'barra', x: d() * w, y: d() * h,
-        w: (0.1 + d() * 0.5) * w, alto: 2 + d() * 9,
-        color: d() < 0.5 ? AZUL : TINTA });
-    }
-    // pelos: líneas de 1 px que cruzan
-    for (var k = 0; k < 3 + Math.floor(d() * 3); k++) {
-      piezas.push({ tipo: 'pelo', y: d() * h, desde: d() * w * 0.4,
-        hasta: w * (0.5 + d() * 0.5), color: MEDIO });
-    }
-    // trama de puntos
-    piezas.push({ tipo: 'trama', x: d() * w * 0.7, y: d() * h * 0.7,
-      w: (0.2 + d() * 0.3) * w, alto: (0.2 + d() * 0.4) * h, paso: 4 + d() * 3 });
-    // la letra fantasma
-    piezas.push({ tipo: 'letra', ch: palabra.charAt(0).toUpperCase(),
-      x: w * (0.62 + d() * 0.2), y: h * (0.78 + d() * 0.14), tam: h * (0.8 + d() * 0.5) });
-    return piezas;
-  }
-
-  function pinta(ctx, pieza, w, h) {
-    ctx.save();
-    if (pieza.tipo === 'esquirla') {
-      ctx.globalAlpha = pieza.alfa;
-      ctx.fillStyle = pieza.color;
-      ctx.translate(pieza.x, pieza.y);
-      ctx.rotate(pieza.giro);
-      ctx.beginPath();
-      ctx.moveTo(0, -pieza.s * 0.5);
-      ctx.lineTo(pieza.s * 0.42, pieza.s * 0.38);
-      ctx.lineTo(-pieza.s * 0.3, pieza.s * 0.2);
-      ctx.closePath();
-      ctx.fill();
-    } else if (pieza.tipo === 'barra') {
-      ctx.fillStyle = pieza.color;
-      ctx.fillRect(pieza.x, pieza.y, pieza.w, pieza.alto);
-    } else if (pieza.tipo === 'pelo') {
-      ctx.strokeStyle = pieza.color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(pieza.desde, Math.round(pieza.y) + 0.5);
-      ctx.lineTo(pieza.hasta, Math.round(pieza.y) + 0.5);
-      ctx.stroke();
-    } else if (pieza.tipo === 'trama') {
-      ctx.fillStyle = 'rgba(var(--tinta-rgb, 8,18,58),.45)';
-      for (var y = pieza.y; y < pieza.y + pieza.alto; y += pieza.paso) {
-        for (var x = pieza.x; x < pieza.x + pieza.w; x += pieza.paso) {
-          ctx.fillRect(x, y, 1.4, 1.4);
-        }
-      }
-    } else if (pieza.tipo === 'letra') {
-      ctx.globalAlpha = 0.14;
-      ctx.fillStyle = TINTA;
-      ctx.font = '900 ' + pieza.tam + 'px Arial Black, Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(pieza.ch, pieza.x, pieza.y);
-    }
-    ctx.restore();
-  }
-
-  function arrancar(cuna) {
-    if (cuna.getAttribute('data-frx')) return;
-    cuna.setAttribute('data-frx', '1');
-
-    var lienzo = document.createElement('canvas');
-    lienzo.className = 'frx';
-    lienzo.setAttribute('aria-hidden', 'true');
-    cuna.insertBefore(lienzo, cuna.firstChild);
-
-    var rotulo = document.createElement('div');
-    rotulo.className = 'frx-rotulo';
-    rotulo.textContent = 'seed: ' + PALABRAS[0];
-    cuna.appendChild(rotulo);
-
-    var ctx = lienzo.getContext('2d');
-    var w = 0, h = 0, piezas = [], indice = 0, corriendo = false;
-
-    function medir() {
-      var r = cuna.getBoundingClientRect();
-      var dpr = Math.min(2, window.devicePixelRatio || 1);
-      w = Math.max(1, Math.round(r.width));
-      h = Math.max(1, Math.round(r.height));
-      lienzo.width = Math.round(w * dpr);
-      lienzo.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      piezas = componer(PALABRAS[indice], w, h);
-    }
-
-    /* Dibuja la portada hasta cierto punto: 0 = papel en blanco, 1 = completa.
-       `letras` es cuántas letras de la palabra van tecleadas. */
-    function cuadro(avance, letras) {
-      ctx.fillStyle = PAPEL;
-      ctx.fillRect(0, 0, w, h);
-
-      var cuantas = Math.floor(avance * piezas.length);
-      for (var i = 0; i < cuantas; i++) pinta(ctx, piezas[i], w, h);
-
-      // el cursor y la palabra tecleándose, arriba a la izquierda
-      var palabra = PALABRAS[indice];
-      var visto = palabra.slice(0, letras);
-      ctx.save();
-      ctx.font = '600 13px "IBM Plex Mono", monospace';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = TINTA;
-      ctx.fillText('> ' + visto, 11, 22);
-      if (letras < palabra.length) {
-        var an = ctx.measureText('> ' + visto).width;
-        ctx.fillStyle = AZUL;
-        ctx.fillRect(11 + an + 2, 12, 7, 12);
-      }
-      ctx.restore();
-
-      // marco de registro, para amarrarlo a la estética de la página
-      ctx.strokeStyle = 'rgba(var(--tinta-rgb, 8,18,58),.28)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(6.5, 6.5, w - 13, h - 13);
-    }
-
-    medir();
-
-    /* El estado final, dibujado YA y sin depender de un solo cuadro de
-       animación. Si el bucle nunca corre —pestaña de fondo, captura, motor que
-       no compone— la tarjeta enseña una portada terminada en vez de un
-       rectángulo vacío. */
-    cuadro(1, PALABRAS[indice].length);
-
-    /* Y otra vez cuando las fuentes estén listas.
-
-       El primer dibujo ocurre antes de que cargue IBM Plex Mono, así que la
-       palabra tecleada sale con la tipografía de respaldo y cambia sola un
-       instante después. Las formas no se mueven —el generador es
-       determinista, medido— pero el texto sí, y ese salto se nota. */
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () {
-        if (!corriendo) cuadro(1, PALABRAS[indice].length);
-      });
-    }
-
-    if (quieto) return;   // con movimiento reducido se queda en esa portada
-
-    // ── el ciclo ────────────────────────────────────────────────────────────
-    var TECLEA = 950, HORNEA = 1250, LEE = 1250, LIMPIA = 450;
-    var TOTAL = TECLEA + HORNEA + LEE + LIMPIA;
-    var t0 = null, vivo = true, pedido = 0;
-
-    function paso(t) {
-      if (!vivo) { corriendo = false; return; }
-      if (t0 === null) t0 = t;
-      var e = (t - t0) % TOTAL;
-      var vuelta = Math.floor((t - t0) / TOTAL) % PALABRAS.length;
-      if (vuelta !== indice) { indice = vuelta; piezas = componer(PALABRAS[indice], w, h); }
-
-      var palabra = PALABRAS[indice];
-      if (e < TECLEA) {
-        cuadro(0, Math.ceil((e / TECLEA) * palabra.length));
-        rotulo.textContent = 'seed: ' + palabra.slice(0, Math.ceil((e / TECLEA) * palabra.length));
-      } else if (e < TECLEA + HORNEA) {
-        cuadro((e - TECLEA) / HORNEA, palabra.length);
-        rotulo.textContent = 'bake · ' + Math.round(((e - TECLEA) / HORNEA) * 100) + '%';
-      } else if (e < TECLEA + HORNEA + LEE) {
-        cuadro(1, palabra.length);
-        rotulo.textContent = 'seed: ' + palabra + ' · 3000px';
-      } else {
-        // barrido de limpieza: la portada se va por la izquierda
-        var f = (e - TECLEA - HORNEA - LEE) / LIMPIA;
-        cuadro(1, palabra.length);
-        ctx.fillStyle = PAPEL;
-        ctx.fillRect(0, 0, w * f, h);
-        rotulo.textContent = 'clear';
-      }
-      pedido = requestAnimationFrame(paso);
-    }
-
-    function enciende() {
-      if (corriendo || !vivo) return;
-      corriendo = true;
-      t0 = null;
-      pedido = requestAnimationFrame(paso);
-    }
-    function apaga() {
-      corriendo = false;
-      if (pedido) cancelAnimationFrame(pedido);
-      pedido = 0;
-    }
-
-    /* Sólo corre cuando se ve. Un canvas animado fuera de pantalla es batería
-       regalada, y en una tarjeta que casi siempre está abajo del pliegue, la
-       mayor parte del tiempo no se ve. */
-    if (typeof IntersectionObserver !== 'undefined') {
-      var io = new IntersectionObserver(function (es) {
-        for (var i = 0; i < es.length; i++) {
-          if (es[i].isIntersecting) enciende(); else apaga();
-        }
-      }, { threshold: 0.15 });
-      io.observe(cuna);
-      /* Red de seguridad: si el observador nunca reporta, se enciende igual.
-         La portada terminada ya está pintada, así que esto sólo agrega el
-         movimiento — nunca es la diferencia entre ver algo y no ver nada. */
-      setTimeout(function () { if (!corriendo) enciende(); }, 1500);
-    } else {
-      enciende();
-    }
-
-    // La página se oculta: se para. Vuelve: sigue.
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) apaga(); else if (vivo) enciende();
-    });
-
-    var remedir = null;
-    window.addEventListener('resize', function () {
-      clearTimeout(remedir);
-      remedir = setTimeout(function () {
-        medir();
-        cuadro(1, PALABRAS[indice].length);
-      }, 200);
-    }, { passive: true });
-  }
-
-  function montar() {
-    var tarjetas = document.querySelectorAll('#work .aug-card');
-    for (var i = 0; i < tarjetas.length; i++) {
-      var cur = tarjetas[i].getAttribute('data-cur') || '';
-      if (!/^001/.test(cur)) continue;
-      var cuna = tarjetas[i].querySelector('.stripes-slot');
-      if (cuna) arrancar(cuna);
-    }
-  }
-
-  var intentos = 0;
-  (function esperar() {
-    if (document.querySelector('#work .aug-card')) { montar(); vigilar(); return; }
-    if (++intentos > 60) return;
-    setTimeout(esperar, 100);
-  })();
-
-  function vigilar() {
-    if (typeof MutationObserver === 'undefined') return;
-    var pend = null;
-    var mo = new MutationObserver(function (ms) {
-      var hubo = false;
-      for (var i = 0; i < ms.length && !hubo; i++) {
-        if (ms[i].addedNodes.length || ms[i].removedNodes.length) hubo = true;
-      }
-      if (!hubo) return;
-      clearTimeout(pend);
-      pend = setTimeout(montar, 160);
-    });
-    // El <body>, no #work: si el componente reemplaza esa sección, un
-    // observador colgado de ella se muere con ella.
-    mo.observe(document.body, { childList: true, subtree: true });
-    setTimeout(function () { mo.disconnect(); clearTimeout(pend); }, 20000);
-  }
-})();
-</script>
-
 <!-- Resumen para clientes sin JavaScript: rastreadores y agentes. Va FUERA del
      bloque <x-dc> a propósito (una sincronización desde Claude Design regenera
      el componente y se lleva lo que esté adentro). Un navegador con JS nunca lo
@@ -2832,15 +2561,15 @@ class Component extends DCLogic {
   nota en el celular de quien la abre con datos móviles.</p>
 
   <h3>Trabajo publicado</h3>
+  <p>Cada pieza se enseña con un video en su tarjeta, dentro de esta misma
+  página. Ninguna manda a otro sitio.</p>
   <ul>
-    <li><strong>fracture</strong> — escribes una palabra y se convierte en una
-    portada. Motor generativo sobre canvas con semilla determinista.
-    <a href="https://danielzam0407.github.io/fracture/">Verlo</a>.</li>
+    <li><strong>console</strong> — un modelo 3D dentro de la terminal: la
+    consola local desde la que se opera el agente, con su retrato en vivo.</li>
     <li><strong>work2</strong> — portafolio que se navega como menú de
-    videojuego: pasillo 3D en CSS puro, sin WebGL.
-    <a href="https://danielzam0407.github.io/menu-pasillo/">Verlo</a>.</li>
+    videojuego: pasillo 3D en CSS puro, sin WebGL.</li>
     <li><strong>work3</strong> — sitio que se maneja con el teclado, con menú
-    de comando en cuatro secciones. Sin liga pública.</li>
+    de comando en cuatro secciones.</li>
   </ul>
 
   <h3>Contacto</h3>
@@ -2850,6 +2579,6 @@ class Component extends DCLogic {
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
 <script type="module" src="./piel.js?v=5"></script>
-<script type="module" src="./bloques.js?v=2"></script>
+<script type="module" src="./bloques.js?v=3"></script>
 </body>
 </html>

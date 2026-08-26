@@ -27,24 +27,23 @@ decidir. Si dudas si tu proyecto encaja, cuéntalo.
 
 ## Trabajo publicado
 
-### fracture
-Una herramienta: escribes una palabra y se convierte en una portada. Motor
-generativo sobre canvas con semilla determinista — la misma palabra da siempre
-la misma imagen. Exporta a 3000px.
-https://danielzam0407.github.io/fracture/
+Cada pieza se enseña con un video en su tarjeta, dentro de la propia página.
+Ninguna manda a otro sitio.
+
+### console
+Un modelo 3D dentro de la terminal: la consola local desde la que se opera el
+agente — tres pantallas, chat en vivo y el retrato del agente renderizado ahí
+mismo. Es una herramienta interna, no un producto.
 
 ### work2
 Un portafolio que se navega como menú de videojuego: un pasillo 3D hecho con
 CSS puro, sin WebGL, con una habitación detrás de cada opción. Se mueve con
-clic o con las teclas 1-5. La liga dice «menu-pasillo» porque así se llamaba
-antes; es la misma pieza. El contenido de las habitaciones hoy es de muestra.
-https://danielzam0407.github.io/menu-pasillo/
+clic o con las teclas 1-5. El contenido de las habitaciones hoy es de muestra.
 
 ### work3
 Otro sitio personal de los que se manejan con el teclado: un menú de comando
 con cuatro secciones, se mueve con las flechas, se entra con Enter y se sale
-con Escape. No tiene liga pública; en el sitio hay un video de la pieza
-funcionando.
+con Escape. En el sitio hay un video de la pieza funcionando.
 
 ## Contacto
 

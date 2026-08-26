@@ -218,6 +218,14 @@ export default {
     // en un texto los imprime como [object Object].
     const hilo = [...previos, { role: 'user', content: pregunta }];
 
+    /* Cómo se ve la página en la pantalla de quien escribe, ahora mismo. Lo
+       reporta el navegador y la ficha lo traduce a texto — validando cada
+       campo, porque esto viene del cliente igual que el mensaje. Sin ficha que
+       lo entienda, el agente trabaja a ciegas como antes. */
+    const estadoPagina =
+      typeof ficha.contexto === 'function' ? ficha.contexto(cuerpo.contexto) : '';
+    const sistema = estadoPagina ? ficha.sistema + '\n\n' + estadoPagina : ficha.sistema;
+
     const cliente = new Anthropic({ apiKey: env.DEEPSEEK_API_KEY, baseURL: BASE });
 
     const { readable, writable } = new TransformStream();
@@ -259,7 +267,7 @@ export default {
           const flujo = cliente.messages.stream({
             model: MODELO,
             max_tokens: MAX_TOKENS,
-            system: ficha.sistema,
+            system: sistema,
             tools: ficha.herramientas,
             messages: mensajes,
           });

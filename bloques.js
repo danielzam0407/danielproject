@@ -67,20 +67,22 @@ const CATALOGO = {
 
   demo: {
     es: {
-      titulo: 'piezas en vivo',
-      nota: 'Nada de esto es un video de muestra: todo corre en tu navegador, ahora.',
+      titulo: 'las piezas',
+      nota: 'Cada una abre su video aquí mismo, sin mandarte a otro lado. La última corre en tu navegador.',
       ligas: [
-        ['fracture', 'Escribe una palabra y se vuelve una portada. Motor generativo con semilla determinista.', 'https://danielzam0407.github.io/fracture/'],
-        ['work2', 'Un portafolio que se camina como menú de videojuego. Pasillo 3D en CSS puro, sin WebGL.', 'https://danielzam0407.github.io/menu-pasillo/'],
+        ['console', 'Un modelo 3D dentro de la terminal: la consola local desde donde se opera el agente.', 'carrete:001'],
+        ['work2', 'Un portafolio que se camina como menú de videojuego. Pasillo 3D en CSS puro, sin WebGL.', 'carrete:002'],
+        ['work3', 'Un sitio personal que se maneja con el teclado: menú de comando, cuatro secciones.', 'carrete:003'],
         ['recorrido', 'Pieza de laboratorio: un recorrido que avanza con tu scroll, cuadro a cuadro. Material de muestra.', '/lab/recorrido/'],
       ],
     },
     en: {
-      titulo: 'live pieces',
-      nota: 'None of this is a demo reel: everything runs in your browser, right now.',
+      titulo: 'the pieces',
+      nota: 'Each one opens its video right here, no trip anywhere else. The last one runs in your browser.',
       ligas: [
-        ['fracture', 'Type a word and it becomes a cover. Generative engine with a deterministic seed.', 'https://danielzam0407.github.io/fracture/'],
-        ['work2', 'A portfolio you walk like a game menu. A 3D hallway in pure CSS, no WebGL.', 'https://danielzam0407.github.io/menu-pasillo/'],
+        ['console', 'A 3D model inside the terminal: the local console the agent is run from.', 'carrete:001'],
+        ['work2', 'A portfolio you walk like a game menu. A 3D hallway in pure CSS, no WebGL.', 'carrete:002'],
+        ['work3', 'A personal site you drive with the keyboard: a command menu, four sections.', 'carrete:003'],
         ['walkthrough', 'Lab piece: a walkthrough that moves with your scroll, frame by frame. Sample material.', '/lab/recorrido/'],
       ],
     },
@@ -131,12 +133,31 @@ function asegurarEstilos() {
 /* ---- construcción (createElement, nunca innerHTML con datos ajenos) --- */
 
 function celda(titulo, cuerpo, href) {
+  /* `carrete:001` no es una URL: es el video de esa tarjeta, que se abre sin
+     salir de la página. El href sigue apuntando a #work como respaldo — si el
+     carrete no montó, el clic al menos lleva al trabajo en vez de no hacer
+     nada. */
+  const carrete = /^carrete:(\d{3})$/.exec(href || '');
   const el = document.createElement(href ? 'a' : 'div');
   el.className = 'celda';
-  if (href) { el.href = href; if (href.startsWith('http')) { el.target = '_blank'; el.rel = 'noopener'; } }
+  if (carrete) {
+    el.href = '#work';
+    el.addEventListener('click', (e) => {
+      try {
+        if (window.nervReel && window.nervReel.abrir(carrete[1])) e.preventDefault();
+      } catch (_) { /* el carrete es opcional; la liga de respaldo no */ }
+    });
+  } else if (href) {
+    el.href = href;
+    if (href.startsWith('http')) { el.target = '_blank'; el.rel = 'noopener'; }
+  }
   const b = document.createElement('b'); b.textContent = titulo; el.appendChild(b);
   const p = document.createElement('p'); p.textContent = cuerpo; el.appendChild(p);
-  if (href) { const s = document.createElement('span'); s.textContent = '-> abrir'; el.appendChild(s); }
+  if (href) {
+    const s = document.createElement('span');
+    s.textContent = carrete ? '-> ver video' : '-> abrir';
+    el.appendChild(s);
+  }
   return el;
 }
 

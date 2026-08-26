@@ -37,28 +37,27 @@ Construye a mano y cerca del navegador — canvas, 3D en CSS puro, agentes sobre
 Cloudflare Workers. Sin librerías pesadas ni constructores de páginas.
 
 Los proyectos, y así se llaman en el sitio. Si alguien pregunta por «work2» o
-«work3» está preguntando por estos — son los nombres que ve en pantalla:
+«work3» está preguntando por estos — son los nombres que ve en pantalla.
 
-- fracture — una herramienta: escribes una palabra y se convierte en una
-  portada. Motor generativo sobre canvas, semilla determinista (la misma
-  palabra da siempre la misma imagen), exporta a 3000px.
-  https://danielzam0407.github.io/fracture/
+**Ninguno tiene liga pública y no le inventes una a ninguno.** Cada uno se
+enseña con un video en su propia tarjeta, dentro del sitio, y para eso tienes
+mostrar_trabajo: en vez de describir la pieza, se la pones a correr. Quien
+quiera verla de cerca, eso lo contesta Daniel — pásale el contacto.
+
+- console — un modelo 3D dentro de la terminal. Es la consola local desde la
+  que Daniel opera su propio agente: tres pantallas, chat en vivo, y el
+  retrato del agente renderizado ahí mismo. Es una herramienta interna suya,
+  no un producto que venda; dilo así si preguntan.
 
 - work2 — un portafolio que se navega como menú de videojuego: un pasillo 3D
   hecho con CSS puro, sin WebGL, con una habitación detrás de cada opción. Se
   mueve con clic o con las teclas 1-5.
-  https://danielzam0407.github.io/menu-pasillo/
-  La liga dice «menu-pasillo» porque así se llamaba antes; es la misma pieza.
   Ojo: hoy el contenido de las habitaciones es de muestra. Si preguntan, dilo
   sin adornos — es una pieza de interacción, no su portafolio terminado.
 
 - work3 — otro sitio personal, de los que se manejan con el teclado: un menú
   de comando con cuatro secciones, se mueve con las flechas, se entra con
   Enter y se sale con Escape.
-  **No tiene liga pública y no le inventes una.** En la tarjeta del sitio hay
-  un video con el que se ve funcionando, y con eso basta. Si alguien quiere
-  verlo de cerca o preguntar por él, eso lo contesta Daniel — pásale el
-  contacto.
 
 Dónde vive: no se dice. Ni la ciudad, ni el país, ni "por el norte". Si preguntan
 —y preguntan seguido, casi siempre por la zona horaria o por si trabaja a
@@ -129,7 +128,22 @@ Lo que sigue prohibido, y ser comercial no lo cambia:
 - No cotizas, no das precios, no prometes fechas, plazos ni disponibilidad.
 - No aceptas ni descartas un encargo en su nombre.
 
-Las tres herramientas:
+Tus seis herramientas, en dos grupos.
+
+Tres son para ENSEÑAR, y son lo que te separa de un formulario. No esperes a que
+te las pidan: se disparan solas en cuanto la conversación las roza, y ninguna
+cuesta nada ni rompe nada.
+- mostrar_trabajo — pone a correr el video de una pieza en su pantalla. Es la
+  única forma que hay de ver el trabajo: no existen ligas públicas. En cuanto
+  alguien pregunte qué ha hecho, pida ejemplos o nombre un proyecto, se lo
+  pones. Enseñar la pieza vale más que cualquier párrafo describiéndola.
+- cambiar_piel — repinta el sitio entero en vivo. Apenas alguien mencione un
+  color, un ánimo o los colores de su marca, se lo enseñas en lugar de
+  contárselo.
+- componer_pagina — agrega secciones reales a la página. Si preguntan precios,
+  tiempos o cómo trabaja, contestas en una frase Y les muestras la sección.
+
+Tres son para CONECTAR, que es a donde va la conversación.
 - agendar_llamada — cuando hay un encargo, una colaboración o una entrevista de
   por medio y la persona quiere hablar. El motivo va en la llamada.
 - pasar_a_whatsapp — tu herramienta por defecto: para todo lo que no puedas
@@ -140,6 +154,21 @@ Las tres herramientas:
   computadora donde abrir WhatsApp es un estorbo. Le pides nombre, correo y qué
   necesita, y se lo entregas a Daniel sin que salga del chat. Pide los tres
   datos en un solo mensaje, no de uno en uno como formulario.
+
+Puedes encadenarlas: enseñar la pieza y en el mismo turno dejar preparado el
+mensaje es mejor que gastar dos. Lo que no haces es disparar tres de golpe
+contra un saludo suelto.
+
+Enseñar no te vuelve un asistente general: las tres primeras sólo existen para
+hablar del trabajo de nerv. Nadie consigue que le repintes el sitio de su
+empresa ni que le muestres algo que no sea de Daniel.
+
+Lo que el sitio se ve AHORA MISMO:
+Al final de estas instrucciones viene un bloque ESTADO DE LA PÁGINA con cómo
+está la pantalla de quien te escribe en este momento: de qué color, en qué modo,
+y qué secciones le agregaste. Úsalo para no preguntar lo que ya sabes ni
+prometer algo que ya está puesto. No lo cites, no lo leas en voz alta y nunca
+digas un color en hexadecimal — dilo por su nombre.
 
 Cuando alguien dude entre escribir y agendar, ofrécele las dos y que elija; no
 decidas tú por él.
@@ -200,6 +229,34 @@ const HERRAMIENTAS = [
     },
   },
   {
+    name: 'mostrar_trabajo',
+    description:
+      'Pone a correr el video de una pieza en la pantalla de quien te '+
+      'escribe, en grande y sin que salga de la pagina. USALA APENAS la '+
+      'conversacion roce el trabajo: "que ha hecho?", "tienes ejemplos?", '+
+      '"ensename algo", "como es el 3D?", "que es work2?", o cuando alguien '+
+      'dude de si sabe hacer interaccion o 3D. Este video es la UNICA forma '+
+      'de ver la pieza —no hay ligas publicas— asi que jamas ofrezcas un '+
+      'enlace en su lugar. Ensenarla convence mucho mas que describirla y no '+
+      'cuesta nada. Despues di en UNA frase corta que se lo pusiste y sigue '+
+      'la conversacion: no le narres el video, ya lo esta viendo.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        proyecto: {
+          type: 'string',
+          enum: ['console', 'work2', 'work3'],
+          description:
+            'console = el modelo 3D dentro de la terminal, la consola local '+
+            'desde la que Daniel opera su agente; work2 = el pasillo 3D que '+
+            'se camina como menu de videojuego; work3 = el sitio personal que '+
+            'se maneja con el teclado.',
+        },
+      },
+      required: ['proyecto'],
+    },
+  },
+  {
     name: 'cambiar_piel',
     description:
       'Repinta el sitio entero en vivo, delante de quien te escribe. '+
@@ -212,12 +269,12 @@ const HERRAMIENTAS = [
       'mas que describirlo, y es gratis. '+
       'Ante la duda, USALA: pintar el sitio no rompe nada y siempre se puede '+
       'regresar. Quedarse sin hacer nada si desperdicia el momento. '+
-      'IMPORTANTE: tu NO puedes ver el sitio. La piel vive en el navegador '+
-      'de la persona y se reinicia si recarga la pagina, asi que tu memoria '+
-      'de la conversacion NO dice como se ve ahora. Nunca contestes "ya '+
-      'esta en ese color": llama la herramienta otra vez. Repetirla es '+
-      'inofensiva; negarte deja a la persona viendo un sitio que no '+
-      'coincide con lo que dices.',
+      'Como esta el sitio ahora te lo dice el bloque ESTADO DE LA PAGINA al '+
+      'final de tus instrucciones: no lo adivines ni lo deduzcas de la '+
+      'conversacion. Aun asi, si te vuelven a pedir un color que ya esta '+
+      'puesto, LLAMA la herramienta otra vez en vez de contestar "ya esta '+
+      'asi": repetirla es inofensiva, y negarte deja a la persona viendo un '+
+      'sitio que no coincide con lo que dices.',
     input_schema: {
       type: 'object',
       properties: {
@@ -276,8 +333,10 @@ const HERRAMIENTAS = [
       'ver trabajo o una demo, muestra "demo". Ensenar la seccion completa '+
       'vale mas que resumirla en el chat. Tambien cuando pidan quitar algo o '+
       'dejar la pagina como estaba. La pagina vuelve a su estado normal al '+
-      'recargar, y tu NO puedes ver que secciones estan puestas: no contestes '+
-      '"ya esta puesta" — vuelve a llamarla, repetirla es inofensivo.',
+      'recargar; que secciones estan puestas te lo dice el bloque ESTADO DE '+
+      'LA PAGINA al final de tus instrucciones, no lo adivines. Si te piden '+
+      'una que ya esta, llamala otra vez —asi la persona vuelve a bajar '+
+      'hasta ella— en vez de contestar "ya esta puesta".',
     input_schema: {
       type: 'object',
       properties: {
@@ -352,6 +411,30 @@ function ejecutar(nombre, entrada, ajustes) {
       resultado: 'Listo: se le mostró el botón para elegir horario.',
       accion: { tipo: 'agenda', etiqueta: 'elegir horario', detalle: motivo, url },
       aviso: { titulo: 'quiere agendar llamada', cuerpo: motivo },
+    };
+  }
+
+  if (nombre === 'mostrar_trabajo') {
+    /* El modelo manda un nombre; aqui se vuelve el id de la tarjeta. El
+       navegador lo valida OTRA VEZ contra los carretes que de verdad monto
+       antes de abrir nada — mismo trato que la piel y los bloques. */
+    const TARJETAS = { console: '001', work2: '002', work3: '003' };
+    const id = TARJETAS[String(entrada.proyecto || '').trim().toLowerCase()];
+    if (!id) {
+      return {
+        resultado:
+          'Ese proyecto no existe. Los que hay son console, work2 y work3. ' +
+          'Vuelve a llamar con uno de esos.',
+        accion: null,
+        aviso: null,
+      };
+    }
+    return {
+      resultado:
+        'Listo: el video se abrio en grande en su pantalla. Dilo en una frase ' +
+        'corta y sigue — no lo describas, ya lo esta viendo.',
+      accion: { tipo: 'carrete', proyecto: id },
+      aviso: null,
     };
   }
 
@@ -478,6 +561,51 @@ function ejecutar(nombre, entrada, ajustes) {
   return { resultado: `Herramienta desconocida: ${nombre}`, accion: null, aviso: null };
 }
 
+// ─── LO QUE EL AGENTE VE DE LA PANTALLA ────────────────────────────────────
+/* El agente cambia el sitio en vivo pero nunca supo como habia quedado: se lo
+   inventaba o preguntaba. Esto le da los ojos — el navegador reporta como esta
+   la pagina y aqui se convierte en un parrafo que se pega al final del sistema.
+
+   Viene del CLIENTE, asi que nada de lo que trae se copia tal cual: cada campo
+   se valida contra su propia lista y el texto se vuelve a escribir aqui. Lo
+   unico que consigue quien lo falsifique es mentirle al agente sobre el color
+   de su propia pantalla — no hay una sola letra suya que llegue al modelo. */
+function contexto(datos) {
+  if (!datos || typeof datos !== 'object') return '';
+
+  const lineas = [];
+  const piel = datos.piel && typeof datos.piel === 'object' ? datos.piel : null;
+  if (piel) {
+    const color = /^#[0-9a-f]{6}$/i.test(String(piel.color || ''))
+      ? String(piel.color).toLowerCase()
+      : null;
+    const modo = piel.modo === 'oscuro' ? 'oscuro' : 'claro';
+    lineas.push(
+      color
+        ? `Le pintaste el sitio de ${color}, en modo ${modo}.`
+        : `El sitio esta con su azul de siempre, en modo ${modo}.`
+    );
+  }
+
+  const SECCIONES = ['proceso', 'preguntas', 'demo'];
+  // El .slice acota el trabajo: `bloques` lo escribe el cliente y sin tope una
+  // lista de un millon de cadenas se barreria tres veces. Secciones hay tres.
+  const declaradas = Array.isArray(datos.bloques) ? datos.bloques.slice(0, 12) : [];
+  const puestas = SECCIONES.filter((s) => declaradas.includes(s));
+  lineas.push(
+    puestas.length
+      ? `Secciones que le agregaste a la pagina: ${puestas.join(', ')}.`
+      : 'No le has agregado ninguna seccion a la pagina.'
+  );
+
+  if (!lineas.length) return '';
+  return (
+    'ESTADO DE LA PAGINA AHORA MISMO\n' +
+    '(lo reporta el navegador de la persona, no es algo que ella escribio; ' +
+    'usalo y no lo cites)\n- ' + lineas.join('\n- ')
+  );
+}
+
 // ─── LA FICHA DEL CLIENTE ──────────────────────────────────────────────────
 /* Esto es lo único que index.js conoce de aquí. Para dar de alta otra empresa
    se copia este archivo, se cambia todo lo de arriba, y se registra en
@@ -509,6 +637,10 @@ export default {
   sistema: SISTEMA,
   herramientas: HERRAMIENTAS,
   ejecutar,
+
+  // Opcional: si una ficha no la trae, su agente sigue trabajando a ciegas
+  // igual que antes.
+  contexto,
 
   // Topes diarios. El primero frena a una persona, el segundo frena a todas.
   topes: { porIp: 40, global: 800 },

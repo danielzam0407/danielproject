@@ -80,8 +80,8 @@ export function ponerPiel(propuesta) {
       ((nT >> 16) & 255) + ', ' + ((nT >> 8) & 255) + ', ' + (nT & 255));
   }
   if (Object.keys(fichas).length) {
-    // El canvas de fracture escucha esto para releer la paleta: sin el aviso,
-    // el sitio cambia de piel y la tarjeta se queda con la de antes.
+    // Lo que pinta en canvas escucha esto para releer la paleta: sin el aviso,
+    // el sitio cambia de piel y el lienzo se queda con la de antes.
     document.dispatchEvent(new CustomEvent('nerv:fichas', { detail: fichas }));
   }
   return fichas;

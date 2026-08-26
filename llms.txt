@@ -48,13 +48,13 @@ del sitio: ahí puede agendar una llamada sin intermediarios.
 
 ## Trabajo publicado
 
-- [fracture](https://danielzam0407.github.io/fracture/): herramienta generativa.
-  Escribes una palabra y se convierte en una portada. Semilla determinista —la
-  misma palabra da siempre la misma imagen— y exporta a 3000px.
-- [work2](https://danielzam0407.github.io/menu-pasillo/): portafolio que se
-  navega como menú de videojuego. Pasillo 3D en CSS puro, sin WebGL. La liga
-  dice «menu-pasillo» porque así se llamaba antes; es la misma pieza. Hoy el
-  contenido de las habitaciones es de muestra.
+Cada pieza se enseña con un video en su propia tarjeta del sitio. Ninguna
+manda a otro sitio, y no hay ligas públicas que dar.
+
+- console: un modelo 3D dentro de la terminal. Es la consola local desde la que
+  se opera el agente —tres pantallas, chat en vivo, y el retrato del agente
+  renderizado ahí mismo. Herramienta interna, no un producto.
+- work2: portafolio que se navega como menú de videojuego. Pasillo 3D en CSS
+  puro, sin WebGL. Hoy el contenido de las habitaciones es de muestra.
 - work3: sitio que se maneja con el teclado, con menú de comando en cuatro
-  secciones. No tiene liga pública; en el sitio hay un video de la pieza
-  funcionando.
+  secciones.
