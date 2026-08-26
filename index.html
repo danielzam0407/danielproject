@@ -1664,86 +1664,15 @@ class Component extends DCLogic {
      más de lo que cabe en 375— así que el interruptor sale de ahí y se ancla
      abajo a la izquierda, en el hueco que dejan los botones del chat.
      Se muestra sólo el idioma al que cambiarías: un botón, no dos. */
-  /* En pantallas chicas el interruptor se muda al DOCK que monta piel.js, a
-     la izquierda, junto al de modo. Antes eran dos cajas sueltas a distinta
-     altura que en móvil se comían los botones del chat.
-
-     Colapsado es un cuadro de 44px con el código del idioma al que cambiarías.
-     Se despliega al pasar el ratón o al enfocar; en táctil el toque ACTÚA
-     directo y la palabra sale sola un momento como acuse. */
   @media (max-width: 759px) {
-    /* El interruptor NO se muda de padre: se queda donde lo montó
-       `montarInterruptor` —dentro de la topbar— y se reubica por CSS.
-
-       Y eso no es preferencia de estilo. La topbar vive DENTRO de `#dc-root`,
-       el árbol que pinta React: sacar un nodo de ahí con `appendChild` y
-       devolverlo después es pelearse con el reconciliador, y se paga con un
-       `removeChild: node is not a child of this node` que tumba el render del
-       componente entero. Verificado: `#dc-root.contains(topbar)` es `true`.
-
-       Con `position: fixed` el nodo sigue siendo hijo de la topbar para React
-       y aterriza donde queremos para el ojo. Ese es el truco. */
-    .lang-sw {
-      position: fixed; left: 62px; bottom: 106px; z-index: 62;
-      border: 0; display: block;
-    }
-    .lang-sw button + button { border-left: 0; }
-    /* Se enseña SÓLO el idioma al que cambiarías: un botón, no dos.
-       Va con el prefijo `#nerv-dock` porque las reglas de abajo lo llevan y
-       le ganaban en especificidad — sin esto salían los dos. */
+    .lang-sw { position: fixed; left: 12px; bottom: 100px; z-index: 61;
+      background: var(--papel, #f4f7fc); border-color: rgba(var(--tinta-rgb, 8,18,58),.6);
+      box-shadow: 3px 3px 0 rgba(var(--tinta-rgb, 8,18,58),.18); }
     .lang-sw button[aria-pressed="true"] { display: none; }
-
-    .lang-sw button {
-      display: flex; align-items: center;
-      height: 44px; min-width: 44px; max-width: 44px; padding: 0; box-sizing: border-box;
-      border: 1px solid var(--tinta, #08123a);
-      background: var(--papel, #f4f7fc); color: var(--tinta, #08123a);
-      font: 700 10px/1 ui-monospace, 'Courier New', monospace;
-      letter-spacing: 2px; text-transform: uppercase; overflow: hidden;
-      /* Se anima `max-width`, no `grid-template-columns`: la caja se mide por
-         su contenido, así que `0fr → 1fr` no la ensancha — sólo reparte un
-         espacio que no existe. Con `max-width` + `overflow:hidden` el rótulo
-         se recorta cerrado y se descubre al abrir. */
-      transition: max-width .26s cubic-bezier(.2,.7,.2,1),
-                  background .26s linear, color .26s linear;
-    }
-    .lang-sw button:hover,
-    .lang-sw button:focus-visible,
-    .lang-sw button[data-abierto] { max-width: 160px; }
-    .lang-sw button:hover,
-    .lang-sw button[data-abierto] {
-      background: var(--tinta, #08123a); color: var(--papel, #f4f7fc); }
-    .lang-sw .l-i { display: grid; place-content: center; flex: 0 0 42px; height: 42px; }
-    /* min-width:0 es lo que deja que la columna 0fr colapse de verdad: sin
-       eso el texto planta su ancho y el botón nunca se cierra. */
-    .lang-sw .l-t { flex: 0 0 auto; overflow: hidden; white-space: nowrap;
-      padding-right: 0; opacity: 0;
-      transition: opacity .26s linear, padding .26s linear; }
-    .lang-sw button:hover .l-t,
-    .lang-sw button:focus-visible .l-t,
-    .lang-sw button[data-abierto] .l-t { opacity: 1; padding-right: 13px; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .lang-sw button, .lang-sw .l-t { transition: none; }
-  }
-
-  /* El relevo del idioma: el contenido da un paso corto y vuelve, mientras el
-     texto se cambia por debajo. No es un fundido suave — es un desplazamiento
-     de 6px, del mismo carácter que el barrido del modo.
-
-     Regla de la casa: el estado final no depende de la animación. La clase se
-     quita con temporizador, no con `animationend`; si el evento no llega, el
-     texto ya está cambiado y sólo se pierde el efecto. */
-  .relevo-idioma { animation: relevo .34s cubic-bezier(.65,0,.35,1); }
-  @keyframes relevo {
-    0%   { opacity: 1; transform: none; }
-    45%  { opacity: .15; transform: translateX(-6px); }
-    46%  { opacity: .15; transform: translateX(6px); }
-    100% { opacity: 1; transform: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .relevo-idioma { animation: none; }
+    .lang-sw button + button { border-left: 0; }
+    /* 46 y no 44: el borde de 1px se come el resto si la caja no es
+       border-box, y 43.9 no es un area tocable. */
+    .lang-sw button { min-width: 46px; min-height: 46px; padding: 0 13px; box-sizing: border-box; }
   }
 
   /* Dedo, no ratón: nada que se toque baja de 44px. */
@@ -1934,7 +1863,6 @@ class Component extends DCLogic {
         : orig;
     }
     raiz.setAttribute('lang', lang);
-    relevo();
     var m = META[lang];
     document.title = m.titulo;
     var d = document.querySelector('meta[name="description"]');
@@ -1947,28 +1875,6 @@ class Component extends DCLogic {
     try { localStorage.setItem('dp-lang', lang); } catch (e) {}
   }
 
-  /* El relevo del cambio de idioma. El texto YA está cambiado cuando esto
-     corre: la animación no espera a nadie ni decide nada, sólo acompaña.
-
-     Se salta en la primera pintada —nadie cambió nada todavía— y con
-     movimiento reducido. La clase se quita por temporizador y no por
-     `animationend`: si el evento no llega (pestaña de fondo, navegador viejo)
-     la clase se iría acumulando y el nodo quedaría con una animación colgada. */
-  var primeraPintada = true;
-  function relevo() {
-    if (primeraPintada) { primeraPintada = false; return; }
-    try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
-    var zonas = document.querySelectorAll('#dc-root, .topbar');
-    for (var i = 0; i < zonas.length; i++) {
-      (function (z) {
-        z.classList.remove('relevo-idioma');
-        void z.offsetWidth;
-        z.classList.add('relevo-idioma');
-        setTimeout(function () { z.classList.remove('relevo-idioma'); }, 420);
-      })(zonas[i]);
-    }
-  }
-
   function idiomaInicial() {
     var g = null;
     try { g = localStorage.getItem('dp-lang'); } catch (e) {}
@@ -1980,255 +1886,18 @@ class Component extends DCLogic {
 
   function montarInterruptor() {
     var barra = document.querySelector('.topbar');
-    /* La guarda mira el DOCUMENTO, no la barra. Antes preguntaba
-       `barra.querySelector('.lang-sw')`, y desde que el interruptor se muda al
-       dock en angosto la barra deja de tenerlo: cada repintado del componente
-       creaba otro. Se llegaron a contar 16. */
-    if (!barra || document.querySelector('.lang-sw')) return;
+    if (!barra || barra.querySelector('.lang-sw')) return;
     var sw = document.createElement('div');
     sw.className = 'lang-sw';
     sw.setAttribute('role', 'group');
     sw.setAttribute('aria-label', 'Idioma / Language');
-    var PALABRA = { es: 'español', en: 'english' };
     ['es', 'en'].forEach(function (l) {
       var b = document.createElement('button');
       b.type = 'button';
+      b.textContent = l;
       b.setAttribute('data-l', l);
       b.setAttribute('aria-pressed', 'false');
-      /* Dos piezas: el código, que hace de icono cuando está colapsado, y la
-         palabra, que sale al desplegarse. En escritorio la hoja de arriba las
-         enseña juntas, así que la barra se ve igual que siempre. */
-      var ic = document.createElement('span');
-      ic.className = 'l-i';
-      ic.textContent = l;
-      var tx = document.createElement('span');
-      tx.className = 'l-t';
-      tx.textContent = PALABRA[l];
-      b.appendChild(ic);
-      b.appendChild(tx);
-      b.addEventListener('click', function () {
-        pintarIdioma(l);
-        /* Acuse en táctil, donde no hay hover. */
-        b.setAttribute('data-abierto', '1');
-        setTimeout(function () { b.removeAttribute('data-abierto'); }, 1100);
-      });
-      sw.appendChild(b);
-    });
-    // Antes del reloj, que es lo último de la barra.
-    var reloj = barra.querySelector('.telemetry');
-    barra.insertBefore(sw, reloj || null);
-  }
-
-  /* ══ 2. MOVIMIENTO AL BAJAR ═════════════════════════════════════════════ */
-
-  /* Reparte las clases de revelado. No toca el marcado del componente: sólo
-     agrega clases a lo que ya existe, así que una sincronización lo repone. */
-  function marcar() {
-    var puesto = 0;
-
-    function vestir(e, clases, escalon) {
-      if (!e || e.classList.contains('mv')) return;
-      e.classList.add('mv');
-      clases.split(' ').forEach(function (c) { if (c) e.classList.add(c); });
-      if (escalon) e.classList.add('mv-d' + Math.min(6, escalon));
-      puesto++;
-    }
-
-    function todos(sel, clases, escalonar) {
-      var els = document.querySelectorAll(sel);
-      for (var k = 0; k < els.length; k++) vestir(els[k], clases, escalonar ? k + 1 : 0);
-    }
-
-    // El título de cada sección entra con un barrido duro, y el [ 0n / … ] que
-    // lo antecede se desliza de lado un instante antes.
-    var titulos = document.querySelectorAll('#work h2, #about h2, #contact h2');
-    for (var i = 0; i < titulos.length; i++) {
-      vestir(titulos[i], 'mv-wipe');
-      vestir(titulos[i].previousElementSibling, 'mv-side');
-    }
-
-    // La línea que dice a qué se dedica. Es lo que más importa que se note.
-    todos('.hp-does', 'mv-side');
-
-    // Las tarjetas de trabajo, escalonadas.
-    todos('#work .aug-card', 'mv-up', true);
-
-    /* El filo azul va en el recuadro de la imagen, NO en la tarjeta: la tarjeta
-       ya usa ::after para los corchetes de esquina y le pisaríamos el suyo. */
-    todos('#work .stripes-slot', 'mv-edge', true);
-
-    // Bloques de datos y párrafos largos.
-    todos('#about .terminal-log, #about .justified, #contact .terminal-log', 'mv-up', true);
-
-    return puesto;
-  }
-
-  /* El observador, con la misma red de seguridad que .draw-x: si nunca reporta
-     —pestaña de fondo, captura, navegador sin IO— se muestra todo de golpe. */
-  function observar() {
-    var todos = document.querySelectorAll('.mv');
-    var mostrarTodo = function () {
-      // .mv-ya y no .mv-in: esto es la salida de emergencia, y tiene que
-      // aterrizar en el estado final sin pedirle nada al bucle de cuadros.
-      for (var i = 0; i < todos.length; i++) todos[i].classList.add('mv-ya');
-    };
-
-    if (quieto || typeof IntersectionObserver === 'undefined') { mostrarTodo(); return; }
-
-    raiz.classList.add('mv-on');
-    var reporto = false;
-    var io = new IntersectionObserver(function (entradas) {
-      reporto = true;
-      for (var i = 0; i < entradas.length; i++) {
-        if (entradas[i].isIntersecting) {
-          entradas[i].target.classList.add('mv-in');
-          io.unobserve(entradas[i].target);
-        }
-      }
-    }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
-
-    for (var i = 0; i < todos.length; i++) io.observe(todos[i]);
-    setTimeout(function () { if (!reporto) mostrarTodo(); }, 1400);
-  }
-
-  /* Riel de avance + sección activa. Un solo listener, estrangulado por rAF. */
-  function montarRiel() {
-    if (document.querySelector('.rail')) return;
-    var rail = document.createElement('div');
-    rail.className = 'rail';
-    rail.setAttribute('aria-hidden', 'true');
-    rail.innerHTML = '<i></i><u></u>';
-    document.body.appendChild(rail);
-
-    var barra = rail.firstChild, cabeza = rail.lastChild;
-    var secciones = [], enlaces = {};
-    ['top', 'work', 'about', 'contact'].forEach(function (id) {
-      var s = document.getElementById(id);
-      if (s) secciones.push(s);
-      var a = document.querySelector('.topnav a[href="#' + id + '"]');
-      if (a) enlaces[id] = a;
-    });
-
-    var pendiente = false, ultima = '';
-    function medir() {
-      pendiente = false;
-      var alto = document.documentElement.scrollHeight - window.innerHeight;
-      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
-      var p = alto > 0 ? Math.max(0, Math.min(1, y / alto)) : 0;
-      barra.style.transform = 'scaleX(' + p.toFixed(4) + ')';
-      cabeza.style.transform = 'translateX(' + (p * (window.innerWidth || 0) - 26).toFixed(1) + 'px)';
-
-      /* Qué sección va en el centro de la pantalla.
-
-         Se toma la última cuyo borde superior ya pasó el centro, en vez de
-         exigir que el centro caiga DENTRO de una. Entre secciones hay cosas
-         que no son sección —la franja del ticker, por ejemplo— y con la regla
-         estricta el centro cae en ese hueco y el resaltado del nav parpadea. */
-      var centro = y + (window.innerHeight / 2), activa = '';
-      for (var i = 0; i < secciones.length; i++) {
-        if (secciones[i].offsetTop <= centro) activa = secciones[i].id;
-      }
-      if (activa !== ultima) {
-        ultima = activa;
-        for (var k in enlaces) {
-          if (Object.prototype.hasOwnProperty.call(enlaces, k)) {
-            enlaces[k].classList.toggle('mv-here', k === activa);
-          }
-        }
-      }
-    }
-
-    window.addEventListener('scroll', function () {
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(medir);
-    }, { passive: true });
-    window.addEventListener('resize', function () {
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(medir);
-    }, { passive: true });
-    medir();
-  }
-
-  /* ══ ARRANQUE ═══════════════════════════════════════════════════════════
-     El componente se pinta solo y puede volver a pintarse: la primera vez que
-     lo hace reemplaza el árbol y se lleva por delante lo que hayamos colgado.
-     Por eso todo aquí es idempotente y se vuelve a aplicar cuando el árbol
-     cambia — montarInterruptor no duplica, marcar salta lo ya marcado, y el
-     idioma se restaura desde el original guardado en cada nodo. */
-  function aplicar() {
-    montarInterruptor();
-    pintarIdioma(idioma);
-    marcar();
-    observar();
-  }
-
-  /* El relevo del cambio de idioma. El texto YA está cambiado cuando esto
-     corre: la animación no espera a nadie ni decide nada, sólo acompaña.
-
-     Se salta en la primera pintada —nadie cambió nada todavía— y con
-     movimiento reducido. La clase se quita por temporizador y no por
-     `animationend`: si el evento no llega (pestaña de fondo, navegador viejo)
-     la clase se iría acumulando y el nodo quedaría con una animación colgada. */
-  var primeraPintada = true;
-  function relevo() {
-    if (primeraPintada) { primeraPintada = false; return; }
-    try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
-    var zonas = document.querySelectorAll('#dc-root, .topbar');
-    for (var i = 0; i < zonas.length; i++) {
-      (function (z) {
-        z.classList.remove('relevo-idioma');
-        void z.offsetWidth;
-        z.classList.add('relevo-idioma');
-        setTimeout(function () { z.classList.remove('relevo-idioma'); }, 420);
-      })(zonas[i]);
-    }
-  }
-
-  function idiomaInicial() {
-    var g = null;
-    try { g = localStorage.getItem('dp-lang'); } catch (e) {}
-    if (g === 'es' || g === 'en') return g;
-    // Primera visita: lo decide el navegador de quien llega.
-    var nav = (navigator.language || 'en').toLowerCase();
-    return nav.indexOf('es') === 0 ? 'es' : 'en';
-  }
-
-  function montarInterruptor() {
-    var barra = document.querySelector('.topbar');
-    /* La guarda mira el DOCUMENTO, no la barra. Antes preguntaba
-       `barra.querySelector('.lang-sw')`, y desde que el interruptor se muda al
-       dock en angosto la barra deja de tenerlo: cada repintado del componente
-       creaba otro. Se llegaron a contar 16. */
-    if (!barra || document.querySelector('.lang-sw')) return;
-    var sw = document.createElement('div');
-    sw.className = 'lang-sw';
-    sw.setAttribute('role', 'group');
-    sw.setAttribute('aria-label', 'Idioma / Language');
-    var PALABRA = { es: 'español', en: 'english' };
-    ['es', 'en'].forEach(function (l) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.setAttribute('data-l', l);
-      b.setAttribute('aria-pressed', 'false');
-      /* Dos piezas: el código, que hace de icono cuando está colapsado, y la
-         palabra, que sale al desplegarse. En escritorio la hoja de arriba las
-         enseña juntas, así que la barra se ve igual que siempre. */
-      var ic = document.createElement('span');
-      ic.className = 'l-i';
-      ic.textContent = l;
-      var tx = document.createElement('span');
-      tx.className = 'l-t';
-      tx.textContent = PALABRA[l];
-      b.appendChild(ic);
-      b.appendChild(tx);
-      b.addEventListener('click', function () {
-        pintarIdioma(l);
-        /* Acuse en táctil, donde no hay hover. */
-        b.setAttribute('data-abierto', '1');
-        setTimeout(function () { b.removeAttribute('data-abierto'); }, 1100);
-      });
+      b.addEventListener('click', function () { pintarIdioma(l); });
       sw.appendChild(b);
     });
     // Antes del reloj, que es lo último de la barra.
@@ -3180,7 +2849,7 @@ class Component extends DCLogic {
   <a href="/contact">contacto</a> y, para agentes,
   <a href="/llms.txt">llms.txt</a>.</p>
 </noscript>
-<script type="module" src="./piel.js?v=6"></script>
+<script type="module" src="./piel.js?v=5"></script>
 <script type="module" src="./bloques.js?v=2"></script>
 </body>
 </html>

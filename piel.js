@@ -343,10 +343,7 @@ export function fijar(nuevo, persistir) {
   else ponerPiel(derivarPiel(estado.color || MOLDE_CLARO['senal'],
                              estado.animo || 'claro', estado.modo));
   document.documentElement.dataset.piel = estado.modo;
-  if (boton) {
-    const t = boton.querySelector('.nd-t');
-    if (t) t.textContent = estado.modo === 'oscuro' ? 'claro' : 'oscuro';
-  }
+  if (boton) boton.textContent = estado.modo === 'oscuro' ? 'claro' : 'oscuro';
   // La vista previa aplica sin guardar: si la persona navega a otra pagina a
   // media cuenta regresiva, no debe llevarse un estado que iba a expirar.
   if (persistir !== false) guardar();
@@ -437,159 +434,31 @@ export function previa(nuevo, segundos) {
   return total;
 }
 /* El interruptor. Existe porque hacer que alguien tenga que CONVERSAR con un
-   agente para no lastimarse los ojos de noche es mal diseno. Un clic basta.
-
-   En movil se ancla abajo a la izquierda, y el interruptor de idioma de
-   index.html se coloca a su derecha por CSS —no metiendose en este
-   contenedor—. Se intento lo segundo y salio caro: la topbar donde vive el
-   interruptor esta DENTRO de #dc-root, el arbol que pinta React, y sacar un
-   nodo de ahi con appendChild tumba el render del componente con un
-   `removeChild: node is not a child of this node`. Cada quien en su sitio, y
-   el ojo los ve juntos.
-
-   Colapsado es un cuadro de 44px con su icono. Al pasar el raton o al enfocar
-   se despliega y ensena la palabra. En tactil no hay hover, asi que el toque
-   ACTUA directo y la palabra aparece sola un momento como acuse: pedir dos
-   toques para cambiar de modo seria peor que la caja grande que habia. */
+   agente para no lastimarse los ojos de noche es mal diseno. Un clic basta. */
 let boton = null;
-let dock = null;
-
-const ANIM = 260;   /* ms. Corto y sin rebote: esto es un instrumento. */
-
-function sinMovimiento() {
-  try { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
-  catch (e) { return false; }
-}
-
-/** El dock. Lo crea quien llegue primero; el de idioma lo reutiliza. */
-export function montarDock() {
-  if (dock || !document.body) return dock;
-  dock = document.getElementById('nerv-dock');
-  if (dock) return dock;
-  dock = document.createElement('div');
-  dock.id = 'nerv-dock';
-  dock.style.cssText = [
-    'position:fixed', 'left:12px', 'bottom:106px', 'z-index:62',
-    'display:flex', 'gap:6px', 'align-items:flex-start',
-  ].join(';');
-  document.body.appendChild(dock);
-  return dock;
-}
-
-/* Los estilos del dock van en una hoja, no en `style=`, porque hacen falta
-   pseudo-clases (:hover, :focus-visible) y una consulta de medios. Se inyecta
-   una sola vez y lleva id para no duplicarse entre paginas. */
-function inyectarEstilos() {
-  if (document.getElementById('nerv-dock-css')) return;
-  const e = document.createElement('style');
-  e.id = 'nerv-dock-css';
-  e.textContent = `
-#nerv-dock .nd-b{
-  display:flex; align-items:center;
-  height:44px; min-width:44px; max-width:44px; padding:0; border:1px solid var(--tinta,#08123a);
-  background:var(--papel,#f4f7fc); color:var(--tinta,#08123a);
-  font:700 10px/1 ui-monospace,"Courier New",monospace;
-  letter-spacing:2px; text-transform:uppercase; cursor:pointer;
-  border-radius:0; overflow:hidden; box-sizing:border-box;
-  /* Se anima max-width y no grid-template-columns: la caja se mide por su
-     contenido, asi que 0fr -> 1fr no la ensancha. */
-  transition:max-width ${ANIM}ms cubic-bezier(.2,.7,.2,1),
-             background ${ANIM}ms linear, color ${ANIM}ms linear;
-}
-#nerv-dock .nd-b:hover,#nerv-dock .nd-b:focus-visible,#nerv-dock .nd-b[data-abierto]{
-  max-width:160px;
-}
-#nerv-dock .nd-b:hover,#nerv-dock .nd-b[data-abierto]{
-  background:var(--tinta,#08123a); color:var(--papel,#f4f7fc);
-}
-#nerv-dock .nd-b:focus-visible{outline:2px solid var(--senal,#0102ec);outline-offset:2px}
-#nerv-dock .nd-i{display:grid;place-content:center;flex:0 0 42px;height:42px}
-/* El rotulo: min-width 0 es lo que deja que la columna 0fr lo colapse de
-   verdad. Sin eso el texto planta su ancho y el boton nunca se cierra. */
-#nerv-dock .nd-t{flex:0 0 auto;overflow:hidden;white-space:nowrap;
-  padding-right:0;opacity:0;transition:opacity ${ANIM}ms linear,padding ${ANIM}ms linear}
-#nerv-dock .nd-b:hover .nd-t,#nerv-dock .nd-b:focus-visible .nd-t,
-#nerv-dock .nd-b[data-abierto] .nd-t{opacity:1;padding-right:13px}
-#nerv-dock .nd-cuadro{width:16px;height:16px;border:2px solid currentColor;position:relative}
-/* Medio cuadro relleno: el sol y la luna de toda la vida, pero con canto. */
-#nerv-dock .nd-cuadro::after{content:"";position:absolute;inset:0;
-  background:currentColor;clip-path:polygon(0 0,100% 100%,0 100%)}
-@media (prefers-reduced-motion: reduce){
-  #nerv-dock .nd-b,#nerv-dock .nd-t{transition:none}
-}
-/* El barrido del cambio de modo: una masa que cruza la pantalla. Nada de
-   fundidos suaves — es un filo que pasa. */
-#nerv-barrido{position:fixed;inset:0;z-index:9998;pointer-events:none;
-  background:var(--tinta,#08123a);transform:translateX(-101%)}
-#nerv-barrido.va{animation:nerv-cruza ${ANIM * 2.2}ms cubic-bezier(.65,0,.35,1) forwards}
-@keyframes nerv-cruza{
-  0%{transform:translateX(-101%)}
-  48%{transform:translateX(0)}
-  52%{transform:translateX(0)}
-  100%{transform:translateX(101%)}
-}`;
-  document.head.appendChild(e);
-}
-
-/** El barrido. Cambia el modo EN MEDIO del cruce, con la pantalla tapada.
- *
- *  Regla de la casa: nada se queda esperando una animacion. El cambio se
- *  aplica con un temporizador, no con `animationend` — si la pestana esta de
- *  fondo o el navegador no dispara el evento, el modo cambia igual y lo unico
- *  que se pierde es el efecto. */
-function conBarrido(aplicar) {
-  if (sinMovimiento() || !document.body) { aplicar(); return; }
-  let velo = document.getElementById('nerv-barrido');
-  if (!velo) {
-    velo = document.createElement('div');
-    velo.id = 'nerv-barrido';
-    velo.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(velo);
-  }
-  velo.classList.remove('va');
-  void velo.offsetWidth;                 /* reinicia la animacion */
-  velo.classList.add('va');
-  setTimeout(aplicar, ANIM * 2.2 * 0.5);
-  setTimeout(() => velo.classList.remove('va'), ANIM * 2.2 + 60);
-}
-
-function etiquetaModo() {
-  return estado.modo === 'oscuro' ? 'claro' : 'oscuro';
-}
 
 function montarBoton() {
   if (boton || !document.body) return;
-  inyectarEstilos();
-  const d = montarDock();
-
   boton = document.createElement('button');
   boton.type = 'button';
-  boton.className = 'nd-b';
   boton.id = 'nerv-modo';
   boton.setAttribute('aria-label', 'Cambiar entre modo claro y oscuro');
-
-  const icono = document.createElement('span');
-  icono.className = 'nd-i';
-  icono.setAttribute('aria-hidden', 'true');
-  const cuadro = document.createElement('span');
-  cuadro.className = 'nd-cuadro';
-  icono.appendChild(cuadro);
-
-  const texto = document.createElement('span');
-  texto.className = 'nd-t';
-  texto.textContent = etiquetaModo();
-
-  boton.appendChild(icono);
-  boton.appendChild(texto);
-
+  boton.textContent = estado.modo === 'oscuro' ? 'claro' : 'oscuro';
+  boton.style.cssText = [
+    'position:fixed', 'left:14px', 'bottom:14px', 'z-index:9999',
+    'font:700 10px/1 ui-monospace,"Courier New",monospace',
+    'letter-spacing:2px', 'text-transform:uppercase',
+    'padding:9px 11px', 'min-height:34px', 'cursor:pointer',
+    'color:var(--papel-alto,#e6effb)', 'background:var(--fondo-hondo,#03060e)',
+    'border:1px solid var(--senal,#0102ec)', 'opacity:.72',
+    'transition:opacity .2s ease',
+  ].join(';');
+  boton.addEventListener('mouseenter', () => { boton.style.opacity = '1'; });
+  boton.addEventListener('mouseleave', () => { boton.style.opacity = '.72'; });
   boton.addEventListener('click', () => {
-    conBarrido(() => fijar({ modo: estado.modo === 'oscuro' ? 'claro' : 'oscuro' }));
-    /* Acuse en tactil, donde no hay hover: se abre solo y se cierra. */
-    boton.dataset.abierto = '1';
-    setTimeout(() => { delete boton.dataset.abierto; }, 1100);
+    fijar({ modo: estado.modo === 'oscuro' ? 'claro' : 'oscuro' });
   });
-
-  d.appendChild(boton);
+  document.body.appendChild(boton);
 }
 
 /* Se restaura ANTES de montar el boton para que ya nazca con la etiqueta
