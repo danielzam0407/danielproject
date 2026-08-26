@@ -1,0 +1,545 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   INSIGNIA — el vocabulario visual de nerv, implementado.
+   nerv — https://nervcenter.online
+
+   Esto no es una paleta ni una lista de adjetivos. Es cada elemento que
+   aparece en las referencias, construido con lo que ya hay en el proyecto:
+   CSS, SVG y canvas. Cero librerías, cero build, cero <img> que no sea una
+   foto de verdad.
+
+   REGLA MADRE: papel blanco (o negro total) + UN acento eléctrico + reglas de
+   pelo negro. Todo lo demás es densidad de información. El estilo NO sale de
+   los colores — sale de cuánta información técnica soporta la superficie sin
+   volverse ilegible.
+
+   Las fichas siguen a piel.js cuando existe, así que el agente repinta la
+   insignia entera junto con el sitio. Lo que no tiene ficha (ácido, rojo,
+   grafito) es fijo a propósito: son acentos de excepción, no de tema.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── TIERRA ─────────────────────────────────────────────────────────────
+     Nunca gris medio. O papel, o negro. El gris medio es donde muere este
+     estilo: sin ese salto brutal, las reglas de pelo desaparecen. */
+  --ins-papel:      var(--papel, #f4f7fc);
+  --ins-papel-puro: #ffffff;
+  --ins-escaneado:  #f2f1ec;   /* papel fotocopiado, ligeramente cálido */
+  --ins-negro:      #0a0a0a;   /* impreso literal en la referencia SOLO RANK */
+
+  /* ── LA SEÑAL ───────────────────────────────────────────────────────────
+     UNA. Si hay dos acentos compitiendo, ya te saliste. */
+  --ins-senal:      var(--senal, #0102ec);
+  --ins-senal-alta: var(--senal-suave, #7f9bff);
+  --ins-hielo:      #99ccff;
+  --ins-hielo-hondo:#6699ff;
+  --ins-violeta:    #6e69ff;
+
+  /* Excepciones. Se usan de a UNA y por pieza, nunca juntas. */
+  --ins-acido:      #ccff33;
+  --ins-rojo:       #ff0000;
+
+  /* ── TINTA ──────────────────────────────────────────────────────────────
+     `pelo` es negro PURO, no la tinta azulada del sitio: una regla de 1px en
+     #08123a sobre papel se ve gris y pierde el filo. */
+  --ins-tinta:      var(--tinta, #08123a);
+  --ins-tinta-rgb:  var(--tinta-rgb, 8, 18, 58);
+  --ins-pelo:       #000000;
+  --ins-humo:       var(--tenue, #9db8dc);
+
+  /* ── MEDIDAS ────────────────────────────────────────────────────────────
+     Tres tamaños de letra y nada en medio. El salto ES el estilo. */
+  --ins-micro:      6px;    /* telemetría, cadenas de id, legal */
+  --ins-rotulo:     9px;    /* caps espaciadas, etiquetas de espécimen */
+  --ins-cuerpo:     12px;   /* texto encontrado, notas */
+  --ins-display:    clamp(38px, 7vw, 92px);
+
+  --ins-pelo-ancho: 1px;
+  --ins-corchete:   14px;   /* brazo de las escuadras */
+
+  --ins-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ins-sans: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --ins-serif: 'Times New Roman', Times, serif;
+  --ins-cjk: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'MS Gothic', sans-serif;
+}
+
+/* ═══ A · TIERRA ══════════════════════════════════════════════════════════ */
+
+.ins-papel        { background: var(--ins-papel); color: var(--ins-tinta); }
+.ins-papel-puro   { background: var(--ins-papel-puro); color: var(--ins-tinta); }
+.ins-negro        { background: var(--ins-negro); color: #ffffff; }
+
+/* Papel fotocopiado: grano de tóner + el pliegue de haberlo doblado.
+   El grano es una turbulencia SVG en línea — no baja ningún archivo. */
+.ins-escaneado {
+  background-color: var(--ins-escaneado);
+  background-image:
+    /* pliegue vertical */
+    linear-gradient(90deg, transparent 0 47%, rgba(0,0,0,.045) 49.4%,
+                    rgba(255,255,255,.5) 50.6%, transparent 53% 100%),
+    /* grano */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E");
+  background-blend-mode: multiply, multiply;
+}
+
+/* Papel milimetrado. Dos escalas: la fina de 8px y la de registro cada 40. */
+.ins-rejilla {
+  background-color: var(--ins-papel-puro);
+  background-image:
+    linear-gradient(rgba(var(--ins-tinta-rgb), .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--ins-tinta-rgb), .07) 1px, transparent 1px),
+    linear-gradient(rgba(var(--ins-tinta-rgb), .16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--ins-tinta-rgb), .16) 1px, transparent 1px);
+  background-size: 8px 8px, 8px 8px, 40px 40px, 40px 40px;
+}
+
+/* Lavado fotográfico: el rectángulo de foto pálida que NO es decoración —
+   es un plano de profundidad. Va detrás de todo y no se le pone borde. */
+.ins-lavado {
+  position: absolute;
+  background: linear-gradient(160deg, var(--ins-hielo), transparent 72%);
+  opacity: .5;
+  filter: saturate(.7);
+  pointer-events: none;
+}
+
+/* ═══ B · RETÍCULA Y REGLAS ═══════════════════════════════════════════════ */
+
+.ins-pelo-h { height: var(--ins-pelo-ancho); background: var(--ins-pelo); width: 100%; }
+.ins-pelo-v { width: var(--ins-pelo-ancho); background: var(--ins-pelo); height: 100%; }
+
+/* EL MARCO QUEBRADO. El elemento más característico de todos: una regla que
+   corre, gira 90°, corre otro tramo y se detiene sin cerrar. Nunca cierra —
+   un rectángulo completo es una caja, y esto es una anotación. */
+.ins-quiebre {
+  position: relative;
+  border-top: var(--ins-pelo-ancho) solid var(--ins-pelo);
+  border-right: var(--ins-pelo-ancho) solid var(--ins-pelo);
+}
+.ins-quiebre::after {
+  content: '';
+  position: absolute; right: -1px; top: 100%;
+  width: 1px; height: 30px;
+  background: var(--ins-pelo);
+}
+.ins-quiebre--izq {
+  border-top: var(--ins-pelo-ancho) solid var(--ins-pelo);
+  border-left: var(--ins-pelo-ancho) solid var(--ins-pelo);
+  border-right: 0;
+}
+.ins-quiebre--izq::after { right: auto; left: -1px; }
+
+/* Corchetes: las cuatro esquinas de un espécimen, sin lados. */
+.ins-corchetes { position: relative; }
+.ins-corchetes::before, .ins-corchetes::after,
+.ins-corchetes > .ins-esq::before, .ins-corchetes > .ins-esq::after {
+  content: ''; position: absolute;
+  width: var(--ins-corchete); height: var(--ins-corchete);
+  border: var(--ins-pelo-ancho) solid var(--ins-pelo);
+  pointer-events: none;
+}
+.ins-corchetes::before { left: 0; top: 0; border-right: 0; border-bottom: 0; }
+.ins-corchetes::after  { right: 0; top: 0; border-left: 0; border-bottom: 0; }
+.ins-corchetes > .ins-esq { position: absolute; inset: 0; pointer-events: none; }
+.ins-corchetes > .ins-esq::before { left: 0; bottom: 0; border-right: 0; border-top: 0; }
+.ins-corchetes > .ins-esq::after  { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+
+/* Escuadra de dos esquinas: la versión barata, para cosas menores. */
+.ins-escuadra { position: relative; }
+.ins-escuadra::before, .ins-escuadra::after {
+  content: ''; position: absolute; width: 9px; height: 9px;
+  border: 1px solid var(--ins-pelo); pointer-events: none;
+}
+.ins-escuadra::before { left: -3px; top: -3px; border-right: 0; border-bottom: 0; }
+.ins-escuadra::after  { right: -3px; bottom: -3px; border-left: 0; border-top: 0; }
+
+/* Línea guía: de la etiqueta al objeto. Siempre en ángulo recto, nunca en
+   diagonal libre — es un plano técnico, no una infografía. */
+.ins-guia { position: absolute; pointer-events: none; }
+.ins-guia i {
+  display: block; background: var(--ins-pelo);
+  height: 1px;
+}
+.ins-guia i + i { width: 1px; height: 22px; margin-left: -1px; }
+.ins-guia b {
+  display: block; width: 4px; height: 4px; margin-left: -2px;
+  background: var(--ins-senal); border-radius: 50%;
+}
+
+/* Regla graduada, con sus números. */
+.ins-escala {
+  position: relative; height: 22px;
+  border-top: 1px solid var(--ins-pelo);
+  background-image: repeating-linear-gradient(90deg,
+    var(--ins-pelo) 0 1px, transparent 1px 10px);
+  background-size: 100% 5px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+.ins-escala::after {
+  content: ''; position: absolute; left: 0; top: 0; right: 0; height: 10px;
+  background-image: repeating-linear-gradient(90deg,
+    var(--ins-pelo) 0 1px, transparent 1px 50px);
+}
+.ins-escala span {
+  position: absolute; top: 12px;
+  font: 400 var(--ins-micro)/1 var(--ins-mono);
+  letter-spacing: .5px; color: var(--ins-tinta);
+}
+
+/* ═══ C · DATOS COMO TEXTURA ══════════════════════════════════════════════
+   El alma del estilo. Una página sin esto se ve limpia y vacía; con esto se
+   ve como el volcado de un instrumento. La regla: la telemetría NO se lee,
+   se percibe. Si alguien tiene que leerla, la pusiste muy grande. */
+
+.ins-telemetria {
+  font: 400 var(--ins-micro)/1 var(--ins-mono);
+  letter-spacing: .4px;
+  color: rgba(var(--ins-tinta-rgb), .62);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+/* Cada lectura vive dentro de su propio par de corchetes. */
+.ins-telemetria.ins-encorchetada {
+  position: relative; padding: 3px 5px;
+}
+.ins-telemetria.ins-encorchetada::before,
+.ins-telemetria.ins-encorchetada::after {
+  content: ''; position: absolute; width: 4px; height: 100%;
+  top: 0; border: 1px solid rgba(var(--ins-tinta-rgb), .55);
+}
+.ins-telemetria.ins-encorchetada::before { left: 0; border-right: 0; }
+.ins-telemetria.ins-encorchetada::after  { right: 0; border-left: 0; }
+
+/* La columna de dígitos. Sin explicación, sin encabezado. Es un registro. */
+.ins-digitos {
+  font: 400 10px/2.4 var(--ins-mono);
+  letter-spacing: 1.5px;
+  color: rgba(var(--ins-tinta-rgb), .8);
+}
+
+/* Código de barras. Las barras las siembra insignia.js desde una cadena, así
+   que dos códigos distintos se ven distintos. Sin JS queda un patrón fijo,
+   que es peor pero no es un hueco. */
+.ins-barras {
+  height: 46px;
+  background-image: repeating-linear-gradient(90deg,
+    var(--ins-pelo) 0 2px, transparent 2px 4px,
+    var(--ins-pelo) 4px 5px, transparent 5px 9px,
+    var(--ins-pelo) 9px 12px, transparent 12px 13px);
+}
+.ins-barras + .ins-barras-rotulo {
+  font: 400 var(--ins-rotulo)/1 var(--ins-mono);
+  letter-spacing: 3px; margin-top: 5px; color: var(--ins-tinta);
+}
+
+/* Bloque QR: una malla de cuadros. La siembra el JS; sin él, un damero. */
+.ins-qr {
+  display: grid; gap: 0;
+  grid-template-columns: repeat(11, 1fr);
+  width: 66px; aspect-ratio: 1;
+}
+.ins-qr i { background: var(--ins-pelo); }
+.ins-qr i.v { background: transparent; }
+
+/* Cadena de identificación. Va pegada a algo, nunca suelta. */
+.ins-id {
+  font: 400 var(--ins-micro)/1 var(--ins-mono);
+  letter-spacing: 1.8px; text-transform: uppercase;
+  color: rgba(var(--ins-tinta-rgb), .7);
+}
+
+/* ═══ D · TIPOGRAFÍA ══════════════════════════════════════════════════════ */
+
+/* Display subrayado, con sus micro-rótulos flotando arriba. La palabra grande
+   nunca va sola: siempre lleva dos etiquetas de 9px que la enmarcan. */
+.ins-display {
+  font: 700 var(--ins-display)/0.92 var(--ins-sans);
+  letter-spacing: -0.035em;
+  color: var(--ins-tinta);
+  border-bottom: 2px solid var(--ins-pelo);
+  display: inline-block; padding-bottom: 2px;
+}
+.ins-rotulo-sup {
+  font: 400 var(--ins-rotulo)/1 var(--ins-sans);
+  letter-spacing: .5px; color: var(--ins-tinta);
+  display: inline-block;
+}
+
+/* Caps espaciadas: la etiqueta de espécimen. GATE CORE, SYSTEM NODE. */
+.ins-caps {
+  font: 400 var(--ins-rotulo)/1.5 var(--ins-mono);
+  letter-spacing: 3.2px; text-transform: uppercase;
+  color: var(--ins-tinta);
+}
+.ins-caps--senal { color: var(--ins-senal); }
+
+/* Japonés en vertical, corriendo por el borde. Es textura, no lectura: va en
+   los márgenes y no se le pide a nadie que lo entienda. */
+.ins-vertical {
+  writing-mode: vertical-rl; text-orientation: upright;
+  font: 400 11px/1.7 var(--ins-cjk);
+  letter-spacing: 3px;
+  color: rgba(var(--ins-tinta-rgb), .75);
+}
+
+/* Kanji a tamaño de cartel. UNO por pieza. Dos ya es decoración. */
+.ins-kanji {
+  font: 700 clamp(64px, 14vw, 190px)/1 var(--ins-cjk);
+  color: var(--ins-tinta);
+  letter-spacing: .05em;
+}
+
+/* Texto encontrado: letra, oración, documento. Se pone a 6-7px y se deja
+   correr. Nadie lo va a leer y ése es el punto: es densidad, no mensaje. */
+.ins-encontrado {
+  font: 400 7px/1.55 var(--ins-sans);
+  color: rgba(var(--ins-tinta-rgb), .85);
+  max-width: 34ch;
+}
+.ins-encontrado--serif {
+  font-family: var(--ins-serif); font-size: 11px; line-height: 1.9;
+  max-width: 46ch;
+}
+
+/* Display estirado y display en contorno. */
+.ins-estirada {
+  font: 800 clamp(30px, 5.5vw, 64px)/.9 var(--ins-sans);
+  letter-spacing: -.02em; transform: scaleY(1.42); transform-origin: bottom left;
+  display: inline-block; color: var(--ins-tinta);
+}
+.ins-contorno {
+  font: 800 clamp(30px, 5.5vw, 64px)/1 var(--ins-sans);
+  letter-spacing: .02em; color: transparent;
+  -webkit-text-stroke: 1.5px var(--ins-tinta);
+  paint-order: stroke fill;
+}
+
+/* Micro-copia legal. Siempre abajo, siempre en 6px, siempre real. */
+.ins-legal {
+  font: 400 var(--ins-micro)/1.6 var(--ins-mono);
+  letter-spacing: .6px; color: rgba(var(--ins-tinta-rgb), .55);
+}
+
+/* ═══ E · MARCAS ══════════════════════════════════════════════════════════ */
+
+/* La barra negra. Redacta, ancla, corta. Sangra fuera del marco. */
+.ins-barra-negra { background: var(--ins-pelo); height: 26px; }
+.ins-barra-negra--senal { background: var(--ins-senal); }
+
+.ins-chevron { display: inline-flex; gap: 2px; color: var(--ins-tinta); }
+.ins-chevron i {
+  width: 0; height: 0;
+  border-top: 7px solid transparent; border-bottom: 7px solid transparent;
+  border-left: 9px solid currentColor;
+}
+.ins-chevron--senal { color: var(--ins-senal); }
+
+/* El asterisco de cuatro puntas — no el ✳ tipográfico, que se ve blando. */
+.ins-estrella {
+  width: 15px; height: 15px; display: inline-block;
+  background: var(--ins-tinta);
+  clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%,
+                     42% 58%, 0 50%, 42% 42%);
+}
+.ins-estrella--senal { background: var(--ins-senal); }
+
+.ins-aviso {
+  width: 20px; height: 18px; display: inline-block; position: relative;
+  background: var(--ins-tinta);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.ins-aviso::after {
+  content: '!'; position: absolute; left: 0; right: 0; bottom: 1px;
+  text-align: center; font: 700 9px/1 var(--ins-sans);
+  color: var(--ins-papel);
+}
+
+/* Cruz de mira: círculo + cruz. La marca de "aquí está el espécimen". */
+.ins-mira {
+  width: 26px; height: 26px; position: relative; display: inline-block;
+}
+.ins-mira::before {
+  content: ''; position: absolute; inset: 0;
+  border: 1px solid var(--ins-senal); border-radius: 50%;
+}
+.ins-mira::after {
+  content: ''; position: absolute; left: 50%; top: -5px; bottom: -5px;
+  width: 1px; margin-left: -.5px; background: var(--ins-senal);
+  box-shadow: 0 0 0 0 transparent;
+}
+.ins-mira i {
+  position: absolute; top: 50%; left: -5px; right: -5px; height: 1px;
+  margin-top: -.5px; background: var(--ins-senal);
+}
+
+/* Marca de registro: la cruz de imprenta. */
+.ins-registro {
+  width: 18px; height: 18px; position: relative; display: inline-block;
+}
+.ins-registro::before, .ins-registro::after {
+  content: ''; position: absolute; background: var(--ins-pelo);
+}
+.ins-registro::before { left: 50%; top: 0; bottom: 0; width: 1px; margin-left: -.5px; }
+.ins-registro::after  { top: 50%; left: 0; right: 0; height: 1px; margin-top: -.5px; }
+
+/* Bandera de cuadros. Va en tiras cortas, como cinta. */
+.ins-cuadros {
+  height: 14px;
+  background-image:
+    linear-gradient(45deg, var(--ins-pelo) 25%, transparent 25% 75%, var(--ins-pelo) 75%),
+    linear-gradient(45deg, var(--ins-pelo) 25%, transparent 25% 75%, var(--ins-pelo) 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 7px 7px;
+  background-color: var(--ins-papel-puro);
+}
+
+/* ═══ F · TRAMA ═══════════════════════════════════════════════════════════ */
+
+.ins-semitono {
+  background-image: radial-gradient(var(--ins-tinta) 1.1px, transparent 1.2px);
+  background-size: 6px 6px;
+  opacity: .55;
+}
+.ins-semitono--senal { background-image: radial-gradient(var(--ins-senal) 1.1px, transparent 1.2px); }
+.ins-semitono--degrade {
+  -webkit-mask-image: linear-gradient(150deg, #000, transparent 78%);
+  mask-image: linear-gradient(150deg, #000, transparent 78%);
+}
+
+/* Dither ordenado (Bayer 4×4 aproximado con cuatro capas desfasadas). */
+.ins-dither {
+  background-color: var(--ins-papel-puro);
+  background-image:
+    linear-gradient(45deg, var(--ins-tinta) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--ins-tinta) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--ins-tinta) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--ins-tinta) 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0;
+  opacity: .5;
+}
+
+/* Mosaico: bloques de pixel, del tamaño que se te note. */
+.ins-mosaico { display: grid; grid-template-columns: repeat(auto-fill, 9px); gap: 0; }
+.ins-mosaico i { aspect-ratio: 1; background: var(--ins-senal); }
+
+/* Grano. Se cuelga encima de todo y no toca los eventos. */
+.ins-grano {
+  position: absolute; inset: 0; pointer-events: none; z-index: 9;
+  opacity: .3; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+.ins-raster {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(180deg,
+    rgba(var(--ins-tinta-rgb), .13) 0 1px, transparent 1px 3px);
+}
+
+/* ═══ G · GEOMETRÍA Y 3D ══════════════════════════════════════════════════
+   Todo en línea. Nada de sólidos sombreados: el 3D de este estilo es de
+   alambre o de cinta pálida, y por eso convive con la tipografía en vez de
+   competir con ella. Los generativos los pinta insignia.js. */
+
+.ins-lienzo { display: block; width: 100%; height: 100%; }
+
+/* Cinta de cromo: gradiente frío con un filo blanco a la mitad. */
+.ins-cinta {
+  background: linear-gradient(97deg,
+    #cfd8e6 0%, #eef3fb 18%, #ffffff 27%, #b9c6da 41%,
+    #e8eef8 62%, #9fb0c8 80%, #dde5f1 100%);
+}
+
+/* Destello de estrella: cuatro brazos afilados. */
+.ins-destello {
+  width: 120px; aspect-ratio: 1; position: relative; display: inline-block;
+}
+.ins-destello::before, .ins-destello::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  background: var(--ins-tinta);
+}
+.ins-destello::before {
+  width: 2px; height: 100%; margin: -50% 0 0 -1px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.ins-destello::after {
+  width: 100%; height: 2px; margin: -1px 0 0 -50%;
+  clip-path: polygon(0 50%, 50% 0, 100% 50%, 50% 100%);
+}
+
+/* ═══ H · ERROR Y DEGRADACIÓN ═════════════════════════════════════════════
+   El error es intencional y MEDIDO. 2px de desregistro se lee como decisión;
+   8px se lee como que se rompió el sitio. */
+
+.ins-desregistro {
+  text-shadow: -2px 0 0 var(--ins-rojo), 2px 0 0 var(--ins-senal);
+}
+.ins-desregistro--frio { text-shadow: -2px 0 0 var(--ins-hielo), 2px 0 0 var(--ins-senal); }
+
+/* Corte de escáner: una franja horizontal desplazada. */
+.ins-corte { position: relative; }
+.ins-corte::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 38%; height: 9%;
+  background: inherit; transform: translateX(9px);
+  box-shadow: -9px 0 0 var(--ins-papel);
+}
+
+/* Mancha de tinta: turbulencia desplazando un trazo. */
+.ins-mancha { display: block; }
+
+/* Esquirla vectorial: los fragmentos blancos con filo negro. */
+.ins-esquirla { display: block; }
+
+/* ═══ I · LEYENDA ═════════════════════════════════════════════════════════
+   La paleta impresa como parte de la obra. Sale de la referencia SOLO RANK y
+   es lo más nerv que hay: enseñar el instrumento junto con la medición. */
+
+.ins-leyenda {
+  display: flex; flex-wrap: wrap; gap: 0 22px;
+  font: 400 var(--ins-micro)/1 var(--ins-mono);
+  letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(var(--ins-tinta-rgb), .75);
+}
+.ins-leyenda b { font-weight: 400; display: inline-flex; align-items: center; gap: 5px; }
+.ins-leyenda b::before {
+  content: ''; width: 7px; height: 7px; background: currentColor;
+  box-shadow: inset 0 0 0 1px rgba(var(--ins-tinta-rgb), .35);
+}
+
+/* Tira de íconos de formato, la del reverso de un disco. */
+.ins-tira { display: inline-flex; gap: 7px; align-items: center; }
+.ins-tira i {
+  width: 15px; height: 15px; border: 1px solid var(--ins-pelo);
+  border-radius: 50%; position: relative;
+}
+.ins-tira i::after {
+  content: ''; position: absolute; inset: 3px; background: var(--ins-pelo);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.ins-tira i:nth-child(2n)::after { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+.ins-tira i:nth-child(3n)::after { clip-path: circle(50%); }
+
+/* ═══ MODO OSCURO ═════════════════════════════════════════════════════════
+   No es "invertir". El negro total cambia qué elemento manda: sobre papel
+   manda la regla de pelo; sobre negro manda el resplandor de la señal. */
+
+[data-piel="oscuro"] .ins-negro,
+.ins-negro {
+  --ins-pelo: #ffffff;
+  --ins-papel: #0a0a0a;
+  --ins-papel-puro: #0a0a0a;
+  --ins-tinta: #ffffff;
+  --ins-tinta-rgb: 255, 255, 255;
+  --ins-humo: #7d8ba3;
+}
+.ins-negro .ins-mira::before,
+.ins-negro .ins-mira::after,
+.ins-negro .ins-mira i { border-color: var(--ins-hielo); background-color: var(--ins-hielo); }
+.ins-negro .ins-mira::before { background: transparent; }
+.ins-negro .ins-aviso::after { color: var(--ins-negro); }
+.ins-negro .ins-cuadros { background-color: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ins-lienzo { animation: none !important; }
+}

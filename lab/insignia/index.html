@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>insignia — el vocabulario visual de nerv</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="insignia.css">
+<style>
+  /* Sólo lo de ESTA página. El vocabulario vive en insignia.css. */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ins-papel); color: var(--ins-tinta);
+    font-family: var(--ins-sans); overflow-x: hidden;
+  }
+  .hoja { max-width: 1420px; margin: 0 auto; padding: 0 clamp(14px, 3vw, 46px) 120px; }
+
+  /* ── la portada ─────────────────────────────────────────────────────── */
+  .portada { position: relative; min-height: 96vh; overflow: hidden;
+    border-bottom: 1px solid var(--ins-pelo); }
+  .portada .lienzo-caja { position: absolute; inset: -4% -8% 0 -8%; z-index: 0; }
+  .portada .capa { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .portada .contenido { position: relative; z-index: 3; padding-top: clamp(40px, 9vh, 110px); }
+
+  /* La tesis SÍ se lee. `.ins-encontrado` es textura de 7px y no sirve aquí:
+     poner el argumento central en tamaño de adorno es presumir el estilo a
+     costa de que nadie entienda de qué va. */
+  .ins-tesis { max-width: 62ch; font: 400 13px/1.75 var(--ins-mono);
+    letter-spacing: .1px; color: rgba(var(--ins-tinta-rgb), .88); }
+
+  .banda-alta { display: flex; align-items: flex-start; gap: 0; }
+  .banda-alta .negro { flex: 0 0 36%; height: 34px; background: var(--ins-pelo); }
+  .banda-alta .hueco { flex: 0 0 26px; }
+  .banda-alta .negro-2 { flex: 0 0 68px; height: 34px; background: var(--ins-pelo); }
+
+  .titular { margin: clamp(90px, 22vh, 260px) 0 0; }
+  .titular .marco { display: inline-block; position: relative; }
+
+  /* ── secciones del catálogo ─────────────────────────────────────────── */
+  .seccion { padding: 78px 0 0; }
+  .seccion > header { display: flex; align-items: baseline; gap: 20px;
+    flex-wrap: wrap; border-bottom: 1px solid var(--ins-pelo); padding-bottom: 9px; }
+  .seccion > header h2 { margin: 0; font-size: clamp(19px, 2.4vw, 27px);
+    font-weight: 700; letter-spacing: -.02em; }
+  .seccion > header .n { font: 600 var(--ins-rotulo)/1 var(--ins-mono);
+    letter-spacing: 3px; color: var(--ins-senal); }
+  .seccion > header .nota { margin-left: auto; font: 400 10px/1.5 var(--ins-mono);
+    color: rgba(var(--ins-tinta-rgb), .62); max-width: 46ch; letter-spacing: .3px; }
+
+  .rejilla-muestras { display: grid; gap: 26px; margin-top: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); }
+  .muestra { position: relative; }
+  .muestra .lienzo-m {
+    position: relative; height: 178px; overflow: hidden;
+    background: var(--ins-papel-puro);
+    border: 1px solid rgba(var(--ins-tinta-rgb), .2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .muestra .pie { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+  .muestra .pie b { font: 600 11px/1.3 var(--ins-sans); letter-spacing: 0; font-weight: 700; }
+  .muestra .pie code { font: 400 9px/1.3 var(--ins-mono); letter-spacing: .4px;
+    color: var(--ins-senal); margin-left: auto; }
+  .muestra .desc { font: 400 10px/1.55 var(--ins-mono); letter-spacing: .2px;
+    color: rgba(var(--ins-tinta-rgb), .62); margin-top: 4px; }
+  .muestra .coord { position: absolute; right: 3px; top: -13px;
+    font: 400 var(--ins-micro)/1 var(--ins-mono); letter-spacing: .5px;
+    color: rgba(var(--ins-tinta-rgb), .5); }
+  .ancha { grid-column: 1 / -1; }
+  .ancha .lienzo-m { height: 300px; }
+
+  /* la doctrina, al final */
+  .doctrina { margin-top: 34px; display: grid; gap: 26px;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .regla { border-left: 2px solid var(--ins-senal); padding: 2px 0 2px 15px; }
+  .regla h3 { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: -.01em; }
+  .regla p { margin: 0; font: 400 11.5px/1.7 var(--ins-mono);
+    color: rgba(var(--ins-tinta-rgb), .78); letter-spacing: .1px; }
+  .regla--no { border-left-color: var(--ins-rojo); }
+
+  .pie-hoja { margin-top: 90px; padding-top: 16px;
+    border-top: 1px solid var(--ins-pelo); display: flex; gap: 26px;
+    flex-wrap: wrap; align-items: flex-end; }
+</style>
+</head>
+<body>
+
+<!-- ═══ 00 · PORTADA ══════════════════════════════════════════════════════
+     No es una portada decorativa: usa dieciocho elementos del catálogo a la
+     vez, que es la única forma honesta de enseñar que el vocabulario compone.
+     Si sólo se vieran en fichas sueltas, esto sería un muestrario, no un
+     estilo.                                                                -->
+<section class="portada">
+  <div class="lienzo-caja">
+    <canvas class="ins-lienzo" data-ins="rafaga" data-semilla="insignia-00"
+            data-hilos="260" data-cintas="18" data-fy="0.42" aria-hidden="true"></canvas>
+  </div>
+
+  <div class="capa" data-ins="telemetria" data-cuantas="46" data-semilla="portada" aria-hidden="true"></div>
+
+  <div class="ins-lavado" style="left:4%;top:19%;width:36%;height:88px;"></div>
+  <div class="ins-lavado" style="right:2%;top:34%;width:28%;height:120px;"></div>
+  <div class="ins-lavado" style="left:22%;top:58%;width:44%;height:70px;"></div>
+
+  <div class="hoja contenido">
+    <div class="banda-alta">
+      <div class="negro"></div><div class="hueco"></div><div class="negro-2"></div>
+    </div>
+
+    <!-- fila alta: rótulos, aviso, id -->
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:22px;">
+      <span class="ins-caps ins-caps--senal">nerv / insignia</span>
+      <span class="ins-chevron ins-chevron--senal"><i></i><i></i><i></i></span>
+      <span class="ins-caps">vocabulario visual · v1</span>
+      <span class="ins-aviso" title="uso interno"></span>
+      <span class="ins-id" style="margin-left:auto;">A172026:D — SET IN STONE</span>
+    </div>
+
+    <div class="ins-quiebre" style="width:min(62%,660px);height:56px;margin-top:14px;"></div>
+
+    <!-- el titular -->
+    <div class="titular">
+      <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+        <span class="ins-rotulo-sup">set</span>
+        <span class="ins-display ins-desregistro--frio">insignia</span>
+        <span class="ins-rotulo-sup">in stone</span>
+      </div>
+      <p class="ins-tesis" style="margin:18px 0 0;">
+        Papel blanco o negro total. Un acento eléctrico y sólo uno. Reglas de pelo
+        en negro puro. Todo lo demás es densidad: telemetría que nadie lee, códigos
+        que no codifican, japonés que es textura. El estilo no sale de los colores —
+        sale de cuánta información técnica aguanta la superficie antes de volverse
+        ilegible, y de detenerse un paso antes.
+      </p>
+    </div>
+
+    <!-- fila baja: kanji, alambre, barras, leyenda -->
+    <div style="display:flex;align-items:flex-end;gap:clamp(16px,4vw,52px);flex-wrap:wrap;margin-top:clamp(40px,8vh,90px);">
+      <div>
+        <div class="ins-kanji" style="font-size:clamp(52px,9vw,120px);">観測</div>
+        <div class="ins-caps" style="margin-top:2px;">observación</div>
+      </div>
+      <svg data-ins="alambre" data-tipo="esfera" data-giroy="0.7"
+           style="width:110px;height:110px;color:rgba(var(--ins-tinta-rgb),.55);" aria-hidden="true"></svg>
+      <svg data-ins="alambre" data-tipo="cubo" data-giroy="0.9" data-girox="0.42"
+           style="width:84px;height:84px;color:var(--ins-senal);" aria-hidden="true"></svg>
+      <div>
+        <div class="ins-barras" data-ins="barras" data-cadena="NERVCENTER"
+             style="width:132px;color:var(--ins-pelo);"></div>
+        <div class="ins-barras-rotulo">insignia · 01</div>
+      </div>
+      <div class="ins-vertical" aria-hidden="true" style="height:150px;">開花植物の観測記録</div>
+    </div>
+
+    <div class="ins-leyenda" aria-hidden="true" style="margin-top:34px;">
+      <b style="color:#0a0a0a">#0A0A0A</b>
+      <b style="color:#ffffff;text-shadow:0 0 0 #000">#FFFFFF</b>
+      <b style="color:var(--ins-senal)">SEÑAL</b>
+      <b style="color:#6e69ff">#6E69FF</b>
+      <b style="color:#99ccff">#99CCFF</b>
+      <b style="color:#ccff33">#CCFF33</b>
+      <b style="color:#ff0000">#FF0000</b>
+    </div>
+  </div>
+
+  <div class="ins-grano"></div>
+</section>
+
+<div class="hoja">
+
+<!-- ═══ A · TIERRA ════════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ A ]</span><h2>tierra</h2>
+    <span class="nota">O papel, o negro. Nunca gris medio: sin ese salto la regla de
+      pelo desaparece y se cae todo lo demás.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 0812</span>
+      <div class="lienzo-m ins-papel"></div>
+      <div class="pie"><b>papel</b><code>.ins-papel</code></div>
+      <div class="desc">#f4f7fc — sigue la ficha del sitio</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 0812</span>
+      <div class="lienzo-m ins-escaneado"></div>
+      <div class="pie"><b>papel escaneado</b><code>.ins-escaneado</code></div>
+      <div class="desc">grano de tóner + pliegue, turbulencia SVG en línea</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0656 y: 0812</span>
+      <div class="lienzo-m ins-rejilla"></div>
+      <div class="pie"><b>milimetrado</b><code>.ins-rejilla</code></div>
+      <div class="desc">dos escalas: 8px fina, 40px de registro</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0914 y: 0812</span>
+      <div class="lienzo-m ins-negro"></div>
+      <div class="pie"><b>negro total</b><code>.ins-negro</code></div>
+      <div class="desc">#0a0a0a — voltea las fichas, no las invierte</div></div>
+  </div>
+</section>
+
+<!-- ═══ B · RETÍCULA ══════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ B ]</span><h2>retícula y reglas</h2>
+    <span class="nota">Una regla que cierra es una caja. Aquí ninguna cierra: corren,
+      giran noventa grados y se detienen. Son anotaciones, no contenedores.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 1204</span>
+      <div class="lienzo-m">
+        <div class="ins-quiebre" style="width:74%;height:76px;"></div>
+      </div>
+      <div class="pie"><b>marco quebrado</b><code>.ins-quiebre</code></div>
+      <div class="desc">el elemento más característico del catálogo</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 1204</span>
+      <div class="lienzo-m">
+        <div class="ins-corchetes" style="width:132px;height:96px;"><span class="ins-esq"></span></div>
+      </div>
+      <div class="pie"><b>corchetes</b><code>.ins-corchetes</code></div>
+      <div class="desc">cuatro esquinas, cero lados</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0656 y: 1204</span>
+      <div class="lienzo-m" style="align-items:flex-start;padding:44px 22px;">
+        <div class="ins-escala" data-ins="escala" aria-hidden="true" data-desde="0" data-hasta="2400" data-paso="4"
+             style="width:100%;"></div>
+      </div>
+      <div class="pie"><b>escala graduada</b><code>.ins-escala</code></div>
+      <div class="desc">marcas cada 10px, registro cada 50, con sus cifras</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0914 y: 1204</span>
+      <div class="lienzo-m">
+        <div style="position:relative;width:150px;height:96px;">
+          <div class="ins-escuadra" style="position:absolute;left:28px;top:26px;width:64px;height:44px;background:var(--ins-hielo);"></div>
+          <div class="ins-guia" style="left:92px;top:26px;">
+            <i style="width:44px;"></i><i></i><b></b>
+          </div>
+          <span class="ins-caps" style="position:absolute;right:-4px;top:14px;font-size:7px;">nodo</span>
+        </div>
+      </div>
+      <div class="pie"><b>línea guía</b><code>.ins-guia</code></div>
+      <div class="desc">siempre en ángulo recto, nunca diagonal libre</div></div>
+  </div>
+</section>
+
+<!-- ═══ C · DATOS ═════════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ C ]</span><h2>datos como textura</h2>
+    <span class="nota">El alma del estilo. La telemetría NO se lee, se percibe: si
+      alguien tiene que leerla la pusiste muy grande. Las cifras corresponden a
+      dónde están puestas — un número al azar se nota.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra ancha"><span class="coord" aria-hidden="true">x: 0140 y: 1596</span>
+      <div class="lienzo-m" data-ins="telemetria" data-cuantas="52" data-semilla="muestra-c" aria-hidden="true"></div>
+      <div class="pie"><b>telemetría sembrada</b><code>nervInsignia.telemetria()</code></div>
+      <div class="desc">52 lecturas · x crece a la derecha, y hacia abajo · determinista por semilla</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 1902</span>
+      <div class="lienzo-m" style="align-items:flex-start;padding:16px 22px;">
+        <div class="ins-digitos" aria-hidden="true">10100331<br>60100331<br>20230431<br>27160931<br>13105301</div>
+      </div>
+      <div class="pie"><b>columna de dígitos</b><code>.ins-digitos</code></div>
+      <div class="desc">sin encabezado y sin explicación: es un registro</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 1902</span>
+      <div class="lienzo-m" style="flex-direction:column;gap:10px;">
+        <div class="ins-barras" data-ins="barras" data-cadena="INSIGNIA"
+             style="width:150px;color:var(--ins-pelo);"></div>
+        <div class="ins-barras-rotulo">ru</div>
+      </div>
+      <div class="pie"><b>código de barras</b><code>data-ins="barras"</code></div>
+      <div class="desc">las barras salen de la cadena: dos códigos se ven distintos</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0656 y: 1902</span>
+      <div class="lienzo-m">
+        <div class="ins-qr" data-ins="qr" data-cadena="nervcenter.online" style="color:var(--ins-pelo);"></div>
+      </div>
+      <div class="pie"><b>bloque qr</b><code>.ins-qr</code></div>
+      <div class="desc">con sus tres ojos, para que se lea como código</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0914 y: 1902</span>
+      <div class="lienzo-m" style="flex-direction:column;gap:8px;align-items:flex-start;padding:22px;">
+        <span class="ins-id">A172026:D</span>
+        <span class="ins-id">15 — N — 21396</span>
+        <span class="ins-id">02 · 26 · 26 &nbsp; min·fr·sec</span>
+        <span class="ins-legal">© 2026 nerv · todos los derechos reservados</span>
+      </div>
+      <div class="pie"><b>cadenas e id</b><code>.ins-id / .ins-legal</code></div>
+      <div class="desc">van pegadas a algo, nunca sueltas</div></div>
+  </div>
+</section>
+
+<!-- ═══ D · TIPOGRAFÍA ════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ D ]</span><h2>tipografía</h2>
+    <span class="nota">Tres tamaños y nada en medio: 6px, 9px y display. El salto ES
+      el estilo — un escalón intermedio lo vuelve una revista.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra ancha"><span class="coord" aria-hidden="true">x: 0140 y: 2298</span>
+      <div class="lienzo-m" style="flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:flex-end;gap:14px;">
+          <span class="ins-rotulo-sup">set</span>
+          <span class="ins-display" style="font-size:clamp(32px,6vw,66px);">binary code</span>
+          <span class="ins-rotulo-sup">in stone</span>
+        </div>
+      </div>
+      <div class="pie"><b>display subrayado</b><code>.ins-display + .ins-rotulo-sup</code></div>
+      <div class="desc">la palabra grande nunca va sola: dos micro-rótulos la enmarcan</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 2604</span>
+      <div class="lienzo-m"><span class="ins-kanji" style="font-size:96px;">花</span></div>
+      <div class="pie"><b>kanji display</b><code>.ins-kanji</code></div>
+      <div class="desc">UNO por pieza. Dos ya es decoración.</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 2604</span>
+      <div class="lienzo-m"><div class="ins-vertical" aria-hidden="true" style="height:132px;">1998年から2026年頃まで</div></div>
+      <div class="pie"><b>vertical CJK</b><code>.ins-vertical</code></div>
+      <div class="desc">textura de margen; a nadie se le pide que lo lea</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0656 y: 2604</span>
+      <div class="lienzo-m" style="align-items:flex-start;padding:18px;">
+        <p class="ins-encontrado--serif ins-encontrado" style="margin:0;">
+          1. Make the Sign of the Cross<br>2. Holding the Crucifix, say the Apostles' Creed<br>
+          3. On the first bead, say an Our Father<br>4. Say one Hail Mary on each of the next<br>
+          5. Say the Glory Be
+        </p>
+      </div>
+      <div class="pie"><b>texto encontrado</b><code>.ins-encontrado</code></div>
+      <div class="desc">densidad, no mensaje: nadie lo va a leer y ése es el punto</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0914 y: 2604</span>
+      <div class="lienzo-m" style="flex-direction:column;gap:14px;">
+        <span class="ins-contorno" style="font-size:34px;">ETHEREAL</span>
+        <span class="ins-estirada" style="font-size:26px;">ELAVATOR</span>
+      </div>
+      <div class="pie"><b>contorno y estirada</b><code>.ins-contorno / .ins-estirada</code></div>
+      <div class="desc">de a una por pieza, y nunca sobre el titular principal</div></div>
+  </div>
+</section>
+
+<!-- ═══ E · MARCAS ════════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ E ]</span><h2>marcas</h2>
+    <span class="nota">Glifos construidos, no tipográficos. El ✳ de una fuente se ve
+      blando; éstos tienen filo porque son clip-path.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra ancha"><span class="coord" aria-hidden="true">x: 0140 y: 3006</span>
+      <div class="lienzo-m" style="gap:clamp(18px,4vw,54px);flex-wrap:wrap;padding:20px;">
+        <span class="ins-chevron"><i></i><i></i><i></i></span>
+        <span class="ins-estrella"></span>
+        <span class="ins-estrella ins-estrella--senal"></span>
+        <span class="ins-aviso"></span>
+        <span class="ins-mira"><i></i></span>
+        <span class="ins-registro"></span>
+        <span class="ins-cuadros" style="width:96px;"></span>
+        <span class="ins-tira"><i></i><i></i><i></i><i></i><i></i></span>
+      </div>
+      <div class="pie"><b>el juego completo</b><code>.ins-chevron .ins-estrella .ins-aviso .ins-mira .ins-registro .ins-cuadros .ins-tira</code></div>
+      <div class="desc">chevrón · estrella de cuatro puntas · aviso · cruz de mira · marca de registro · bandera · tira de formatos</div></div>
+
+    <div class="muestra ancha"><span class="coord" aria-hidden="true">x: 0140 y: 3312</span>
+      <div class="lienzo-m" style="flex-direction:column;gap:0;align-items:stretch;padding:0;">
+        <div class="ins-barra-negra" style="width:62%;"></div>
+        <div style="flex:1"></div>
+        <div class="ins-barra-negra ins-barra-negra--senal" style="width:38%;margin-left:auto;height:18px;"></div>
+      </div>
+      <div class="pie"><b>barra negra</b><code>.ins-barra-negra</code></div>
+      <div class="desc">redacta, ancla y corta. Sangra fuera del marco — una barra que respeta el margen no hace nada.</div></div>
+  </div>
+</section>
+
+<!-- ═══ F · TRAMA ═════════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ F ]</span><h2>trama</h2>
+    <span class="nota">La imagen no se pone: se rompe. Semitono, dither y mosaico son
+      tres formas de decir que lo que ves pasó por una máquina.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 3708</span>
+      <div class="lienzo-m"><div class="ins-semitono ins-semitono--degrade" style="position:absolute;inset:0;"></div></div>
+      <div class="pie"><b>semitono</b><code>.ins-semitono</code></div>
+      <div class="desc">con máscara en degradé para que no sea un tapiz</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 3708</span>
+      <div class="lienzo-m"><div class="ins-dither" style="position:absolute;inset:0;"></div></div>
+      <div class="pie"><b>dither</b><code>.ins-dither</code></div>
+      <div class="desc">Bayer aproximado con cuatro gradientes desfasados</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0656 y: 3708</span>
+      <div class="lienzo-m" style="align-items:stretch;padding:0;">
+        <div class="ins-mosaico" data-ins="mosaico" data-columnas="18" data-filas="20"
+             data-semilla="figura" style="width:100%;align-content:start;"></div>
+      </div>
+      <div class="pie"><b>mosaico</b><code>data-ins="mosaico"</code></div>
+      <div class="desc">densidad decreciente: la figura se deshace hacia abajo</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0914 y: 3708</span>
+      <div class="lienzo-m ins-papel-puro">
+        <div class="ins-raster"></div><div class="ins-grano" style="opacity:.5"></div>
+        <span class="ins-caps" style="position:relative;z-index:10;">grano + raster</span>
+      </div>
+      <div class="pie"><b>grano y raster</b><code>.ins-grano / .ins-raster</code></div>
+      <div class="desc">van encima de todo y no tocan los eventos</div></div>
+  </div>
+</section>
+
+<!-- ═══ G · GEOMETRÍA ═════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ G ]</span><h2>geometría y 3D</h2>
+    <span class="nota">Todo en línea. El 3D de este estilo es de alambre o de cinta
+      pálida, y por eso convive con la tipografía en vez de competir con ella.
+      Nada de sólidos sombreados.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra ancha"><span class="coord" aria-hidden="true">x: 0140 y: 4104</span>
+      <div class="lienzo-m" style="padding:0;">
+        <canvas class="ins-lienzo" data-ins="rafaga" data-semilla="muestra-g"
+                data-hilos="200" data-cintas="12" aria-hidden="true"></canvas>
+      </div>
+      <div class="pie"><b>ráfaga</b><code>data-ins="rafaga"</code></div>
+      <div class="desc">el elemento firma · 200 hilos + 12 cintas + 22 lazos · determinista · una sola pasada, sin bucle de animación</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 4410</span>
+      <div class="lienzo-m">
+        <svg data-ins="alambre" data-tipo="esfera" style="width:140px;height:140px;color:var(--ins-tinta);" aria-hidden="true"></svg>
+      </div>
+      <div class="pie"><b>esfera de alambre</b><code>data-tipo="esfera"</code></div>
+      <div class="desc">proyección ortográfica a mano; cero librerías 3D</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 4410</span>
+      <div class="lienzo-m">
+        <svg data-ins="alambre" data-tipo="cubo" data-giroy="0.85" data-girox="0.4"
+             style="width:130px;height:130px;color:var(--ins-senal);" aria-hidden="true"></svg>
+      </div>
+      <div class="pie"><b>cubo de alambre</b><code>data-tipo="cubo"</code></div>
+      <div class="desc">doce aristas, sin caras: se le ve el otro lado</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0656 y: 4410</span>
+      <div class="lienzo-m ins-cinta"></div>
+      <div class="pie"><b>cinta de cromo</b><code>.ins-cinta</code></div>
+      <div class="desc">gradiente frío con un filo blanco a la mitad</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0914 y: 4410</span>
+      <div class="lienzo-m"><span class="ins-destello"></span></div>
+      <div class="pie"><b>destello</b><code>.ins-destello</code></div>
+      <div class="desc">cuatro brazos afilados, en clip-path</div></div>
+  </div>
+</section>
+
+<!-- ═══ H · ERROR ═════════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ H ]</span><h2>error y degradación</h2>
+    <span class="nota">Medido. 2px de desregistro se lee como decisión; 8px se lee
+      como que se rompió el sitio. La diferencia entre el estilo y un bug es que
+      el estilo es consistente.</span>
+  </header>
+  <div class="rejilla-muestras">
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0140 y: 4806</span>
+      <div class="lienzo-m"><span class="ins-display ins-desregistro" style="font-size:38px;border:0;">fracture</span></div>
+      <div class="pie"><b>desregistro RGB</b><code>.ins-desregistro</code></div>
+      <div class="desc">rojo a la izquierda, señal a la derecha, 2px exactos</div></div>
+
+    <div class="muestra"><span class="coord" aria-hidden="true">x: 0398 y: 4806</span>
+      <div class="lienzo-m" style="padding:0;">
+        <svg data-ins="mancha" data-semilla="tinta-01"
+             style="width:60px;height:100%;color:var(--ins-pelo);" aria-hidden="true"></svg>
+      </div>
+      <div class="pie"><b>mancha de tinta</b><code>data-ins="mancha"</code></div>
+      <div class="desc">turbulencia SVG desplazando un trazo grueso</div></div>
+
+    <div class="muestra ancha"><span class="coord" aria-hidden="true">x: 0656 y: 4806</span>
+      <div class="lienzo-m" style="padding:0;">
+        <svg data-ins="esquirlas" data-semilla="corte-01" data-cuantas="18"
+             style="width:100%;height:100%;color:var(--ins-pelo);" aria-hidden="true"></svg>
+      </div>
+      <div class="pie"><b>esquirlas</b><code>data-ins="esquirlas"</code></div>
+      <div class="desc">fragmentos blancos con filo negro: cortan la composición sin taparla</div></div>
+  </div>
+</section>
+
+<!-- ═══ I · SOBRE NEGRO ═══════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ I ]</span><h2>sobre negro</h2>
+    <span class="nota">No es invertir. Sobre papel manda la regla de pelo; sobre negro
+      manda la señal. Cambia quién lleva la composición, no sólo los valores.</span>
+  </header>
+  <div style="margin-top:30px;" class="ins-negro">
+    <div style="position:relative;padding:clamp(26px,5vw,54px);overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span class="ins-caps" style="color:var(--ins-hielo);">solo rank</span>
+        <span class="ins-chevron" style="color:var(--ins-hielo);"><i></i><i></i></span>
+        <span class="ins-caps">/hunter system/ /telegram rpg/</span>
+        <span class="ins-id" style="margin-left:auto;">entry state · e-rank</span>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:clamp(20px,6vw,80px);
+                  flex-wrap:wrap;padding:44px 0;position:relative;">
+        <div class="ins-corchetes" style="width:170px;height:170px;display:flex;align-items:center;justify-content:center;">
+          <span class="ins-esq"></span>
+          <svg data-ins="alambre" data-tipo="esfera" data-giroy="1.1"
+               style="width:120px;height:120px;color:var(--ins-hielo);" aria-hidden="true"></svg>
+          <span class="ins-caps" style="position:absolute;left:0;top:-16px;font-size:7px;color:var(--ins-hielo);">gate core</span>
+        </div>
+        <div class="ins-corchetes" style="width:130px;height:130px;display:flex;align-items:center;justify-content:center;">
+          <span class="ins-esq"></span>
+          <span class="ins-mira" style="width:64px;height:64px;"><i></i></span>
+          <span class="ins-caps" style="position:absolute;left:0;top:-16px;font-size:7px;color:var(--ins-hielo);">system node</span>
+        </div>
+        <div class="ins-corchetes" style="width:130px;height:130px;display:flex;align-items:center;justify-content:center;">
+          <span class="ins-esq"></span>
+          <svg data-ins="alambre" data-tipo="cubo" data-giroy="0.6"
+               style="width:88px;height:88px;color:#ccff33;" aria-hidden="true"></svg>
+          <span class="ins-caps" style="position:absolute;left:0;top:-16px;font-size:7px;color:#ccff33;">s-rank</span>
+        </div>
+      </div>
+
+      <div class="ins-leyenda" aria-hidden="true">
+        <b style="color:#0a0a0a;box-shadow:inset 0 0 0 1px #555">#0A0A0A</b>
+        <b style="color:#ffffff">#FFFFFF</b>
+        <b style="color:#6e69ff">#6E69FF</b>
+        <b style="color:#99ccff">#99CCFF</b>
+        <b style="color:#ccff33">#CCFF33</b>
+        <b style="color:#6699ff">#6699FF</b>
+      </div>
+      <div class="ins-raster"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LA DOCTRINA ═══════════════════════════════════════════════════════ -->
+<section class="seccion">
+  <header>
+    <span class="n">[ ✳ ]</span><h2>cómo se compone</h2>
+    <span class="nota">Los elementos no son el estilo. Las reglas de abajo sí — sin
+      ellas esto es un muestrario de adornos.</span>
+  </header>
+  <div class="doctrina">
+    <div class="regla"><h3>Un solo acento</h3>
+      <p>Una señal por pieza. Si hay dos colores compitiendo, ya no es este estilo —
+        es un tablero de control.</p></div>
+    <div class="regla"><h3>Densidad con un punto de fuga</h3>
+      <p>Todo converge a un nudo. La maraña sin foco es ruido; con foco es un
+        instrumento apuntando a algo.</p></div>
+    <div class="regla"><h3>La información falsa es real</h3>
+      <p>Las coordenadas corresponden a dónde están. Los códigos salen de su cadena.
+        La mentira que se sostiene es la que tiene sistema.</p></div>
+    <div class="regla"><h3>Tres tamaños</h3>
+      <p>6px, 9px, display. El escalón intermedio convierte esto en una revista.</p></div>
+    <div class="regla"><h3>Las reglas no cierran</h3>
+      <p>Corren, giran noventa grados y se detienen. Un rectángulo cerrado es una
+        caja; esto son anotaciones sobre un plano.</p></div>
+    <div class="regla"><h3>El vacío es un elemento</h3>
+      <p>La mitad de la superficie tiene que quedar en papel limpio. La densidad se
+        lee por contraste con el vacío, no por acumulación.</p></div>
+    <div class="regla regla--no"><h3>NO: vidrio</h3>
+      <p>Nada de blur, nada de translúcido suave, nada de sombras difusas. Canto duro
+        o nada.</p></div>
+    <div class="regla regla--no"><h3>NO: neón sobre negro</h3>
+      <p>El cliché de «cyberpunk». Aquí el negro es papel de imprenta, no una pantalla
+        encendida.</p></div>
+    <div class="regla regla--no"><h3>NO: esquinas redondeadas</h3>
+      <p>Salvo los círculos, que son círculos. Un border-radius de 8px mata todo el
+        catálogo de un golpe.</p></div>
+    <div class="regla regla--no"><h3>NO: degradados de arcoíris</h3>
+      <p>El cromo es frío y monocromo. Un gradiente iridiscente es Y2K de banco de
+        imágenes.</p></div>
+    <div class="regla regla--no"><h3>NO: CJK como broma</h3>
+      <p>El japonés se usa como textura tipográfica y dice algo coherente. Pegar
+        caracteres al azar se nota, y se nota mal.</p></div>
+    <div class="regla regla--no"><h3>NO: telemetría legible</h3>
+      <p>Si un visitante se detiene a leer las coordenadas, están muy grandes.
+        6px, .62 de opacidad, y a otra cosa.</p></div>
+  </div>
+</section>
+
+<footer class="pie-hoja">
+  <div>
+    <div class="ins-caps ins-caps--senal">nerv · insignia · v1</div>
+    <div class="ins-legal" style="margin-top:6px;">
+      Vocabulario visual medido sobre 12 referencias.<br>
+      Implementado en CSS, SVG y canvas. Cero librerías, cero build.
+    </div>
+  </div>
+  <div class="ins-barras" data-ins="barras" data-cadena="INSIGNIA-V1"
+       style="width:120px;height:34px;color:var(--ins-pelo);"></div>
+  <div style="margin-left:auto;text-align:right;">
+    <div class="ins-id">contraste: línea base 41 / 34 · lectura 6</div>
+    <div class="ins-id" style="margin-top:4px;">A172026:D — SET IN STONE</div>
+  </div>
+</footer>
+
+</div><!-- /.hoja -->
+
+<script type="module" src="insignia.js"></script>
+</body>
+</html>
