@@ -177,6 +177,15 @@ prompts y los comandos son trabajo mío.
 
 Lo que lo separa de "lanzar agentes y ver qué sale":
 
+- **Una pieza se construye UNA vez.** Prohibido levantar varios agentes sobre el
+  mismo entregable: ni tres direcciones de arte, ni un jurado que elija entre
+  ellas, ni "a ver cuál sale mejor". El paralelismo es entre piezas DISTINTAS,
+  nunca entre versiones de la misma. El 2026-08-26 un bake-off de 3
+  constructores + 3 jueces para UNA página de `lab/` costó **320,806 tokens de
+  salida y tiró dos tercios a propósito** — y encima la dirección de arte ya
+  venía fijada por dos imágenes de referencia, así que la variación que compró
+  no hacía falta. Tampoco se escribe un workflow a la medida para rodear esto:
+  si el trabajo cabe en `encargo`, se usa `encargo`.
 - **El paralelismo es por archivos disjuntos**, no por worktree. Dos piezas que
   comparten archivo se serializan solas. El worktree no sirve aquí: `.claude/`
   está en `.gitignore`, así que un agente aislado se queda sin fronteras y sin
@@ -188,6 +197,11 @@ Lo que lo separa de "lanzar agentes y ver qué sale":
   y verificar lo cierra el principal, que sí está en la conversación.
 - **Tope de 6 piezas** — son 2 agentes cada una y el techo de sesión es 15. Más
   que eso son varios encargos en fila, y entre uno y otro se corrige el rumbo.
+
+**Para qué es un workflow.** Para que un objetivo cueste UN prompt en vez de que
+Daniel esté escribiendo a cada rato, con el MISMO presupuesto que tendría esa
+conversación. Uno que multiplica el gasto no ahorró nada: cambió su tiempo por
+su dinero, y ése no era el trato.
 
 **La frontera de los constructores es de papel.** Un guardia invocado por
 `agentType` no tiene `Write` por su ficha; los agentes que construyen tienen
@@ -228,20 +242,17 @@ descripciones se activan con trabajo real, no con preguntas sobre sí mismos.
 diciéndole que lea su ficha en `.claude/agents/` y la siga. Se pierde sólo el
 acotamiento por el campo `tools:`.
 
-Las herramientas que ejecutan:
+Las herramientas que ejecutan son cuatro skills: **`/reatacar`**, **`/pudricion`**,
+**`/destrabar`** y **`/ciclo`**. Cada una lleva sus banderas y su trampa dentro
+(`.claude/skills/<nombre>/SKILL.md`); aquí no se repiten.
 
-```bash
-python .claude/guardias/reatacar.py --rapido    # 6 ataques (sin bandera, 13)
-```
-```bash
-python .claude/guardias/pudricion.py            # relleno, correos, ligas
-```
-```bash
-python .claude/guardias/destrabar.py --si       # libera la cuota diaria topada
-```
-```bash
-python .claude/guardias/ciclo.py ver            # hallazgos abiertos sin disponer
-```
+Ninguna se invoca sola — todas llevan `disable-model-invocation`, porque gastan
+cuota real, la destraban, o mueven el libro de hallazgos. Eso además las saca
+del contexto: no cuestan nada hasta que se escriben.
+
+Los scripts siguen viviendo en `.claude/guardias/` y las skills sólo los
+envuelven. **No mover `ciclo.py`**: los dos enganches de `settings.json` lo
+llaman por ruta absoluta.
 
 **El ciclo ya no depende de que alguien se acuerde.** Dos enganches en
 `.claude/settings.json`: al terminar un auditor se abre sola una entrada en
