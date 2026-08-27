@@ -1,0 +1,23 @@
+# Fin de linea, decidido aqui y no por la configuracion de cada maquina.
+# Sin esto, `core.autocrlf=true` en Windows escupe una advertencia por archivo
+# en CADA `git add` — el commit de un repo mediano soltaba 70 lineas de ruido.
+* text=auto
+
+# Binarios: git no los toca.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.mp4 binary
+*.webm binary
+*.mp3 binary
+*.m4a binary
+*.wav binary
+*.flac binary
+*.woff2 binary
+*.pmx binary
+*.bmp binary
+*.zip binary
+*.pdf binary

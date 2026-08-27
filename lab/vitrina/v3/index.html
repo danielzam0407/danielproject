@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vitrina &middot; sistema visual de nerv</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+/* ===================================================================
+   lab/vitrina/v3 — la rejilla.
+
+   Dos movimientos y nada mas:
+
+   1. LAMINAS A HUESO. Un solo modulo de proporcion fija (4:5) repetido
+      sin gutter: celdas borde contra borde, como una carta de color de
+      imprenta. La lamina de la portada es ese mismo modulo dos veces
+      (8:5). Las fichas, las pieles y los mandos del motor usan la misma
+      celosia de un pelo: contenedor con borde arriba/izquierda, celda
+      con borde derecha/abajo. Nunca se dobla la linea.
+
+   2. EJE FUERA DE CENTRO. Todo empieza en la cuarta columna de doce
+      (25%), que es donde arranca la lamina de la placa A. El numero de
+      seccion se queda en la primera. El riel de 12 columnas va fijo al
+      fondo de la pagina para que se vea que la decision es del sistema,
+      no del parrafo.
+
+   TODO color sale de una ficha. El unico hexadecimal escrito aqui es el
+   respaldo dentro de var(): si piel.js no carga, la pagina se pinta
+   sola con el molde claro. Las tres pieles con nombre se leen de
+   window.nervPiel.PIELES — sus colores NO se copian a este archivo.
+   =================================================================== */
+
+:root {
+  /* Las 12 fichas, con respaldo. Un valor puesto por piel.js va en el
+     style en linea de <html> y gana sobre esto; quitarPiel lo borra y
+     el respaldo vuelve solo. */
+  --v-senal:       var(--senal, #0102ec);
+  --v-senal-suave: var(--senal-suave, #7f9bff);
+  --v-acento:      var(--acento, #9ef0e4);
+  --v-tinta:       var(--tinta, #08123a);
+  --v-papel:       var(--papel, #f4f7fc);
+  --v-papel-alto:  var(--papel-alto, #e6effb);
+  --v-tenue:       var(--tenue, #9db8dc);
+  --v-fondo-hondo: var(--fondo-hondo, #03060e);
+  --v-pulso:       var(--pulso, 1);
+  --v-ruido:       var(--ruido, 0);
+  --v-giro:        var(--giro, 0);
+  --v-medios-sat:  var(--medios-sat, 1);
+
+  --mono: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --grotesca: "Arial Black", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+
+  /* La escala. Seis peldanos y ningun intermedio cargando la pagina. */
+  --t-despliegue: clamp(40px, 8.6vw, 118px);
+  --t-titular:    clamp(26px, 4.4vw, 56px);
+  --t-lamina:     clamp(17px, 1.9vw, 20px);
+  --t-cuerpo:     15px;
+  --t-dato:       13px;
+  --t-rotulo:     10px;
+
+  --ancho: 1380px;
+  --margen: clamp(16px, 3vw, 40px);
+  --marco: 14px;
+}
+
+/* Canto vivo en TODO. Una sola regla que tambien alcanza a los botones,
+   los select y el selector de color del sistema. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-radius: 0;
+  box-shadow: none;
+}
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  padding: var(--marco) 0;
+  background: var(--v-papel);
+  color: var(--v-tinta);
+  font-family: var(--mono);
+  font-size: var(--t-cuerpo);
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---- 0. MARCO ------------------------------------------------------
+   Letterbox: la pagina es una placa. Las barras van en tinta, que es la
+   ficha que siempre tiene contraste maximo contra el papel — en modo
+   oscuro se invierten con todo lo demas, que es justo lo correcto. */
+.marco {
+  position: fixed; left: 0; right: 0; height: var(--marco);
+  background: var(--v-tinta); z-index: 60;
+}
+.marco-alto { top: 0; }
+.marco-bajo { bottom: 0; }
+
+/* El riel de 12 columnas, fijo. Es el plano de la pagina, no adorno. */
+.riel { position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 0; pointer-events: none; }
+.riel i {
+  display: block; height: 100%; width: 100%;
+  max-width: var(--ancho); margin: 0 auto; padding: 0 var(--margen);
+  background-image: repeating-linear-gradient(to right,
+    var(--v-tenue) 0 1px, transparent 1px calc(100% / 12));
+  background-origin: content-box;
+  background-clip: content-box;
+  opacity: .5;
+}
+
+main { position: relative; z-index: 1; }
+
+.hoja { width: 100%; max-width: var(--ancho); margin: 0 auto; padding: 0 var(--margen); }
+.rejilla { display: grid; grid-template-columns: repeat(12, 1fr); }
+
+section { padding: clamp(52px, 8vh, 104px) 0; }
+section + section { border-top: 1px solid var(--v-tinta); }
+
+/* ---- cabeceras: numero en la columna 1, titulo en la 4 ---- */
+.cab { margin-bottom: clamp(22px, 4vh, 48px); }
+.cab .idx {
+  grid-column: 1 / 4; margin: 0; padding-top: .8em;
+  font-size: var(--t-rotulo); letter-spacing: 2px;
+  text-transform: uppercase; opacity: .68;
+}
+.cab h2 {
+  grid-column: 4 / 13; margin: 0;
+  font-family: var(--grotesca); font-weight: 900;
+  font-size: var(--t-titular); line-height: .9;
+  letter-spacing: -.035em; text-transform: lowercase;
+}
+.cab .sub {
+  grid-column: 4 / 11; margin: 1em 0 0;
+  font-size: var(--t-dato); max-width: 62ch; opacity: .8;
+}
+.rot { font-size: var(--t-rotulo); letter-spacing: 2px;
+       text-transform: uppercase; opacity: .68; margin: 0; }
+
+/* ---- 1. PORTADA ---------------------------------------------------- */
+/* La lamina arranca en la columna 4 de 12 (26% del ancho) y al 30% del
+   alto. El 30% se calcula, no se adivina: arriba de la lamina hay 57px
+   de constantes medidas (14 de marco + 16 del rotulo + 27 de hueco),
+   asi que el relleno es 30vh menos esos 57. */
+.portada { padding-top: clamp(48px, calc(30vh - 57px), 200px); padding-bottom: clamp(48px, 9vh, 96px);
+           position: relative; min-height: 86vh; }
+.portada .hoja { position: relative; z-index: 1; }
+
+.anotacion { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+.puntos {
+  position: absolute; left: 0; top: 0; width: 46%; height: 64%;
+  background-image: radial-gradient(var(--v-tenue) 1px, transparent 1px);
+  background-size: 20px 20px;
+  -webkit-mask-image: linear-gradient(150deg, currentColor 8%, transparent 72%);
+  mask-image: linear-gradient(150deg, currentColor 8%, transparent 72%);
+}
+.regla { position: absolute; height: 1px; background: var(--v-tinta); opacity: .7; }
+.r1 { top: 11%; left: 61%; width: 31%; }
+.r2 { top: 15.5%; left: 71%; width: 13%; }
+.r3 { bottom: 20%; left: 3%; width: 17%; }
+.tics { position: absolute; height: 7px;
+  background-image: repeating-linear-gradient(to right,
+    var(--v-tinta) 0 1px, transparent 1px 12px); opacity: .75; }
+.t1 { top: 19%; left: 61%; width: 21%; }
+.t2 { bottom: 29%; right: 5%; width: 12%; }
+.corchete { position: absolute; border: 1px solid var(--v-tinta); opacity: .8; }
+.c1 { top: 43%; right: 7%; width: 26px; height: 74px; border-left: 0; }
+.c2 { bottom: 11%; left: 29%; width: 62px; height: 20px; border-bottom: 0; }
+.barra { position: absolute; top: 57%; left: 2%; width: 14%; height: 9px;
+         background: var(--v-tinta); }
+.hueco { position: absolute; top: 65%; right: -46px; width: 190px; height: 124px;
+         border: 1px solid var(--v-tenue); }
+/* marca de registro: cruz + cuadro hueco */
+.registro { position: absolute; width: 16px; height: 16px;
+            border: 1px solid var(--v-tinta); opacity: .8; }
+.registro::before, .registro::after {
+  content: ""; position: absolute; background: var(--v-tinta);
+}
+.registro::before { left: 50%; top: -9px; bottom: -9px; width: 1px; }
+.registro::after { top: 50%; left: -9px; right: -9px; height: 1px; }
+.g1 { top: 8%; left: 4%; }
+.g2 { bottom: 9%; right: 5%; }
+
+.cabeza-portada { margin-bottom: clamp(18px, 3vh, 34px); align-items: start; }
+.marca { grid-column: 1 / 5; margin: 0; font-size: var(--t-rotulo);
+         letter-spacing: 2px; text-transform: uppercase; opacity: .72; }
+/* La microtipografia de la placa A: no se lee, es textura. Va en la capa
+   de anotacion y no en el flujo — colgada de la rejilla estiraba la fila
+   76px y empujaba la lamina fuera de su 30%. */
+.microtipo {
+  position: absolute; top: 24%; right: 4%; width: 21%;
+  margin: 0; padding: 0; list-style: none;
+  columns: 2; column-gap: 14px;
+  font-size: 9px; line-height: 1.4; letter-spacing: .5px; opacity: .5;
+}
+
+/* La lamina de la portada: dos modulos (4:5 + 4:5 = 8:5), canto vivo,
+   arrancando en la cuarta columna. */
+.placa {
+  grid-column: 4 / 9; aspect-ratio: 8 / 5; align-self: start;
+  /* En una laptop chica manda el alto: la lamina no puede empujar la
+     linea de apoyo fuera de la primera pantalla. */
+  max-width: min(100%, 64vh);
+  background: var(--v-senal);
+  display: flex; align-items: flex-end;
+  padding: clamp(14px, 1.6vw, 26px);
+}
+.placa h1 {
+  margin: 0; font-family: var(--grotesca); font-weight: 900;
+  font-size: var(--t-despliegue); line-height: .82; letter-spacing: -.045em;
+  color: var(--v-papel); white-space: nowrap;
+}
+.apoyo { grid-column: 4 / 11; margin: clamp(16px, 2.2vh, 28px) 0 0;
+         font-size: var(--t-dato); max-width: 64ch; }
+
+/* Banda a sangre. Estatica: la referencia implica velocidad, pero una
+   marquesina que solo se ve terminada con frame loop se mide como una
+   pagina en blanco. */
+.banda {
+  background: var(--v-tinta); color: var(--v-papel);
+  height: 26px; display: flex; align-items: center;
+  overflow: hidden; white-space: nowrap;
+  font-size: var(--t-rotulo); letter-spacing: 3px; text-transform: uppercase;
+}
+
+/* ---- 2. FICHAS: la celosia sin gutter ------------------------------ */
+.laminas {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid var(--v-tinta); border-left: 1px solid var(--v-tinta);
+}
+.celda {
+  border-right: 1px solid var(--v-tinta); border-bottom: 1px solid var(--v-tinta);
+  aspect-ratio: 4 / 5; display: flex; flex-direction: column; min-width: 0;
+}
+.muestra { flex: 1 1 auto; min-height: 0; position: relative; }
+.celda .txt { border-top: 1px solid var(--v-tinta); padding: 7px 9px 9px; }
+.celda .nom { display: block; font-size: var(--t-rotulo); letter-spacing: 1.4px;
+              text-transform: uppercase; opacity: .68; font-weight: 400; }
+.celda .fila { display: flex; justify-content: space-between; align-items: baseline;
+               gap: 6px; margin-top: 3px; }
+.celda .val { font-size: var(--t-dato); }
+.celda .fuente { font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+                 opacity: .55; }
+
+.celda[data-f="senal"]       .muestra { background: var(--v-senal); }
+.celda[data-f="senal-suave"] .muestra { background: var(--v-senal-suave); }
+.celda[data-f="acento"]      .muestra { background: var(--v-acento); }
+.celda[data-f="tinta"]       .muestra { background: var(--v-tinta); }
+.celda[data-f="papel"]       .muestra { background: var(--v-papel); }
+.celda[data-f="papel-alto"]  .muestra { background: var(--v-papel-alto); }
+.celda[data-f="tenue"]       .muestra { background: var(--v-tenue); }
+.celda[data-f="fondo-hondo"] .muestra { background: var(--v-fondo-hondo); }
+
+/* Las cuatro que no son color no se pintan de nada: se miden. */
+.medidor { background: var(--v-papel); }
+.medidor .eje {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 9px;
+  background-image: repeating-linear-gradient(to right,
+    var(--v-tenue) 0 1px, transparent 1px 25%);
+}
+.medidor .barra-d {
+  position: absolute; left: 0; bottom: 9px; width: 0; height: 14px;
+  background: var(--v-senal);
+}
+
+/* ---- 3. EL MOTOR --------------------------------------------------- */
+.motor-nota { grid-column: 1 / 4; font-size: var(--t-dato); opacity: .8; }
+.mandos {
+  grid-column: 4 / 13; display: grid; grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--v-tinta); border-left: 1px solid var(--v-tinta);
+}
+.mando {
+  border-right: 1px solid var(--v-tinta); border-bottom: 1px solid var(--v-tinta);
+  padding: 14px; display: flex; flex-direction: column; gap: 9px; min-width: 0;
+}
+.mando label { font-size: var(--t-rotulo); letter-spacing: 2px;
+               text-transform: uppercase; opacity: .68; }
+.mando input[type="color"] {
+  width: 100%; height: 46px; min-height: 44px; padding: 0; cursor: pointer;
+  background: none; border: 1px solid var(--v-tinta);
+}
+.mando input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.mando input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
+.mando input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
+.mando select {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; min-height: 44px; padding: 0 30px 0 10px; cursor: pointer;
+  font: inherit; font-size: var(--t-dato);
+  color: var(--v-tinta); background: var(--v-papel);
+  border: 1px solid var(--v-tinta);
+}
+.envuelto { position: relative; }
+.envuelto::after {
+  content: ""; position: absolute; right: 11px; top: 50%; margin-top: -3px;
+  width: 0; height: 0; pointer-events: none;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 6px solid var(--v-tinta);
+}
+.eco { grid-column: 4 / 13; margin: 14px 0 0; font-size: 12px;
+       opacity: .8; overflow-wrap: anywhere; }
+
+/* ---- 4. LAS CUATRO PIELES ------------------------------------------ */
+.pieles {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid var(--v-tinta); border-left: 1px solid var(--v-tinta);
+}
+.piel {
+  border: 0; border-right: 1px solid var(--v-tinta); border-bottom: 1px solid var(--v-tinta);
+  aspect-ratio: 4 / 5; display: flex; flex-direction: column; min-width: 0;
+  padding: 0; margin: 0; cursor: pointer; text-align: left;
+  font: inherit; color: var(--v-tinta); background: var(--v-papel);
+  transition: opacity .18s ease;
+}
+.piel:hover { opacity: .82; }
+.bandas { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.bandas i { flex: 1 1 0; display: block; }
+.bandas i[data-f="senal"]       { background: var(--v-senal); }
+.bandas i[data-f="senal-suave"] { background: var(--v-senal-suave); }
+.bandas i[data-f="acento"]      { background: var(--v-acento); }
+.bandas i[data-f="tinta"]       { background: var(--v-tinta); }
+/* origen es null en piel.js: no hay colores que ensenar, hay un hueco. */
+.bandas.nula {
+  background-image: linear-gradient(to top right,
+    transparent calc(50% - 1px), var(--v-tinta) calc(50% - 1px),
+    var(--v-tinta) calc(50% + 1px), transparent calc(50% + 1px));
+}
+.piel .txt { border-top: 1px solid var(--v-tinta); padding: 8px 10px 10px; }
+.piel .nom { display: block; font-family: var(--grotesca); font-weight: 900;
+             font-size: var(--t-lamina); line-height: 1; letter-spacing: -.02em;
+             text-transform: lowercase; }
+.piel .cita { display: block; margin-top: 5px; font-size: var(--t-rotulo);
+              letter-spacing: 1px; opacity: .68; }
+.llamadas { margin: 14px 0 0; font-size: 12px; opacity: .8; overflow-wrap: anywhere; }
+
+/* ---- 5. ESCALA ----------------------------------------------------- */
+.escalon { align-items: baseline; padding: 14px 0;
+           border-bottom: 1px solid var(--v-tenue); }
+.escalon .marbete { grid-column: 1 / 4; }
+.escalon .px { display: block; font-size: var(--t-dato); }
+.escalon .papel-de { display: block; font-size: var(--t-rotulo); letter-spacing: 1.5px;
+                     text-transform: uppercase; opacity: .68; margin-top: 2px; }
+.escalon .muestra-t { grid-column: 4 / 13; margin: 0; overflow: hidden; }
+.e-despliegue { font-family: var(--grotesca); font-weight: 900;
+                font-size: var(--t-despliegue); line-height: .9; letter-spacing: -.045em; }
+.e-titular { font-family: var(--grotesca); font-weight: 900;
+             font-size: var(--t-titular); line-height: .95; letter-spacing: -.035em; }
+.e-lamina { font-size: var(--t-lamina); }
+.e-cuerpo { font-size: var(--t-cuerpo); }
+.e-dato   { font-size: var(--t-dato); }
+.e-rotulo { font-size: var(--t-rotulo); letter-spacing: 2px; text-transform: uppercase; }
+.razon { margin: 16px 0 0; font-size: var(--t-dato); }
+
+/* ---- 6. MOBILIARIO ------------------------------------------------- */
+.mueble { grid-column: 4 / 13; display: flex; flex-wrap: wrap; align-items: flex-end;
+          gap: 12px; }
+.campo { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 200px; }
+.campo label { font-size: var(--t-rotulo); letter-spacing: 2px;
+               text-transform: uppercase; opacity: .68; }
+.campo input {
+  min-height: 44px; padding: 0 11px; font: inherit; font-size: var(--t-dato);
+  color: var(--v-tinta); background: var(--v-papel);
+  border: 1px solid var(--v-tinta);
+}
+.campo input::placeholder { color: var(--v-tinta); opacity: .45; }
+.btn {
+  min-height: 44px; padding: 0 18px; cursor: pointer; font: inherit;
+  font-size: var(--t-dato); letter-spacing: 1px; border: 1px solid var(--v-tinta);
+  transition: opacity .18s ease;
+}
+.btn:hover { opacity: .82; }
+/* El primario NO lleva la senal de fondo: medido, senal/papel cae a 3.0:1
+   con la piel quirofano — suficiente para tipografia de despliegue, no
+   para 13px. La senal se queda de canto. */
+.primario { background: var(--v-tinta); color: var(--v-papel); border-left: 4px solid var(--v-senal); }
+.secundario { background: none; color: var(--v-tinta); }
+.error { grid-column: 4 / 13; margin: 10px 0 0; font-size: var(--t-dato); }
+.error b { border-bottom: 2px solid var(--v-senal); }
+
+.marco-tabla { grid-column: 4 / 13; margin-top: 30px; overflow-x: auto; }
+.tabla { border-collapse: collapse; width: 100%; font-size: var(--t-dato); }
+.tabla caption { text-align: left; padding-bottom: 8px; }
+.tabla th, .tabla td { border: 1px solid var(--v-tinta); padding: 7px 10px;
+                       text-align: left; white-space: nowrap; }
+.tabla th { font-size: var(--t-rotulo); letter-spacing: 1.5px;
+            text-transform: uppercase; font-weight: 400; opacity: .8; }
+.nota { grid-column: 4 / 13; margin: 10px 0 0; font-size: var(--t-rotulo);
+        letter-spacing: 1px; opacity: .68; }
+
+/* ---- 7. PIE -------------------------------------------------------- */
+.pie { background: var(--v-fondo-hondo); color: var(--v-papel-alto); }
+.pie h2 { color: var(--v-papel-alto); }
+.pie .idx, .pie .sub, .pie .rot { opacity: .78; }
+/* Sobre fondo-hondo la senal no se lee (1.4:1 con el molde claro): ahi
+   manda senal-suave, que es la ficha disenada para vivir sobre oscuro. */
+.pie code, .pie b { color: var(--v-senal-suave); }
+.pie p { grid-column: 4 / 13; margin: 1em 0 0; font-size: var(--t-dato); max-width: 68ch; }
+
+a { color: var(--v-senal); }
+:focus-visible { outline: 2px solid var(--v-senal); outline-offset: 2px; }
+.pie :focus-visible { outline-color: var(--v-senal-suave); }
+
+/* ---- responsivo ---------------------------------------------------- */
+@media (min-width: 520px) { .laminas { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 760px) {
+  .laminas { grid-template-columns: repeat(4, 1fr); }
+  .pieles  { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 1180px) { .laminas { grid-template-columns: repeat(6, 1fr); } }
+
+@media (max-width: 899px) { .microtipo { display: none; } }
+@media (max-width: 759px) {
+  .r2, .t2, .c1, .g2, .hueco { display: none; }
+  .placa { grid-column: 3 / 13; }
+  .apoyo, .marca { grid-column: 1 / 13; }
+  /* En 375px el eje fuera de centro se paga con el ancho de lectura:
+     la lamina de la portada lo conserva, el texto no. */
+  .cab .idx, .cab h2, .cab .sub,
+  .motor-nota, .mandos, .eco,
+  .mueble, .error, .marco-tabla, .nota,
+  .escalon .marbete, .escalon .muestra-t,
+  .pie p { grid-column: 1 / 13; }
+  .cab .idx { padding-top: 0; margin-bottom: 8px; }
+  .cab .sub { max-width: none; }
+  .motor-nota { margin-bottom: 18px; }
+  .escalon .marbete { margin-bottom: 8px; }
+  .riel i { background-image: repeating-linear-gradient(to right,
+              var(--v-tenue) 0 1px, transparent 1px calc(100% / 4)); }
+}
+@media (max-width: 559px) {
+  .mandos { grid-template-columns: 1fr; }
+  .mueble { display: block; }
+  .campo { margin-bottom: 12px; }
+  .btn { width: 100%; margin-bottom: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- 0. MARCO -->
+<div class="marco marco-alto" aria-hidden="true"></div>
+<div class="marco marco-bajo" aria-hidden="true"></div>
+<div class="riel" aria-hidden="true"><i></i></div>
+
+<main>
+
+<!-- 1. PORTADA -->
+<section class="portada">
+  <div class="anotacion" aria-hidden="true">
+    <div class="puntos"></div>
+    <div class="regla r1"></div>
+    <div class="regla r2"></div>
+    <div class="regla r3"></div>
+    <div class="tics t1"></div>
+    <div class="tics t2"></div>
+    <div class="corchete c1"></div>
+    <div class="corchete c2"></div>
+    <div class="barra"></div>
+    <div class="hueco"></div>
+    <div class="registro g1"></div>
+    <div class="registro g2"></div>
+    <ul class="microtipo">
+      <li>senal</li><li>senal-suave</li><li>acento</li><li>tinta</li>
+      <li>papel</li><li>papel-alto</li><li>tenue</li><li>fondo-hondo</li>
+      <li>pulso</li><li>ruido</li><li>giro</li><li>medios-sat</li>
+    </ul>
+  </div>
+  <div class="hoja">
+    <div class="rejilla cabeza-portada">
+      <p class="marca">nerv &middot; lab/vitrina &middot; no se publica</p>
+    </div>
+    <div class="rejilla">
+      <div class="placa"><h1>vitrina.</h1></div>
+      <p class="apoyo">El sistema visual de nerv, en vivo: cambiar una ficha mueve todo lo que est&aacute; abajo.</p>
+    </div>
+  </div>
+</section>
+
+<div class="banda" aria-hidden="true">vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※ vitrina ※</div>
+
+<!-- 2. FICHAS -->
+<section>
+  <div class="hoja">
+    <div class="rejilla cab">
+      <p class="idx">02 / 07</p>
+      <h2>fichas.</h2>
+      <p class="sub">Las doce que existen: ocho de color y cuatro que no lo son. El valor no est&aacute; escrito aqu&iacute; &mdash; se lee del documento con <code>getComputedStyle(document.documentElement)</code> y se vuelve a leer cada vez que cambia la piel. Si dice <b>molde</b>, la ficha no est&aacute; puesta y manda el respaldo.</p>
+    </div>
+    <div class="laminas">
+      <div class="celda" data-f="senal"><div class="muestra"></div><div class="txt"><span class="nom">senal</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="senal-suave"><div class="muestra"></div><div class="txt"><span class="nom">senal-suave</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="acento"><div class="muestra"></div><div class="txt"><span class="nom">acento</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="tinta"><div class="muestra"></div><div class="txt"><span class="nom">tinta</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="papel"><div class="muestra"></div><div class="txt"><span class="nom">papel</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="papel-alto"><div class="muestra"></div><div class="txt"><span class="nom">papel-alto</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="tenue"><div class="muestra"></div><div class="txt"><span class="nom">tenue</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="fondo-hondo"><div class="muestra"></div><div class="txt"><span class="nom">fondo-hondo</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="pulso"><div class="muestra medidor"><i class="barra-d"></i><i class="eje"></i></div><div class="txt"><span class="nom">pulso</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="ruido"><div class="muestra medidor"><i class="barra-d"></i><i class="eje"></i></div><div class="txt"><span class="nom">ruido</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="giro"><div class="muestra medidor"><i class="barra-d"></i><i class="eje"></i></div><div class="txt"><span class="nom">giro</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+      <div class="celda" data-f="medios-sat"><div class="muestra medidor"><i class="barra-d"></i><i class="eje"></i></div><div class="txt"><span class="nom">medios-sat</span><span class="fila"><span class="val">&middot;&middot;&middot;</span><span class="fuente"></span></span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. EL MOTOR -->
+<section>
+  <div class="hoja">
+    <div class="rejilla cab">
+      <p class="idx">03 / 07</p>
+      <h2>el motor.</h2>
+      <p class="sub">Un color, un &aacute;nimo y un modo. De ah&iacute; salen las doce fichas.</p>
+    </div>
+    <div class="rejilla">
+      <p class="motor-nota">Cualquier color entra; las reglas de armon&iacute;a son de la casa. El motor conserva la luminancia relativa de cada ficha del molde, as&iacute; que toda relaci&oacute;n dise&ntilde;ada a mano se preserva por construcci&oacute;n: <b>todo resultado posible ya estaba aprobado</b>.</p>
+      <div class="mandos">
+        <div class="mando">
+          <label for="m-color">color</label>
+          <input type="color" id="m-color">
+        </div>
+        <div class="mando">
+          <label for="m-animo">&aacute;nimo</label>
+          <span class="envuelto">
+            <select id="m-animo">
+              <option value="claro">claro</option>
+              <option value="oscuro">oscuro</option>
+              <option value="duro">duro</option>
+              <option value="limpio">limpio</option>
+              <option value="calido">calido</option>
+            </select>
+          </span>
+        </div>
+        <div class="mando">
+          <label for="m-modo">modo</label>
+          <span class="envuelto">
+            <select id="m-modo">
+              <option value="claro">claro</option>
+              <option value="oscuro">oscuro</option>
+            </select>
+          </span>
+        </div>
+      </div>
+      <p class="eco"><span class="rot">&uacute;ltima llamada</span><br><code id="llamada">nervPiel.fijar({ &hellip; }, false)</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- 4. LAS CUATRO PIELES -->
+<section>
+  <div class="hoja">
+    <div class="rejilla cab">
+      <p class="idx">04 / 07</p>
+      <h2>las cuatro pieles.</h2>
+      <p class="sub">Las tres con nombre son juegos de fichas crudos, escritos a mano en <code>piel.js</code>. Sus colores no est&aacute;n copiados aqu&iacute;: las bandas se pintan leyendo <code>window.nervPiel.PIELES</code>. <b>origen</b> no tiene colores porque en la fuente es <code>null</code>.</p>
+    </div>
+    <div class="pieles">
+      <button class="piel" type="button" data-p="origen">
+        <span class="bandas nula" aria-hidden="true"></span>
+        <span class="txt"><span class="nom">origen</span><span class="cita">la de siempre</span></span>
+      </button>
+      <button class="piel" type="button" data-p="brutal">
+        <span class="bandas" aria-hidden="true"><i data-f="senal"></i><i data-f="senal-suave"></i><i data-f="acento"></i><i data-f="tinta"></i></span>
+        <span class="txt"><span class="nom">brutal</span><span class="cita">m&aacute;s agresivo, m&aacute;s duro</span></span>
+      </button>
+      <button class="piel" type="button" data-p="quirofano">
+        <span class="bandas" aria-hidden="true"><i data-f="senal"></i><i data-f="senal-suave"></i><i data-f="acento"></i><i data-f="tinta"></i></span>
+        <span class="txt"><span class="nom">quir&oacute;fano</span><span class="cita">m&aacute;s limpio, m&aacute;s fr&iacute;o</span></span>
+      </button>
+      <button class="piel" type="button" data-p="ambar">
+        <span class="bandas" aria-hidden="true"><i data-f="senal"></i><i data-f="senal-suave"></i><i data-f="acento"></i><i data-f="tinta"></i></span>
+        <span class="txt"><span class="nom">&aacute;mbar</span><span class="cita">m&aacute;s c&aacute;lido, m&aacute;s viejo</span></span>
+      </button>
+    </div>
+    <p class="llamadas"><code>ponerPiel(PIELES.brutal)</code> para las tres con nombre &mdash; <code>fijar({ color: null, animo: null, modo: "claro" }, false)</code> para volver al origen.</p>
+  </div>
+</section>
+
+<!-- 5. ESCALA -->
+<section>
+  <div class="hoja">
+    <div class="rejilla cab">
+      <p class="idx">05 / 07</p>
+      <h2>escala.</h2>
+      <p class="sub">Seis pelda&ntilde;os. Arriba de 24&nbsp;px, grotesca pesada del sistema; de ah&iacute; abajo, mono. Los tama&ntilde;os se miden al cargar y al redimensionar, no est&aacute;n escritos.</p>
+    </div>
+    <div class="rejilla escalon" data-escala>
+      <p class="marbete"><span class="px">&middot;&middot;&middot;</span><span class="papel-de">despliegue &middot; grotesca 900</span></p>
+      <p class="muestra-t e-despliegue">vitrina.</p>
+    </div>
+    <div class="rejilla escalon" data-escala>
+      <p class="marbete"><span class="px">&middot;&middot;&middot;</span><span class="papel-de">titular &middot; grotesca 900</span></p>
+      <p class="muestra-t e-titular">el motor.</p>
+    </div>
+    <div class="rejilla escalon" data-escala>
+      <p class="marbete"><span class="px">&middot;&middot;&middot;</span><span class="papel-de">l&aacute;mina &middot; mono</span></p>
+      <p class="muestra-t e-lamina">cualquier color entra</p>
+    </div>
+    <div class="rejilla escalon" data-escala>
+      <p class="marbete"><span class="px">&middot;&middot;&middot;</span><span class="papel-de">cuerpo &middot; mono</span></p>
+      <p class="muestra-t e-cuerpo">las reglas de armon&iacute;a son de la casa</p>
+    </div>
+    <div class="rejilla escalon" data-escala>
+      <p class="marbete"><span class="px">&middot;&middot;&middot;</span><span class="papel-de">dato &middot; mono</span></p>
+      <p class="muestra-t e-dato">senal &middot; pulso 1.4 &middot; ruido 0.8</p>
+    </div>
+    <div class="rejilla escalon" data-escala>
+      <p class="marbete"><span class="px">&middot;&middot;&middot;</span><span class="papel-de">r&oacute;tulo &middot; mono</span></p>
+      <p class="muestra-t e-rotulo">fondo-hondo</p>
+    </div>
+    <p class="razon">Raz&oacute;n medida entre el pelda&ntilde;o m&aacute;s alto y el m&aacute;s bajo: <b id="razon">&middot;&middot;&middot;</b>. Entre el r&oacute;tulo y el titular no hay nada cargando la p&aacute;gina.</p>
+  </div>
+</section>
+
+<!-- 6. MOBILIARIO -->
+<section>
+  <div class="hoja">
+    <div class="rejilla cab">
+      <p class="idx">06 / 07</p>
+      <h2>mobiliario.</h2>
+      <p class="sub">Los cinco componentes que el sitio usa, y nada m&aacute;s. No son maqueta: el campo acepta un hexadecimal y lo aplica con la misma criba que <code>piel.js</code>.</p>
+    </div>
+    <form class="rejilla" id="forma">
+      <div class="mueble">
+        <div class="campo">
+          <label for="hex">color en hexadecimal</label>
+          <input type="text" id="hex" placeholder="#rrggbb" autocomplete="off" spellcheck="false" inputmode="text">
+        </div>
+        <button class="btn primario" type="submit">aplicar</button>
+        <button class="btn secundario" type="button" id="b-origen">volver al origen</button>
+      </div>
+      <p class="error" id="err" role="status" hidden>Almohadilla y seis d&iacute;gitos hexadecimales, ni uno m&aacute;s. Es la misma criba que corre dentro de <code>piel.js</code>: lo que no pasa, no entra.</p>
+    </form>
+    <div class="rejilla">
+      <div class="marco-tabla">
+        <table class="tabla">
+          <caption class="rot">las cuatro p&aacute;ginas que cargan la piel</caption>
+          <thead><tr><th scope="col">archivo</th><th scope="col">l&iacute;nea</th><th scope="col">etiqueta</th></tr></thead>
+          <tbody>
+            <tr><td>index.html</td><td>2852</td><td>./piel.js?v=5</td></tr>
+            <tr><td>about.html</td><td>152</td><td>/piel.js?v=5</td></tr>
+            <tr><td>contact.html</td><td>147</td><td>/piel.js?v=5</td></tr>
+            <tr><td>404.html</td><td>57</td><td>/piel.js?v=5</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="nota">Nota al pie &mdash; medido con <code>grep -rn "piel.js?v=" *.html</code> en la ra&iacute;z del repo: cuatro coincidencias, todas en v5. Tocar la piel obliga a subir las cuatro.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. PIE -->
+<section class="pie">
+  <div class="hoja">
+    <div class="rejilla cab">
+      <p class="idx">07 / 07</p>
+      <h2>pie.</h2>
+    </div>
+    <div class="rejilla">
+      <p>Esto vive en <b>lab/</b> y no se publica: es escaparate del sistema, no p&aacute;gina de producto. Lleva <code>noindex, nofollow</code> y no carga nada de fuera &mdash; ni una fuente, ni un CDN, ni una imagen remota.</p>
+      <p>Para medirla: pegar <code>.claude/guardias/contraste.js</code> en la consola del navegador y llamar <code>nervContrasteEstados()</code>. La l&iacute;nea base del sitio es <b>41</b> bajo 4.5:1 en claro y <b>34</b> en oscuro, seis de lectura en los dos. Lo que se protege no es el total: una piel derivada tiene que dar <b>exactamente</b> el mismo conteo que su modo base.</p>
+      <p>El interruptor de modo de abajo a la izquierda lo monta <code>piel.js</code>, no esta p&aacute;gina. Nada de lo que se toque aqu&iacute; se guarda: todas las llamadas van con <code>persistir = false</code>.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* La piel es opcional: si piel.js no carga, la pagina se pinta con los
+   respaldos del CSS y los mandos no hacen nada. Por eso toda llamada va
+   en try, y nada de lo que se ve depende de que el modulo exista. */
+(function () {
+  'use strict';
+
+  var raiz = document.documentElement;
+  var FICHAS = [
+    ['senal', 'color'], ['senal-suave', 'color'], ['acento', 'color'], ['tinta', 'color'],
+    ['papel', 'color'], ['papel-alto', 'color'], ['tenue', 'color'], ['fondo-hondo', 'color'],
+    ['pulso', 'numero'], ['ruido', 'numero'], ['giro', 'grados'], ['medios-sat', 'numero']
+  ];
+
+  /* Lee el estado REAL del documento. `--senal` es lo que puso piel.js;
+     `--v-senal` es lo que de verdad se esta pintando (la ficha, o su
+     respaldo si nadie la puso). */
+  function leer(nombre) {
+    var e = getComputedStyle(raiz);
+    var propia = (e.getPropertyValue('--' + nombre) || '').trim();
+    var pintada = (e.getPropertyValue('--v-' + nombre) || '').trim();
+    return { valor: pintada || propia, propia: !!propia };
+  }
+
+  function pintarFichas() {
+    for (var i = 0; i < FICHAS.length; i++) {
+      var nombre = FICHAS[i][0], tipo = FICHAS[i][1];
+      var celda = document.querySelector('.celda[data-f="' + nombre + '"]');
+      if (!celda) continue;
+      var d = leer(nombre);
+      var val = celda.querySelector('.val');
+      if (val) val.textContent = d.valor || '—';
+      var fuente = celda.querySelector('.fuente');
+      if (fuente) fuente.textContent = d.propia ? 'piel' : 'molde';
+
+      var barra = celda.querySelector('.barra-d');
+      if (!barra) continue;
+      var n = parseFloat(d.valor);
+      if (isNaN(n)) n = 0;
+      if (tipo === 'grados') {
+        /* bipolar: el cero se ancla al centro */
+        var p = Math.max(-180, Math.min(180, n)) / 180 * 50;
+        barra.style.left = (p < 0 ? 50 + p : 50) + '%';
+        barra.style.width = Math.abs(p) + '%';
+      } else {
+        barra.style.left = '0%';
+        barra.style.width = (Math.max(0, Math.min(2, n)) / 2 * 100) + '%';
+      }
+    }
+  }
+
+  /* piel.js avisa con este evento cada vez que las fichas se mueven,
+     venga de donde venga: de los mandos de aqui, del interruptor de
+     modo, o del agente. */
+  document.addEventListener('nerv:fichas', pintarFichas);
+  pintarFichas();
+
+  /* ---- la escala se mide, no se declara ---- */
+  function medirEscala() {
+    var filas = document.querySelectorAll('[data-escala]');
+    var min = Infinity, max = 0;
+    for (var i = 0; i < filas.length; i++) {
+      var m = filas[i].querySelector('.muestra-t');
+      var px = parseFloat(getComputedStyle(m).fontSize);
+      if (isNaN(px)) continue;
+      var r = filas[i].querySelector('.px');
+      if (r) r.textContent = Math.round(px) + 'px';
+      if (px < min) min = px;
+      if (px > max) max = px;
+    }
+    var razon = document.getElementById('razon');
+    if (razon && max && min !== Infinity) {
+      razon.textContent = (Math.round(max / min * 10) / 10) + ':1';
+    }
+  }
+  medirEscala();
+  window.addEventListener('resize', medirEscala);
+
+  /* ---- los mandos ---- */
+  var inColor = document.getElementById('m-color');
+  var selAnimo = document.getElementById('m-animo');
+  var selModo = document.getElementById('m-modo');
+  var eco = document.getElementById('llamada');
+  var HEX = /^#[0-9a-f]{6}$/i;
+
+  function decir(txt) { if (eco) eco.textContent = txt; }
+
+  function aplicar(color) {
+    var c = color || (inColor ? inColor.value : '');
+    var animo = selAnimo ? selAnimo.value : 'claro';
+    var modo = selModo ? selModo.value : 'claro';
+    decir('nervPiel.fijar({ color: "' + c + '", animo: "' + animo +
+          '", modo: "' + modo + '" }, false)');
+    try {
+      window.nervPiel.fijar({ color: c, animo: animo, modo: modo }, false);
+    } catch (e) { /* sin piel.js no hay nada que mover */ }
+  }
+
+  if (inColor) inColor.addEventListener('input', function () { aplicar(); });
+  if (selAnimo) selAnimo.addEventListener('change', function () { aplicar(); });
+  if (selModo) selModo.addEventListener('change', function () { aplicar(); });
+
+  /* ---- las cuatro pieles ---- */
+  function volverAlOrigen() {
+    decir('nervPiel.fijar({ color: null, animo: null, modo: "claro" }, false)');
+    try {
+      window.nervPiel.fijar({ color: null, animo: null, modo: 'claro' }, false);
+    } catch (e) {}
+    pintarFichas();
+  }
+
+  var botones = document.querySelectorAll('.piel');
+  for (var b = 0; b < botones.length; b++) {
+    botones[b].addEventListener('click', function () {
+      var n = this.getAttribute('data-p');
+      if (n === 'origen') { volverAlOrigen(); return; }
+      decir('nervPiel.ponerPiel(nervPiel.PIELES.' + n + ')');
+      try {
+        window.nervPiel.ponerPiel(window.nervPiel.PIELES[n]);
+      } catch (e) {}
+      pintarFichas();
+    });
+  }
+
+  /* ---- el mobiliario, con la misma criba de piel.js ---- */
+  var forma = document.getElementById('forma');
+  var campo = document.getElementById('hex');
+  var err = document.getElementById('err');
+  if (forma) {
+    forma.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var v = (campo ? campo.value : '').trim();
+      if (!HEX.test(v)) { if (err) err.hidden = false; if (campo) campo.focus(); return; }
+      if (err) err.hidden = true;
+      if (inColor) inColor.value = v.toLowerCase();
+      aplicar(v.toLowerCase());
+    });
+  }
+  var bOrigen = document.getElementById('b-origen');
+  if (bOrigen) bOrigen.addEventListener('click', volverAlOrigen);
+
+  /* piel.js es un modulo: se ejecuta despues de que se analiza el
+     documento, asi que window.nervPiel todavia no existe aqui. Lo que
+     necesita leerlo espera a DOMContentLoaded, que corre despues. */
+  function conPiel() {
+    /* el selector de color arranca en la senal que el documento tiene
+       puesta AHORA, no en un valor horneado */
+    if (inColor) {
+      var s = leer('senal').valor;
+      if (HEX.test(s)) inColor.value = s.toLowerCase();
+    }
+    /* las bandas de las tres pieles con nombre salen de la fuente */
+    var P = null;
+    try { P = window.nervPiel.PIELES; } catch (e) { P = null; }
+    if (!P) return;
+    var nombres = ['brutal', 'quirofano', 'ambar'];
+    for (var i = 0; i < nombres.length; i++) {
+      var ficha = P[nombres[i]];
+      if (!ficha) continue;
+      var tiras = document.querySelectorAll('.piel[data-p="' + nombres[i] + '"] .bandas i');
+      for (var t = 0; t < tiras.length; t++) {
+        var k = tiras[t].getAttribute('data-f');
+        if (ficha[k]) tiras[t].style.background = ficha[k];
+      }
+    }
+    pintarFichas();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', conPiel);
+  } else {
+    conPiel();
+  }
+})();
+</script>
+<script type="module" src="../../../piel.js?v=5"></script>
+</body>
+</html>
