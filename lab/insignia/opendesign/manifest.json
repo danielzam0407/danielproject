@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "od-design-system-project/v1",
+  "id": "insignia",
+  "name": "Insignia — nerv",
+  "category": "Bold & Expressive",
+  "description": "Technical-brutalist poster grammar: paper-white or total black ground, a single electric accent, hairline black rules, wireframe 3D, and instrument-grade data texture. Measured from twelve references in the tDR / WipEout / graphic-core lineage. Not cyberpunk: the black is press paper, never a lit screen.",
+  "source": {
+    "type": "user",
+    "origin": "nerv — https://nervcenter.online · compiled from 12 references, 2026-08-26"
+  },
+  "files": {
+    "design": "DESIGN.md",
+    "tokens": "tokens.css"
+  },
+  "craft": {
+    "applies": [],
+    "suggested": ["color", "accessibility-baseline"],
+    "exemptions": []
+  }
+}

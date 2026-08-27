@@ -1,0 +1,119 @@
+/* design-systems/insignia/tokens.css
+ * nerv — Insignia. Technical-brutalist poster grammar.
+ *
+ * Paper-white ground, one electric accent, hairline black rules.
+ * Radii are 0 everywhere except pills — a single 8px corner kills the grammar.
+ * Elevation is a ring, never a blur: this system forbids soft shadows.
+ */
+
+:root {
+  /* ── Ground. Never mid-grey: without the hard jump the hairlines vanish. */
+  --bg: #f4f7fc;
+  --surface: #ffffff;
+  --surface-warm: #f2f1ec;          /* photocopied paper, slightly warm */
+
+  /* ── Ink. --border is pure black, NOT the blue-tinted foreground:
+       a 1px rule in #08123a reads grey on paper and loses its edge. */
+  --fg: #08123a;
+  --fg-2: #16224d;
+  --muted: #5d6e93;
+  --meta: #9db8dc;
+  --border: #000000;
+  --border-soft: rgba(8, 18, 58, 0.22);
+
+  /* ── The signal. ONE. Two competing accents and this is a control panel. */
+  --accent: #0102ec;
+  --accent-on: #ffffff;
+  --accent-hover: color-mix(in oklab, var(--accent), black 8%);
+  --accent-active: color-mix(in oklab, var(--accent), black 14%);
+
+  /* Semantic state stays under 5% of any surface. */
+  --success: #16a34a;
+  --warn: #d97706;
+  --danger: #ff0000;
+
+  /* ── Type. Three sizes and nothing between them: 6px, 9px, display.
+       The jump IS the style — an intermediate step turns this into a
+       magazine. The scale below keeps the mid-range only because the
+       schema requires the full ramp; use xs, sm and 3xl/4xl in practice. */
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --text-xs: 6px;                   /* telemetry, id strings, legal */
+  --text-sm: 9px;                   /* spaced caps, specimen labels */
+  --text-base: 13px;
+  --text-lg: 17px;
+  --text-xl: 24px;
+  --text-2xl: 38px;
+  --text-3xl: 64px;
+  --text-4xl: 92px;
+  --leading-body: 1.7;
+  --leading-tight: 0.92;
+  --tracking-display: -0.035em;
+
+  /* ── Rhythm. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --section-y-desktop: 78px;
+  --section-y-tablet: 56px;
+  --section-y-phone: 40px;
+
+  /* ── Zero radius. Circles are circles; everything else is a hard corner. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-pill: 9999px;
+
+  /* ── Elevation is a RING, never a blur. Soft shadows are forbidden here:
+       the whole grammar is press-on-paper, and paper does not glow. */
+  --elev-flat: none;
+  --elev-ring: 0 0 0 1px var(--border);
+  --elev-raised: 0 0 0 1px var(--border);
+
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+
+  /* ── Motion. Fast and mechanical. Nothing eases in lazily. */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --ease-standard: cubic-bezier(0.16, 0.84, 0.3, 1);
+
+  --container-max: 1420px;
+  --container-gutter-desktop: 46px;
+  --container-gutter-tablet: 28px;
+  --container-gutter-phone: 14px;
+
+  /* ── Extensions specific to this grammar. Not part of the shared schema;
+       an artifact that uses the vocabulary needs these names. */
+  --ins-hielo: #99ccff;             /* ice blue, for washes and dark-ground marks */
+  --ins-hielo-hondo: #6699ff;
+  --ins-violeta: #6e69ff;
+  --ins-acido: #ccff33;             /* exception accent, one per piece */
+  --ins-rojo: #ff0000;              /* exception accent, one per piece */
+  --ins-negro: #0a0a0a;             /* the total-black ground */
+  --ins-hairline: 1px;
+  --ins-corchete: 14px;             /* bracket arm length */
+  --ins-micro-op: 0.62;             /* telemetry opacity — do not raise */
+}
+
+/* Total-black ground. Not an inversion: it changes WHO leads the
+   composition. On paper the hairline leads; on black the signal does. */
+[data-ground="black"] {
+  --bg: #0a0a0a;
+  --surface: #0a0a0a;
+  --surface-warm: #101010;
+  --fg: #ffffff;
+  --fg-2: #e6effb;
+  --muted: #7d8ba3;
+  --meta: #6699ff;
+  --border: #ffffff;
+  --border-soft: rgba(255, 255, 255, 0.24);
+  --accent: #6e69ff;
+  --accent-on: #0a0a0a;
+}
