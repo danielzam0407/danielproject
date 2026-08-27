@@ -580,6 +580,63 @@ body, body * { transition: background-color .55s ease, color .55s ease,
   animation:v4-abrir 1900ms cubic-bezier(.16,.9,.3,1) 140ms forwards}
 @keyframes v4-abrir{from{--v4r:0%}to{--v4r:150%}}
 
+/* ── EL TITULAR QUE GIRA ──────────────────────────────────────────────────
+   Tomado del carrusel de GoDaddy --que ademas de rotar es CLICABLE y se puede
+   pausar-- y traido a la insignia. Dos diferencias que lo hacen nuestro:
+
+   1. El cambio es un DESREGISTRO, no un desvanecido. Familia H del catalogo:
+      la palabra salta un pelo y se parte en canales durante dos cuadros, como
+      una plancha de imprenta que entra mal registrada. Canto duro, sin blur.
+   2. Cada opcion del indice ABRE EL AGENTE con esa pregunta escrita. Alla el
+      carrusel lleva a "empieza gratis"; aqui la columna de la pagina es el
+      agente, asi que el indice entra a el.
+
+   La palabra va al FINAL de su renglon a proposito: al cambiar de ancho no
+   mueve nada de lo que tiene alrededor. */
+.v4-gira{display:inline-block;position:relative;color:var(--senal,#0102ec);
+  white-space:nowrap}
+.v4-gira-p{display:inline-block}
+.v4-gira.v4-salta .v4-gira-p{animation:v4-desregistro 260ms steps(2,end) both}
+@keyframes v4-desregistro{
+  0%   {transform:translate(0,0);   text-shadow:none}
+  35%  {transform:translate(-3px,1px); text-shadow:3px 0 0 rgba(255,0,64,.85), -3px 0 0 rgba(0,224,255,.85)}
+  70%  {transform:translate(2px,-1px); text-shadow:-2px 0 0 rgba(255,0,64,.6), 2px 0 0 rgba(0,224,255,.6)}
+  100% {transform:translate(0,0);   text-shadow:none}
+}
+
+.v4-indice{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:26px 0 0}
+.v4-indice-n{color:var(--senal,#0102ec);font-variant-numeric:tabular-nums;margin-right:4px}
+.v4-indice-lista{display:flex;flex-wrap:wrap;gap:6px}
+.v4-indice button{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;
+  border:1px solid rgba(var(--tinta-rgb,8,18,58),.28);background:transparent;cursor:pointer;
+  color:var(--tinta,#08123a);padding:6px 11px;transition:border-color .12s,color .12s}
+.v4-indice button:hover{border-color:var(--senal,#0102ec);color:var(--senal,#0102ec)}
+/* La que esta puesta: barra negra, familia E. No un fondo de color. */
+.v4-indice button[aria-pressed="true"]{background:var(--tinta,#08123a);
+  color:var(--papel,#f4f7fc);border-color:var(--tinta,#08123a)}
+.v4-indice-pausa{margin-left:2px;letter-spacing:0 !important;min-width:34px}
+.v4-indice-mm{color:rgba(var(--tinta-rgb,8,18,58),.45);font-variant-numeric:tabular-nums;
+  margin-right:2px}
+
+/* EL RIEL. Una sola regla que hace DOS trabajos: viaja hasta la opcion puesta
+   y ademas se llena marcando cuanto falta para el siguiente giro. Es la regla
+   5 de la casa --corre y se detiene-- y de paso convierte el carrusel en un
+   instrumento: se ve donde estas y cuanto queda. Un marcador que ademas mide.
+   Sin JS no existe y no falta nada: los botones ya dicen cual esta puesta. */
+.v4-indice-lista{position:relative}
+.v4-riel{position:absolute;left:0;bottom:-5px;height:2px;width:0;
+  background:rgba(var(--tinta-rgb,8,18,58),.22);
+  transition:transform .34s cubic-bezier(.16,.9,.3,1),width .34s cubic-bezier(.16,.9,.3,1);
+  pointer-events:none}
+.v4-riel::after{content:'';position:absolute;left:0;top:0;height:100%;width:100%;
+  background:var(--senal,#0102ec);transform-origin:left;transform:scaleX(0)}
+.v4-riel.v4-cuenta::after{animation:v4-llenar 2600ms linear forwards}
+@keyframes v4-llenar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){ .v4-riel.v4-cuenta::after{animation:none;transform:scaleX(1)} }
+@media (prefers-reduced-motion: reduce){
+  .v4-gira.v4-salta .v4-gira-p{animation:none}
+}
+
 /* ── demostración ───────────────────────────────────────────────────────── */
 .v4-demo{position:relative;z-index:2;max-width:668px}
 .v4-demo-rot{display:flex;align-items:center;gap:9px;margin-bottom:12px}
@@ -786,7 +843,21 @@ body, body * { transition: background-color .55s ease, color .55s ease,
 
   <div class="v4-env v4-hero-cuerpo">
     <p class="v4-sup v4-hero-sup">design and code studio · monterrey</p>
-    <h1 class="v4-dsp">We make websites<br>that answer back.</h1>
+    <h1 class="v4-dsp v4-titular">We make <span class="v4-gira" id="v4-gira"><span
+      class="v4-gira-p" id="v4-gira-p">websites</span></span><br>that answer back.</h1>
+
+    <!-- El indice de lo que se puede pedir. No es adorno: cada uno abre el
+         agente con esa pregunta ya escrita. GoDaddy pone aqui un "empieza
+         gratis"; aqui la columna de la pagina es el agente, asi que el carrusel
+         entra a el. -->
+    <div class="v4-indice" id="v4-indice">
+      <span class="v4-sup v4-indice-n" id="v4-indice-n">01/06</span>
+      <span class="v4-sup v4-indice-mm" id="v4-indice-mm" aria-hidden="true"></span>
+      <div class="v4-indice-lista" id="v4-lista" role="group"
+           aria-label="What we can build"><i class="v4-riel" id="v4-riel" aria-hidden="true"></i></div>
+      <button class="v4-indice-pausa" id="v4-pausa" type="button"
+              aria-pressed="false" aria-label="Pause the rotation">| |</button>
+    </div>
     <p class="v4-lede">
       Designed from scratch for your business — no templates. With someone
       inside who takes care of your customers when you can't.
@@ -993,7 +1064,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
        -- las animaciones ya terminaron en su estado final (`both`). */
     if (raiz.classList.contains('v4mov')) {
       cara.classList.add('v4entra');
-      setTimeout(function () { cara.classList.remove('v4entra'); }, 4000);
+      setTimeout(function () { cara.classList.remove('v4entra'); revisarTelemetria(); }, 4000);
     }
 
     /* ── revelado ──────────────────────────────────────────────────────── */
@@ -1023,6 +1094,15 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     var telemCaja = document.getElementById('v4-telem');
     var marcas = [];
 
+    var COSAS = [
+      { en: 'websites',      pide: 'What would a website for my business look like?' },
+      { en: 'online stores', pide: 'Can you build me an online store?' },
+      { en: 'dashboards',    pide: 'I need a dashboard to see my numbers. Can you do that?' },
+      { en: 'portfolios',    pide: 'I want a portfolio to show my work. How would it look?' },
+      { en: 'web apps',      pide: 'Can you build a web app, not just a page?' },
+      { en: 'landing pages', pide: 'I need a landing page for a campaign.' }
+    ];
+
     /* ── LAS COORDENADAS NO SE ENCIMAN CON EL TEXTO ────────────────────
        Antes se sembraban al azar sobre todo el hero y algunas caian encima del
        titular y de las pistas del agente. No se arregla moviendolas a mano: se
@@ -1044,18 +1124,47 @@ body, body * { transition: background-color .55s ease, color .55s ease,
       s = 20260827;
 
       var hero = telemCaja.parentElement;
+
+      /* MEDIR SIN LA ENTRADA PUESTA. Mientras corre la construccion por etapas,
+         el titular y la demostracion llevan un `translateY` encima, asi que
+         `getBoundingClientRect` los devuelve DESPLAZADOS: se sembraba contra
+         unas cajas y acababan en otras. Se quita la clase el instante de medir
+         y se repone. Asi la siembra es correcta corra cuando corra. */
+      var teniaEntrada = cara.classList.contains('v4entra');
+      if (teniaEntrada) cara.classList.remove('v4entra');
       var hr = hero.getBoundingClientRect();
-      if (hr.width < 10) return;
+      if (hr.width < 10) { if (teniaEntrada) cara.classList.add('v4entra'); return; }
 
       /* Lo que hay que esquivar: todo texto legible del hero, mas el flanco. */
       var AIRE = 14;
       var vetos = [];
-      hero.querySelectorAll('.v4-dsp, .v4-lede, .v4-hero-sup, .v4-demo, .v4-kanji')
+      /* El titular CRECE Y ENCOGE al girar la palabra. Si se veta el ancho que
+         tiene ahora, la coordenada que hoy queda en hueco manana cae encima.
+         Se mide cuanto puede llegar a medir --probando las seis palabras una
+         vez-- y se veta ese maximo. Asi la siembra vale para toda la rotacion
+         y no hay que re-sembrar cada 2.6 s, que seria ruido saltando. */
+      var maxTitular = 0;
+      var pal = document.getElementById('v4-gira-p');
+      if (pal) {
+        var guarda = pal.textContent;
+        for (var c = 0; c < COSAS.length; c++) {
+          pal.textContent = COSAS[c].en;
+          var w = pal.parentElement.parentElement.getBoundingClientRect().width;
+          if (w > maxTitular) maxTitular = w;
+        }
+        pal.textContent = guarda;
+      }
+
+      hero.querySelectorAll('.v4-dsp, .v4-lede, .v4-hero-sup, .v4-demo, .v4-indice, .v4-kanji')
         .forEach(function (n) {
           var r = n.getBoundingClientRect();
           if (r.width < 4 || r.height < 4) return;
+          var der = r.right;
+          if (n.classList.contains('v4-dsp') && maxTitular > r.width) {
+            der = r.left + maxTitular;      // el titular, a su ancho maximo
+          }
           vetos.push({ x1: r.left - hr.left - AIRE, y1: r.top - hr.top - AIRE,
-                       x2: r.right - hr.left + AIRE, y2: r.bottom - hr.top + AIRE });
+                       x2: der - hr.left + AIRE, y2: r.bottom - hr.top + AIRE });
         });
 
       var ANCHO = 108, ALTO = 12;   // tamano aproximado de una marca a 6.5px
@@ -1081,7 +1190,49 @@ body, body * { transition: background-color .55s ease, color .55s ease,
         marcas.push(n);
         puestas++;
       }
+      if (teniaEntrada) cara.classList.add('v4entra');
+      revisarTelemetria();
       return puestas;
+    }
+
+    /* LA REVISION. La siembra elige DONDE va cada marca, una vez. Esto decide
+       CUALES se ven, cada vez que la maqueta cambia -- y cambia mas de lo que
+       parece: el titular gira y crece, la entrada por etapas desplaza cajas, el
+       idioma alarga frases, las fuentes asientan tarde.
+
+       Perseguir eso re-sembrando haria saltar las marcas por la pantalla. Asi
+       no: las posiciones no se mueven NUNCA; la que hoy estorba simplemente se
+       apaga. Cuesta una pasada de rectangulos y garantiza cero encima de texto
+       en cualquier estado. El vacio es un elemento: una marca de menos no se
+       nota, una encima de una palabra si. */
+    function revisarTelemetria() {
+      if (!marcas.length) return 0;
+      var hero = telemCaja.parentElement;
+      var teniaEntrada = cara.classList.contains('v4entra');
+      if (teniaEntrada) cara.classList.remove('v4entra');
+
+      var AIRE = 10, apagadas = 0;
+      var cajas = [];
+      hero.querySelectorAll('.v4-dsp, .v4-lede, .v4-hero-sup, .v4-demo, .v4-indice, .v4-kanji')
+        .forEach(function (n) {
+          var r = n.getBoundingClientRect();
+          if (r.width > 3 && r.height > 3) cajas.push(r);
+        });
+
+      for (var i = 0; i < marcas.length; i++) {
+        var m = marcas[i];
+        m.style.visibility = 'visible';
+        var r = m.getBoundingClientRect();
+        for (var c = 0; c < cajas.length; c++) {
+          var q = cajas[c];
+          if (r.left < q.right + AIRE && r.right > q.left - AIRE &&
+              r.top < q.bottom + AIRE && r.bottom > q.top - AIRE) {
+            m.style.visibility = 'hidden'; apagadas++; break;
+          }
+        }
+      }
+      if (teniaEntrada) cara.classList.add('v4entra');
+      return apagadas;
     }
 
     /* Se re-siembra cuando cambia el tamano: las cajas del texto se mueven y
@@ -1089,7 +1240,11 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     var relojSiembra = null;
     addEventListener('resize', function () {
       clearTimeout(relojSiembra);
-      relojSiembra = setTimeout(function () { sembrarTelemetria(); medir(); }, 220);
+      relojSiembra = setTimeout(function () {
+        var h1 = cara.querySelector('.v4-titular');
+        if (h1) h1.style.minHeight = '';    // se recalcula al re-sembrar
+        sembrarTelemetria(); medir();
+      }, 220);
     });
     /* Las fuentes cambian las cajas al cargar: se siembra despues de que asienten. */
     if (document.fonts && document.fonts.ready) {
@@ -1151,6 +1306,137 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     /* El clic del carrete NO se cablea aqui: `armar()` ya pone el suyo sobre
        la tarjeta entera y sobre su boton. Dos manejadores sobre el mismo gesto
        abrian y cerraban de un golpe. */
+
+    /* ── EL TITULAR QUE GIRA ───────────────────────────────────────────
+       Seis cosas que Daniel hace. Cada una es un boton de verdad: se puede
+       elegir, y elegirla le pregunta al agente por ESA. La rotacion se detiene
+       en cuanto alguien toca algo -- que a nadie le gusta perseguir un boton
+       que se mueve -- y con `prefers-reduced-motion` no arranca. */
+    /* (COSAS se declara antes de la siembra de telemetria: ver abajo.) */
+    var gira = document.getElementById('v4-gira');
+    var giraP = document.getElementById('v4-gira-p');
+    var indN = document.getElementById('v4-indice-n');
+    var lista = cara.querySelector('.v4-indice-lista');
+    var pausaBtn = document.getElementById('v4-pausa');
+    var iCosa = 0, relojGira = null, pausado = quieto;
+
+    /* Se pregunta por BOTONES, no por hijos: el riel ya es un hijo, y
+       preguntar por `childNodes.length` daba la lista por construida. */
+    if (gira && lista && !lista.querySelector('button')) {
+      COSAS.forEach(function (c, k) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = c.en;
+        b.setAttribute('aria-pressed', 'false');
+        b.tabIndex = k === 0 ? 0 : -1;      // foco itinerante: uno solo en la fila
+        b.addEventListener('click', function () {
+          poner(k);
+          parar();               // tocaste: deja de moverse
+          preguntar(c.pide);     // y el agente contesta por ESA
+        });
+        /* Flechas para recorrer la fila, como cualquier grupo de controles.
+           GoDaddy no lo tiene y es lo que separa un carrusel de un mando. */
+        b.addEventListener('keydown', function (e) {
+          var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+          if (!d) return;
+          e.preventDefault();
+          parar();
+          var sig = ((k + d) % COSAS.length + COSAS.length) % COSAS.length;
+          poner(sig);
+          lista.children[sig + 1].focus();   // +1: el riel es el primer hijo
+        });
+        lista.appendChild(b);
+      });
+    }
+
+    function poner(k) {
+      iCosa = ((k % COSAS.length) + COSAS.length) % COSAS.length;
+      giraP.textContent = COSAS[iCosa].en;
+      if (indN) indN.textContent = String(iCosa + 1).padStart(2, '0') + '/' +
+                                   String(COSAS.length).padStart(2, '0');
+      var bs = lista ? [].slice.call(lista.querySelectorAll('button')) : [];
+      for (var b = 0; b < bs.length; b++) {
+        bs[b].setAttribute('aria-pressed', String(b === iCosa));
+        bs[b].tabIndex = b === iCosa ? 0 : -1;
+      }
+      /* El desregistro: se quita y se vuelve a poner para relanzarlo. */
+      gira.classList.remove('v4-salta');
+      void gira.offsetWidth;
+      gira.classList.add('v4-salta');
+
+      /* LA FIRMA SE RE-SIEMBRA. Cada cosa que Daniel hace tiene su propia
+         rafaga: el fondo se vuelve a dibujar con una semilla derivada de la
+         palabra. Es lo que un carrusel de plantilla no puede hacer -- hace
+         falta tener una firma generativa. Deterministico: la misma opcion da
+         siempre el mismo dibujo, asi que es una marca y no ruido. */
+      var lienzo = cara.querySelector('.v4-rafaga canvas');
+      if (lienzo && window.nervInsignia && typeof window.nervInsignia.montar === 'function') {
+        lienzo.removeAttribute('data-ins-rafaga');
+        lienzo.setAttribute('data-semilla', 'portada-' + COSAS[iCosa].en);
+        try { window.nervInsignia.montar(); } catch (e) {}
+      }
+
+      /* El riel viaja hasta la puesta y se rellena marcando lo que falta. */
+      var riel = document.getElementById('v4-riel');
+      var btn = lista && lista.children[iCosa + 1];
+      if (riel && btn) {
+        riel.style.width = btn.offsetWidth + 'px';
+        riel.style.transform = 'translateX(' + btn.offsetLeft + 'px)';
+        riel.classList.remove('v4-cuenta');
+        void riel.offsetWidth;
+        if (!pausado) riel.classList.add('v4-cuenta');
+      }
+
+      /* La medida es REAL: el ancho que ocupa la palabra, redondeado. La regla
+         de la casa dice que la informacion falsa se sostiene si tiene sistema;
+         esta ni siquiera es falsa. */
+      var mm = document.getElementById('v4-indice-mm');
+      if (mm) mm.textContent = '· ' + Math.round(giraP.getBoundingClientRect().width) + 'px';
+      revisarTelemetria();   // el titular cambio de ancho: hay que repasar
+      /* El diccionario traduce por nodo de texto, y este cambia solo: se le
+         vuelve a pedir la pasada para que no se quede en ingles al girar. */
+      if (typeof window.nervIdiomaRepintar === 'function') window.nervIdiomaRepintar();
+    }
+    function parar() {
+      pausado = true; clearInterval(relojGira); relojGira = null;
+      var r = document.getElementById('v4-riel'); if (r) r.classList.remove('v4-cuenta');
+      if (pausaBtn) { pausaBtn.setAttribute('aria-pressed', 'true'); pausaBtn.textContent = '▶'; }
+    }
+    function andar() {
+      if (quieto) return;
+      pausado = false;
+      if (pausaBtn) { pausaBtn.setAttribute('aria-pressed', 'false'); pausaBtn.textContent = '| |'; }
+      clearInterval(relojGira);
+      relojGira = setInterval(function () { poner(iCosa + 1); }, 2600);
+    }
+    if (pausaBtn) pausaBtn.addEventListener('click', function () { pausado ? andar() : parar(); });
+    /* EL TITULAR NO PUEDE CAMBIAR DE ALTO. Una palabra larga hace saltar el
+       renglon y la pagina entera se mueve al girar: la maqueta reflota, el
+       flanco da un tiron y lo que estabas leyendo se corre. Se mide el alto de
+       los seis estados una vez y se reserva el mayor. Cuesta seis medidas al
+       arrancar y le quita el temblor a toda la pagina. */
+    if (gira && giraP) {
+      var h1 = gira.closest('.v4-titular');
+      if (h1) {
+        var guardaP = giraP.textContent, altoMax = 0;
+        for (var q = 0; q < COSAS.length; q++) {
+          giraP.textContent = COSAS[q].en;
+          var hh = h1.getBoundingClientRect().height;
+          if (hh > altoMax) altoMax = hh;
+        }
+        giraP.textContent = guardaP;
+        if (altoMax > 0) h1.style.minHeight = Math.ceil(altoMax) + 'px';
+      }
+    }
+
+    if (gira) { poner(0); if (!quieto) andar(); }
+
+    /* La siembra definitiva va AQUI, no arriba: el indice del carrusel se
+       construye despues de la primera y empuja la caja de la demostracion
+       hacia abajo, encima de marcas ya puestas. Se siembra cuando la maqueta
+       ya esta completa. */
+    sembrarTelemetria();
+    medir();
 
     /* ── la demostración habla con el agente DE VERDAD ─────────────────── */
     function preguntar(txt) {
@@ -2370,7 +2656,13 @@ class Component extends DCLogic {
     "every message reaches a person": "cada mensaje llega a una persona",
     "A front page pushed to its limit": "Una portada llevada al límite",
     "editorial ui · live reel · own agent · previous edition": "ui editorial · carrete en vivo · agente propio · edición anterior",
-    "The previous edition of this studio's own site: telemetry, marquees\n           and a reel per project, built as an argument about how much\n           information a surface can carry before it stops being readable.": "La edición anterior del sitio de este mismo estudio: telemetría,\n           marquesinas y un carrete por proyecto, hecha como argumento sobre\n           cuánta información aguanta una superficie antes de dejar de leerse."
+    "The previous edition of this studio's own site: telemetry, marquees\n           and a reel per project, built as an argument about how much\n           information a surface can carry before it stops being readable.": "La edición anterior del sitio de este mismo estudio: telemetría,\n           marquesinas y un carrete por proyecto, hecha como argumento sobre\n           cuánta información aguanta una superficie antes de dejar de leerse.",
+    "websites": "sitios web",
+    "online stores": "tiendas en línea",
+    "dashboards": "paneles de control",
+    "portfolios": "portafolios",
+    "web apps": "aplicaciones web",
+    "landing pages": "landings de campaña"
   };
 
   var META = {
@@ -2608,6 +2900,11 @@ class Component extends DCLogic {
     marcar();
     observar();
   }
+
+  /* El titular gira y cambia su propio texto, asi que necesita pedir la pasada
+     otra vez. `vigilarRepintado` no basta: se desconecta a los 20 s y la
+     rotacion sigue -- despues de eso la palabra se quedaria en ingles. */
+  window.nervIdiomaRepintar = aplicar;
 
   function vigilarRepintado() {
     if (typeof MutationObserver === 'undefined') return;
