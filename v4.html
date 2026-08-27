@@ -530,9 +530,18 @@ body, body * { transition: background-color .55s ease, color .55s ease,
   display:flex;flex-direction:column;align-items:center;justify-content:space-between;
   padding-block:18px;pointer-events:none}
 .v4-flanco-marca{font-weight:800;font-size:13px;letter-spacing:-.02em;writing-mode:vertical-rl}
-.v4-flanco-pista{position:relative;flex:1;width:1px;background:rgba(var(--tinta-rgb,8,18,58),.22);margin-block:16px}
-.v4-flanco-nudo{position:absolute;left:50%;top:0;width:11px;height:11px;margin-left:-5px;
-  background:var(--senal,#0102ec);transform:translateY(-50%)}
+/* La pista y el nudo. Se reforzaron: con la rejilla milimetrada detras, un
+   pelo al 22% y un cuadro de 11px se perdian. Ahora la pista es solida, el
+   nudo mide 13px y arrastra una cola que marca lo YA recorrido -- que es la
+   mitad de la informacion y antes no estaba. Es el instrumento que mide la
+   pagina, y un instrumento que no se ve no mide. */
+.v4-flanco-pista{position:relative;flex:1;width:1px;
+  background:rgba(var(--tinta-rgb,8,18,58),.38);margin-block:16px}
+.v4-flanco-cola{position:absolute;left:0;top:0;width:1px;height:0;
+  background:var(--senal,#0102ec);opacity:.55}
+.v4-flanco-nudo{position:absolute;left:50%;top:0;width:13px;height:13px;margin-left:-6px;
+  background:var(--senal,#0102ec);transform:translateY(-50%);
+  box-shadow:0 0 0 3px var(--papel,#f4f7fc)}
 .v4-flanco-cifra{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;
   writing-mode:vertical-rl;color:var(--senal,#0102ec)}
 
@@ -752,7 +761,7 @@ body, body * { transition: background-color .55s ease, color .55s ease,
 <!-- ── flanco: la escala que mide la página ─────────────────────────────── -->
 <aside class="v4-flanco" aria-hidden="true">
   <span class="v4-flanco-marca">nerv</span>
-  <div class="v4-flanco-pista"><i class="v4-flanco-nudo" id="v4-nudo"></i></div>
+  <div class="v4-flanco-pista"><i class="v4-flanco-cola" id="v4-cola"></i><i class="v4-flanco-nudo" id="v4-nudo"></i></div>
   <span class="v4-flanco-cifra" id="v4-cifra">0000</span>
 </aside>
 
@@ -848,9 +857,9 @@ body, body * { transition: background-color .55s ease, color .55s ease,
   </div>
   <hr class="v4-regla">
   <div class="v4-obras">
-    <article class="v4-obra aug-card" data-carrete="001" data-v4rev>
+    <article class="v4-obra aug-card" data-cur="001 / console" data-v4rev>
       <span class="v4-obra-num">001</span>
-      <div class="v4-reel stripes-slot"><video class="reel-v" src="media/work1.mp4" muted loop playsinline preload="metadata"></video></div>
+      <div class="v4-reel stripes-slot"></div>
       <div>
         <h3 class="v4-obra-t">A dashboard that answers</h3>
         <p>A command centre with goals, an inventory and an assistant that knows
@@ -860,9 +869,9 @@ body, body * { transition: background-color .55s ease, color .55s ease,
       </div>
       <span class="v4-obra-ver">see reel</span>
     </article>
-    <article class="v4-obra aug-card" data-carrete="002" data-v4rev>
+    <article class="v4-obra aug-card" data-cur="002 / work2" data-v4rev>
       <span class="v4-obra-num">002</span>
-      <div class="v4-reel stripes-slot"><video class="reel-v" src="media/work2.mp4" muted loop playsinline preload="metadata"></video></div>
+      <div class="v4-reel stripes-slot"></div>
       <div>
         <h3 class="v4-obra-t">A portfolio you walk through</h3>
         <p>A hallway with a door per section: you step into the room instead of
@@ -872,15 +881,28 @@ body, body * { transition: background-color .55s ease, color .55s ease,
       </div>
       <span class="v4-obra-ver">see reel</span>
     </article>
-    <article class="v4-obra aug-card" data-carrete="003" data-v4rev>
+    <article class="v4-obra aug-card" data-cur="003 / work3" data-v4rev>
       <span class="v4-obra-num">003</span>
-      <div class="v4-reel stripes-slot"><video class="reel-v" src="media/work3.mp4" muted loop playsinline preload="metadata"></video></div>
+      <div class="v4-reel stripes-slot"></div>
       <div>
         <h3 class="v4-obra-t">A site you drive with the keyboard</h3>
         <p>A command menu, four sections, zero mouse. For whoever lives on
            shortcuts and hates clicking.</p>
         <div class="microtext">command menu · arrow keys · four sections</div>
         <div class="kagi v4-sr">work3 / screen 03</div>
+      </div>
+      <span class="v4-obra-ver">see reel</span>
+    </article>
+    <article class="v4-obra aug-card" data-cur="004 / nerv 03" data-v4rev>
+      <span class="v4-obra-num">004</span>
+      <div class="v4-reel stripes-slot"></div>
+      <div>
+        <h3 class="v4-obra-t">A front page pushed to its limit</h3>
+        <p>The previous edition of this studio's own site: telemetry, marquees
+           and a reel per project, built as an argument about how much
+           information a surface can carry before it stops being readable.</p>
+        <div class="microtext">editorial ui · live reel · own agent · previous edition</div>
+        <div class="kagi v4-sr">nerv / edition 03</div>
       </div>
       <span class="v4-obra-ver">see reel</span>
     </article>
@@ -1079,6 +1101,8 @@ body, body * { transition: background-color .55s ease, color .55s ease,
       var alto = document.documentElement.scrollHeight - innerHeight;
       var p = alto > 0 ? Math.min(Math.max(scrollY / alto, 0), 1) : 0;
       if (nudo) nudo.style.top = (p * 100) + '%';
+      var cola = document.getElementById('v4-cola');
+      if (cola) cola.style.height = (p * 100) + '%';
       if (cifra) cifra.textContent = String(Math.round(p * 9999)).padStart(4, '0');
       /* La telemetría no miente: `y` es la posición real en el documento. */
       var y = Math.round(scrollY);
@@ -1124,14 +1148,9 @@ body, body * { transition: background-color .55s ease, color .55s ease,
       cara.querySelectorAll('.v4-reel video').forEach(function (v) { ojoV.observe(v); });
     }
 
-    /* ── abrir el carrete ──────────────────────────────────────────────── */
-    cara.querySelectorAll('.v4-obra').forEach(function (o) {
-      var id = o.getAttribute('data-carrete');
-      function abrir() { try { if (window.nervReel) window.nervReel.abrir(id); } catch (e) {} }
-      var v = o.querySelector('.v4-reel'), b = o.querySelector('.v4-obra-ver');
-      if (v) v.addEventListener('click', abrir);
-      if (b) b.addEventListener('click', abrir);
-    });
+    /* El clic del carrete NO se cablea aqui: `armar()` ya pone el suyo sobre
+       la tarjeta entera y sobre su boton. Dos manejadores sobre el mismo gesto
+       abrian y cerraban de un golpe. */
 
     /* ── la demostración habla con el agente DE VERDAD ─────────────────── */
     function preguntar(txt) {
@@ -2348,7 +2367,10 @@ class Component extends DCLogic {
     "Tell it what business you have and what you need. It says what can be\n        done, roughly what it costs, and passes me the message.": "Cuéntale qué negocio tienes y qué necesitas. Te dice qué se puede hacer, cuánto cuesta más o menos, y me pasa el recado.",
     "talk to the assistant": "hablar con el asistente",
     "email": "correo",
-    "every message reaches a person": "cada mensaje llega a una persona"
+    "every message reaches a person": "cada mensaje llega a una persona",
+    "A front page pushed to its limit": "Una portada llevada al límite",
+    "editorial ui · live reel · own agent · previous edition": "ui editorial · carrete en vivo · agente propio · edición anterior",
+    "The previous edition of this studio's own site: telemetry, marquees\n           and a reel per project, built as an argument about how much\n           information a surface can carry before it stops being readable.": "La edición anterior del sitio de este mismo estudio: telemetría,\n           marquesinas y un carrete por proyecto, hecha como argumento sobre\n           cuánta información aguanta una superficie antes de dejar de leerse."
   };
 
   var META = {
@@ -2617,7 +2639,12 @@ class Component extends DCLogic {
 
   var intentos = 0;
   (function esperar() {
-    if (document.querySelector('.topbar') && document.getElementById('contact')) { arrancar(); return; }
+    // Esperaba a `.topbar`, que era del componente retirado: con la cara v4 la
+    // condicion no se cumplia NUNCA y el modulo de idioma no arrancaba. El
+    // diccionario estaba bien y no se aplicaba jamas. Ahora tambien vale la
+    // barra nueva.
+    if ((document.querySelector('.v4-barra') || document.querySelector('.topbar')) &&
+        document.getElementById('contact')) { arrancar(); return; }
     if (++intentos > 60) return;
     setTimeout(esperar, 100);
   })();
@@ -2770,7 +2797,8 @@ class Component extends DCLogic {
     // cuadre, y el marco ya sabe ceñirse a la proporción que le digan.
     '001': { src: 'media/work1.mp4' },
     '002': { src: 'media/work2.mp4' },
-    '003': { src: 'media/work3.mp4' }
+    '003': { src: 'media/work3.mp4' },
+    '004': { src: 'media/work4.mp4' }
   };
 
   var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
