@@ -21,3 +21,4 @@
 *.bmp binary
 *.zip binary
 *.pdf binary
+*.glb binary
