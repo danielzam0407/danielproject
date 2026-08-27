@@ -168,29 +168,80 @@ class NervBot {
       ['pieL',   /^foot_l$/i],  ['pieR',   /^foot_r$/i],
       ['manoL',  /^hand_l$/i],  ['manoR',  /^hand_r$/i]
     ];
+    // los 30 huesos de dedo, que hasta ahora estaban tiesos y abiertos
+    this.dedos = [];
     obj.traverse((b) => {
       if (!b.isBone) return;
       want.forEach(([k, re]) => { if (!this.bones[k] && re.test(b.name)) this.bones[k] = b; });
       const h = /^hair(\d+)_(\d+)$/i.exec(b.name);
       if (h) this.hair.push({ bone: b, depth: parseInt(h[2], 10), chain: parseInt(h[1], 10) });
+      const f = /^(thumb|index|middle|ring|pinky)_(\d\d)_(l|r)$/i.exec(b.name);
+      if (f) this.dedos.push({ bone: b, dedo: f[1].toLowerCase(),
+                               falange: parseInt(f[2], 10), lado: f[3].toLowerCase() });
     });
-    const all = Object.values(this.bones).concat(this.hair.map(h => h.bone));
+    const all = Object.values(this.bones)
+      .concat(this.hair.map(h => h.bone))
+      .concat(this.dedos.map(d => d.bone));
     all.forEach(b => b && this.rest.set(b, b.rotation.clone()));
 
-    // baja los brazos: el archivo viene en pose de referencia
-    ['armL', 'armR'].forEach((k) => {
+    this.relajarPose();
+  }
+
+  /* LA POSTURA DE REPOSO.
+
+     El archivo viene en pose de encuadernado: brazos rectos y abiertos, palmas
+     al frente, y los treinta huesos de dedo tiesos y separados. El motor del
+     handoff solo bajaba los brazos (z -= 0.85) y con eso se conformaba.
+
+     Eso es lo que la hacia leerse como maniqui por bien que se moviera
+     despues: lo que se anima es ESTA base, y si la base es un maniqui, el
+     resultado es un maniqui que se mueve. Aqui se le da una postura de
+     persona parada, y de ahi parte todo lo demas.
+
+     Los ejes estan medidos sobre el propio esqueleto, girando cada hueso y
+     viendo si la punta se acerca o se aleja de su ancla:
+       codo    y-  (la mano se acerca 88 mm al hombro)
+       rodilla y-  (el pie se acerca 80 mm al muslo)
+       dedos   y+  (la punta se acerca 13-15 mm a la muneca)
+       pulgar  z-  (7 mm) */
+  relajarPose() {
+    const mover = (k, dx, dy, dz) => {
       const b = this.bones[k]; if (!b) return;
       const r = this.rest.get(b).clone();
-      r.z -= 0.85;
+      r.x += dx; r.y += dy; r.z += dz;
       this.rest.set(b, r);
       b.rotation.copy(r);
-    });
-    ['foreL', 'foreR'].forEach((k) => {
-      const b = this.bones[k]; if (!b) return;
-      const r = this.rest.get(b).clone();
-      r.z -= 0.16;
-      this.rest.set(b, r);
-      b.rotation.copy(r);
+    };
+
+    // los brazos cuelgan, algo adelante y hacia adentro: no en cruz
+    mover('armL', 0.10, 0.00, -0.86);
+    mover('armR', 0.10, 0.00, -0.86);
+    // el codo NUNCA esta recto en alguien de pie
+    mover('foreL', 0, -0.11, -0.07);
+    mover('foreR', 0, -0.10, -0.07);   // asimetria tambien aqui
+    // los hombros caen un poco
+    mover('clavL', 0.05, 0, 0);
+    mover('clavR', 0.05, 0, 0);
+    // rodillas apenas cedidas y pies ligeramente abiertos
+    mover('pantL', 0, -0.07, 0);
+    mover('pantR', 0, -0.06, 0);      // asimetria: nadie esta parado parejo
+    mover('pieL', 0, 0.05, 0);
+    mover('pieR', 0, -0.05, 0);
+
+    /* La mano relajada. Cada falange cierra un poco mas que la anterior, y
+       cada dedo un poco distinto del vecino -- una mano donde los cinco dedos
+       hacen exactamente lo mismo se ve peor que una tiesa. */
+    const porDedo = { thumb: 0.9, index: 0.78, middle: 1.0, ring: 1.08, pinky: 1.2 };
+    const porFalange = { 1: 0.20, 2: 0.42, 3: 0.34 };
+    this.dedos.forEach((d) => {
+      const b = d.bone;
+      const r = this.rest.get(b); if (!r) return;
+      const n = r.clone();
+      const cuanto = (porFalange[d.falange] || 0.2) * (porDedo[d.dedo] || 1);
+      if (d.dedo === 'thumb') n.z -= cuanto * 0.85;
+      else n.y += cuanto;
+      this.rest.set(b, n);
+      b.rotation.copy(n);
     });
   }
 
@@ -465,6 +516,22 @@ class NervBot {
 
     const f = P.fase;
     const A = P.andando;
+
+    /* La curva del paso NO es un seno. Al caminar, la pierna que va en el aire
+       viaja rapido y la que apoya se arrastra despacio -- un seno hace las dos
+       mitades iguales, y eso es exactamente lo que se lee como robot. El
+       armonico de segundo orden desbalancea las dos mitades. */
+    const columpio = (a) => Math.sin(a) + 0.22 * Math.sin(2 * a);
+
+    /* Desfase entre articulaciones (overlapping action). En un cuerpo nada
+       arranca al mismo tiempo: la cadera empieza, el tronco la sigue tarde, el
+       hombro mas tarde y la mano al final. Sin este retardo todo el esqueleto
+       cambia de direccion en el mismo cuadro, que es la firma del muneco. */
+    const RET = { pelvis: 0, tronco: 0.16, hombro: 0.30, brazo: 0.42, mano: 0.62 };
+
+    /* Y ruido lento para que nada se repita igual dos veces. Dos senos de
+       periodos que no encajan: el ciclo compuesto tarda minutos en cerrar. */
+    const vaiven = Math.sin(t * 0.37) * 0.5 + Math.sin(t * 0.23 + 1.7) * 0.5;
     /* La amplitud va atada a la mezcla, no sumada a una base. Con una base
        fija las piernas seguian columpiando parada: los pies quedaban a 0.70 de
        separacion y uno flotaba 9 cm del suelo. Quieta casi no se abren. */
@@ -476,12 +543,12 @@ class NervBot {
        ruta -- si no, quedaria de perfil delante de quien la lee. */
     P.rumbo = lerp(P.rumbo, clamp(P.vx * 1.6, -1, 1) * 0.5 * A, 0.05);
 
-    const pierna = (muslo, pant, pie, desfase) => {
+    const pierna = (muslo, pant, pie, desfase, guino) => {
       const b1 = B[muslo], b2 = B[pant], b3 = B[pie];
-      const s = Math.sin(f + desfase);
+      const s = columpio(f + desfase);
       if (b1) {
         const r = rest(b1);
-        b1.rotation.x = lerp(b1.rotation.x, r.x + s * zancada, 0.18);
+        b1.rotation.x = lerp(b1.rotation.x, r.x + s * zancada * guino, 0.18);
       }
       if (b2) {
         const r = rest(b2);
@@ -491,22 +558,27 @@ class NervBot {
       }
       if (b3) {
         const r = rest(b3);
-        b3.rotation.x = lerp(b3.rotation.x, r.x - s * 0.22 * A, 0.16);
+        // el pie llega tarde a la pierna: el tobillo es lo ultimo que gira
+        b3.rotation.x = lerp(b3.rotation.x, r.x - columpio(f + desfase - 0.5) * 0.20 * A, 0.16);
       }
     };
-    pierna('musloL', 'pantL', 'pieL', 0);
-    pierna('musloR', 'pantR', 'pieR', Math.PI);
+    // los dos lados no son un espejo exacto: nadie camina simetrico
+    pierna('musloL', 'pantL', 'pieL', 0, 1.0);
+    pierna('musloR', 'pantR', 'pieR', Math.PI, 0.94);
 
     // la pelvis sube y baja dos veces por zancada, y contragira con el tronco
     if (B.pelvis) {
       const r = rest(B.pelvis);
-      B.pelvis.rotation.y = lerp(B.pelvis.rotation.y, r.y + Math.sin(f) * 0.12 * A, 0.12);
-      B.pelvis.rotation.z = lerp(B.pelvis.rotation.z, r.z + Math.sin(f) * 0.05, 0.10);
+      B.pelvis.rotation.y = lerp(B.pelvis.rotation.y, r.y + Math.sin(f - RET.pelvis) * 0.12 * A, 0.12);
+      // el balanceo de cadera parada tambien deriva con el ruido lento
+      B.pelvis.rotation.z = lerp(B.pelvis.rotation.z,
+        r.z + Math.sin(f) * 0.05 + vaiven * 0.018 * (1 - A), 0.10);
     }
     if (B.spine1) {
       const r = rest(B.spine1);
-      B.spine1.rotation.y = lerp(B.spine1.rotation.y, r.y - Math.sin(f) * 0.09 * A, 0.10);
+      B.spine1.rotation.y = lerp(B.spine1.rotation.y, r.y - Math.sin(f - RET.tronco) * 0.09 * A, 0.10);
       B.spine1.rotation.x = lerp(B.spine1.rotation.x, r.x + breath * 0.010, 0.08);
+      B.spine1.rotation.z = lerp(B.spine1.rotation.z, r.z + vaiven * 0.012, 0.06);
     }
     // el rebote del cuerpo al caminar, y el peso al estar parada
     this.root.position.y += Math.abs(Math.sin(f)) * 0.018 * A * k
@@ -615,10 +687,13 @@ class NervBot {
       B.armR.rotation.z = lerp(B.armR.rotation.z, r.z + wave - apoyo + breath * 0.01, 0.1);
       // el brazo contrabalancea a la pierna del MISMO lado: media vuelta atras
       B.armR.rotation.x = lerp(B.armR.rotation.x,
-        r.x + this.pose.lean * 0.30 - Math.sin(f + Math.PI) * brazoAmp * (1 - this.pose.lean), 0.14);
+        r.x + this.pose.lean * 0.30
+            - columpio(f + Math.PI - RET.brazo) * brazoAmp * (1 - this.pose.lean), 0.14);
       if (B.foreR) {
         const rf = rest(B.foreR);
-        B.foreR.rotation.y = lerp(B.foreR.rotation.y, rf.y + (this.gesture === 'wave' ? Math.sin(g * 11) * 0.4 : 0), 0.18);
+        const saludo = this.gesture === 'wave' ? Math.sin(g * 11) * 0.4 : 0;
+        B.foreR.rotation.y = lerp(B.foreR.rotation.y,
+          rf.y + saludo - Math.max(0, Math.sin(f + Math.PI - RET.mano)) * 0.34 * A, 0.18);
         B.foreR.rotation.z = lerp(B.foreR.rotation.z, rf.z + this.pose.lean * 0.52, 0.08);
       }
     }
@@ -626,18 +701,35 @@ class NervBot {
       const r = rest(B.armL);
       const point = this.gesture === 'point' ? 0.5 : 0;
       B.armL.rotation.z = lerp(B.armL.rotation.z, r.z + point + breath * 0.012, 0.09);
-      B.armL.rotation.x = lerp(B.armL.rotation.x, r.x - Math.sin(f) * brazoAmp, 0.14);
+      B.armL.rotation.x = lerp(B.armL.rotation.x,
+        r.x - columpio(f - RET.brazo) * brazoAmp * 0.96, 0.14);
       if (B.foreL) {
         const rf = rest(B.foreL);
-        // el codo se dobla un poco cuando el brazo va adelante: no es un remo
+        // el codo se dobla mas cuando el brazo va adelante, y llega tarde
         B.foreL.rotation.y = lerp(B.foreL.rotation.y,
-          rf.y - Math.max(0, Math.sin(f)) * 0.30 * A, 0.14);
+          rf.y - Math.max(0, Math.sin(f - RET.mano)) * 0.34 * A, 0.14);
       }
     }
     if (B.clavL && this.pose.lean) {
       const r = rest(B.clavL);
       B.clavL.rotation.z = lerp(B.clavL.rotation.z, r.z + this.pose.lean * 0.12, 0.05);
     }
+    /* Los dedos respiran. Una mano perfectamente quieta se ve muerta aunque
+       este bien puesta; basta con centesimas de radian para que deje de
+       leerse como plastico. Cada dedo lleva su propio desfase. */
+    for (let i = 0; i < this.dedos.length; i++) {
+      const d = this.dedos[i];
+      const r = rest(d.bone); if (!r) continue;
+      const ph = i * 0.7;
+      const micro = Math.sin(t * 0.9 + ph) * 0.012 + Math.sin(t * 0.31 + ph * 0.5) * 0.018;
+      const cierraAlAndar = Math.max(0, Math.sin(f - RET.mano)) * 0.10 * A;
+      if (d.dedo === 'thumb') {
+        d.bone.rotation.z = lerp(d.bone.rotation.z, r.z - micro - cierraAlAndar * 0.6, 0.08);
+      } else {
+        d.bone.rotation.y = lerp(d.bone.rotation.y, r.y + micro + cierraAlAndar, 0.08);
+      }
+    }
+
     if (this.gesture === 'spin') this.root.rotation.y += 0.13;
 
     /* Aqui vivian el plano de corte y el degradado que la encerraban en un
