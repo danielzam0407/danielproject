@@ -168,6 +168,55 @@
     destino.parentNode.insertBefore(a, destino.nextSibling);
   }
 
+  /* El boton de WhatsApp del diseno llega apuntando a #inicio: el prototipo no
+     tenia de donde sacar el numero. El worker si lo sirve en /contacto, y vive
+     alla a proposito — asi el numero no queda escrito en un repo publico,
+     donde lo raspa cualquier bot de spam, y hay un solo lugar donde cambiarlo.
+
+     Se engancha por `data-cursor="whatsapp"`, que es un atributo del propio
+     diseno: sobrevive a una sincronizacion desde Claude Design. Y se re-aplica
+     con un MutationObserver colgado del <body> —nunca de una seccion, que
+     muere con ella— porque el componente se repinta solo y se lleva el href. */
+  var urlWhatsapp = null;
+  var pendiente = false;
+
+  function ponerWhatsapp() {
+    pendiente = false;
+    if (!urlWhatsapp) return;
+    var botones = document.querySelectorAll('[data-cursor="whatsapp"]');
+    for (var i = 0; i < botones.length; i++) {
+      if (botones[i].getAttribute('href') === urlWhatsapp) continue;  // idempotente
+      botones[i].setAttribute('href', urlWhatsapp);
+      botones[i].setAttribute('target', '_blank');
+      botones[i].setAttribute('rel', 'noopener noreferrer');
+    }
+  }
+
+  function agendarWhatsapp() {
+    if (pendiente) return;
+    pendiente = true;
+    /* setTimeout y no requestAnimationFrame: esto no es una animacion, y un
+       parche al DOM que depende del frame loop no se aplica donde el loop no
+       corre (regla 3 de la casa, y el Browser pane es justo ese caso). */
+    setTimeout(ponerWhatsapp, 0);
+  }
+
+  fetch(ENDPOINT + '/contacto')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.whatsapp) return;
+      var u;
+      try { u = new URL(d.whatsapp); } catch (e) { return; }
+      if (u.protocol !== 'https:') return;
+      urlWhatsapp = u.href;
+      ponerWhatsapp();
+    })
+    .catch(function () {});   // sin numero, el boton se queda como estaba
+
+  new MutationObserver(agendarWhatsapp).observe(document.body, {
+    childList: true, subtree: true
+  });
+
   window.nervAgente = {
     preguntar: preguntar,
     pintarAccion: pintarAccion,
