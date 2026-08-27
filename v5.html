@@ -501,8 +501,10 @@ class Component extends DCLogic {
     const show = w >= 880;
     if (this.botWrap) this.botWrap.style.display = show ? 'flex' : 'none';
     if (this.main) {
-      const rail = show ? Math.round(Math.min(470, Math.max(250, w * 0.32))) : 0;
-      this.main.style.paddingRight = rail + 'px';
+      /* Sin mascota, el carril de la derecha no reserva nada: era su espacio
+         y sin ella solo dejaba la pagina coja. Al volver a encenderla se
+         restituye el `Math.round(Math.min(470, Math.max(250, w * 0.32)))`. */
+      this.main.style.paddingRight = '0px';
     }
   }
 
@@ -976,7 +978,10 @@ class Component extends DCLogic {
      desde Claude Design regenera el componente y borra lo que este adentro.
      El mapa de importacion va antes del modulo que lo usa. -->
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<!-- La mascota 3D esta retirada a proposito, no rota. El motor sigue en
+     nerv-bot.js y se vuelve a encender descomentando esta linea:
 <script type="module" src="./nerv-bot.js?v=7"></script>
+     Mientras tanto el carril que le reservaba el contenido vale 0. -->
 <script src="./agente-puente.js?v=2"></script>
 </body>
 </html>
