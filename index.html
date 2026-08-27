@@ -2166,7 +2166,11 @@ class Component extends DCLogic {
 
   .reel-caja { position: relative; z-index: 2; max-width: min(1180px, 100%);
     display: flex; flex-direction: column; gap: 9px; }
-  .reel-marco { position: relative; border: 1px solid rgba(200,220,250,.32);
+  /* `align-self` es lo que le quita el estirón: la caja es tan ancha como el
+     pie sin doblar, y un marco estirado a esa medida deja banda muerta al lado
+     de un video que no sea 16:9. Centrado y del ancho de su contenido. */
+  .reel-marco { position: relative; align-self: center;
+    border: 1px solid rgba(200,220,250,.32);
     background: var(--fondo-hondo, #03060e); }
   /* Corchetes de esquina, como los de las tarjetas. */
   .reel-marco::before, .reel-marco::after { content: ''; position: absolute;
@@ -2175,15 +2179,19 @@ class Component extends DCLogic {
   .reel-marco::after { right: -6px; bottom: -6px; border-left: 0; border-top: 0; }
 
   /* La proporción por defecto. Un carrete que no sea 16:9 la reescribe al
-     abrirse, y así llena el marco en vez de quedarse con barras. */
+     abrirse, y así llena el marco en vez de quedarse con barras. El tamaño
+     vive aquí y no en el video porque de este cajón cuelgan el marco, los
+     corchetes y las rayas (`::after`, inset:0): si el que manda es el video,
+     el escenario se estira al padre y todo eso termina envolviendo una banda
+     muerta al lado del cuadro. Y se declara —no se hereda del archivo— porque
+     con preload="none" el video no tiene tamaño propio (videoWidth = 0) y
+     `width:auto` cae al 300x150 del navegador. */
   .reel-escenario { display: block; line-height: 0; position: relative;
-    --reel-arw: 16; --reel-arh: 9; }
-  /* El tamaño se declara, no se hereda del archivo: con preload="none" el video
-     no tiene tamaño propio (videoWidth = 0) y `width:auto` cae al 300x150 que
-     el navegador usa por defecto. object-fit acomoda lo que no cuadre. */
-  .reel-escenario .reel-v { display: block;
+    --reel-arw: 16; --reel-arh: 9;
     width: min(92vw, 1180px, calc(72vh * var(--reel-arw) / var(--reel-arh)));
-    aspect-ratio: var(--reel-arw) / var(--reel-arh); height: auto; max-width: 100%;
+    aspect-ratio: var(--reel-arw) / var(--reel-arh); max-width: 100%; }
+  /* El video llena el escenario; object-fit acomoda lo que no cuadre. */
+  .reel-escenario .reel-v { display: block; width: 100%; height: 100%;
     object-fit: contain; background: var(--fondo-hondo, #03060e); cursor: pointer; }
   /* Rayas sobre el video: lo amarra al resto de la página. */
   .reel-escenario::after { content: ''; position: absolute; inset: 0; z-index: 2;
@@ -2235,9 +2243,12 @@ class Component extends DCLogic {
   /* Qué carrete va en qué tarjeta. Cambiar el reparto es cambiar esta tabla —
      nada más. La clave es el id que ya usa el proyecto en su ficha. */
   var CARRETES = {
-    // `ar` sólo hace falta cuando el video no es 16:9. La consola se grabó en
-    // 4:3 y sin decirlo saldría con dos barras a los lados.
-    '001': { src: 'media/work1.mp4', ar: [4, 3] },
+    // `ar` sólo hace falta cuando el video no es 16:9, y hoy ninguno lo es: los
+    // tres están en 1280x720 a 30 fps. El 001 llevaba `[4, 3]` mientras fue una
+    // grabación de pantalla de la consola; ahora se renderiza en 16:9 como los
+    // otros dos. El mecanismo se queda: es lo que sostiene al siguiente que no
+    // cuadre, y el marco ya sabe ceñirse a la proporción que le digan.
+    '001': { src: 'media/work1.mp4' },
     '002': { src: 'media/work2.mp4' },
     '003': { src: 'media/work3.mp4' }
   };
