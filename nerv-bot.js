@@ -213,9 +213,23 @@ class NervBot {
       b.rotation.copy(r);
     };
 
-    // los brazos cuelgan, algo adelante y hacia adentro: no en cruz
-    mover('armL', 0.10, 0.00, -0.86);
-    mover('armR', 0.10, 0.00, -0.86);
+    /* Los brazos cuelgan con un hueco de axila, no pegados al cuerpo.
+
+       El numero NO se estima: se barrio el angulo midiendo a que distancia del
+       eje del cuerpo cae la mano. El hombro esta a 0.119 del eje y una mano
+       relajada tiene que caer entre 0.13 y 0.19 -- o sea un poco MAS afuera
+       que el hombro, que es lo que abre la axila.
+
+           z = -1.65  ->  0.006   la mano cruza el eje: dentro del cuerpo
+           z = -1.55  ->  0.057   metida en la cadera
+           z = -1.45  ->  0.108   rozando
+           z = -1.35  ->  0.160   <- aqui
+           z = -1.25  ->  0.212   demasiado abierta
+
+       Estaba en -1.543: le pasaba de noventa grados al bajarlos desde la pose
+       en cruz, y las manos terminaban adentro. */
+    mover('armL', 0.10, 0.00, -0.667);
+    mover('armR', 0.10, 0.00, -0.655);   // asimetria: ni los brazos son gemelos
     // el codo NUNCA esta recto en alguien de pie
     mover('foreL', 0, -0.11, -0.07);
     mover('foreR', 0, -0.10, -0.07);   // asimetria tambien aqui
