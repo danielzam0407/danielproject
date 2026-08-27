@@ -481,12 +481,38 @@ body, body * { transition: background-color .55s ease, color .55s ease,
    Claude Design lo repone, sigue colapsado y nuestra cara sigue mandando. */
 #dc-root{display:none !important}
 
+/* MAS FONDO. Rejilla milimetrada, la familia A del catalogo: dos escalas, una
+   fina de 8px y el registro cada 40. No es decoracion -- es el plano sobre el
+   que estan hechas las anotaciones, y sin el las reglas de pelo flotan. Va a
+   opacidad muy baja: tiene que sentirse, no leerse. */
+.v4-fondo{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(var(--tinta-rgb,8,18,58),.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(var(--tinta-rgb,8,18,58),.055) 1px,transparent 1px),
+    linear-gradient(rgba(var(--tinta-rgb,8,18,58),.11) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(var(--tinta-rgb,8,18,58),.11) 1px,transparent 1px);
+  background-size:8px 8px,8px 8px,40px 40px,40px 40px}
+.v4{position:relative}
+/* El alambre tambien se excluye: es fondo. Sin esta segunda exclusion la
+   regla le ganaba en especificidad a su `position:absolute` y el canvas
+   entraba al flujo, abriendo un hueco de su alto encima de la barra. */
+.v4 > *:not(.v4-fondo):not(.v4-alambre){position:relative;z-index:1}
+/* El alambre: una esfera de vectores que se apoya en el vacio de la derecha.
+   Segunda pieza de la familia G, la misma que la rafaga. */
+.v4-alambre{position:absolute;right:4%;top:64%;width:clamp(120px,13vw,230px);
+  aspect-ratio:1;z-index:0;opacity:.5;pointer-events:none}
+@media (max-width:900px){ .v4-alambre{display:none} }
+
 .v4{ --v4-pad:clamp(20px,4vw,72px); --v4-tope:1560px; --v4-flanco:56px;
   font-family:'Archivo','Space Grotesk',system-ui,sans-serif;
   color:var(--tinta,#08123a); background:var(--papel,#f4f7fc);
   padding-left:var(--v4-flanco); position:relative; overflow-x:clip }
 .v4 *{box-sizing:border-box}
-.v4-env{max-width:var(--v4-tope);margin:0 auto;padding-inline:var(--v4-pad)}
+/* Anclado a la IZQUIERDA, no centrado. En pantalla ancha el centrado dejaba
+   un pasillo muerto entre el flanco y el titulo; asi el texto arranca donde
+   arranca la retícula y el aire queda del lado de la rafaga, que es donde
+   tiene que estar. Gramatica de cartel: se lee desde el canto izquierdo. */
+.v4-env{max-width:var(--v4-tope);margin:0;padding-inline:clamp(16px,2.4vw,44px)}
 .v4-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* Tres tamaños y ni uno más. */
@@ -634,6 +660,27 @@ body, body * { transition: background-color .55s ease, color .55s ease,
 .v4-paso p{margin:0;font-size:14.5px;line-height:1.5}
 
 /* ── revelado ───────────────────────────────────────────────────────────── */
+/* LA ENTRADA, en tres tiempos: primero se construye el fondo, luego la barra,
+   luego el cuerpo. Se declara con retardos, no con un guion en JS, para que
+   un navegador sin JS no se quede a media construccion.
+   Regla 3: todo termina en `forwards` y en su estado final. */
+.v4entra .v4-fondo{animation:v4-fondo-in 900ms cubic-bezier(.16,.9,.3,1) both}
+.v4entra .v4-barra{animation:v4-cae 620ms cubic-bezier(.16,.9,.3,1) 620ms both}
+.v4entra .v4-hero-sup{animation:v4-sube 620ms cubic-bezier(.16,.9,.3,1) 1050ms both}
+.v4entra .v4-hero .v4-dsp{animation:v4-sube 760ms cubic-bezier(.16,.9,.3,1) 1180ms both}
+.v4entra .v4-hero .v4-lede{animation:v4-sube 700ms cubic-bezier(.16,.9,.3,1) 1400ms both}
+.v4entra .v4-demo{animation:v4-sube 700ms cubic-bezier(.16,.9,.3,1) 1560ms both}
+.v4entra .v4-telem{animation:v4-aparece 900ms ease 1700ms both}
+.v4entra .v4-flanco{animation:v4-aparece 700ms ease 400ms both}
+@keyframes v4-fondo-in{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+@keyframes v4-cae{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+@keyframes v4-sube{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes v4-aparece{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){
+  .v4entra .v4-fondo,.v4entra .v4-barra,.v4entra .v4-hero-sup,.v4entra .v4-hero .v4-dsp,
+  .v4entra .v4-hero .v4-lede,.v4entra .v4-demo,.v4entra .v4-telem,.v4entra .v4-flanco{animation:none}
+}
+
 .v4mov [data-v4rev]{opacity:0;transform:translateY(14px);
   transition:opacity 700ms ease,transform 700ms cubic-bezier(.16,.9,.3,1)}
 .v4mov [data-v4rev].v4visto{opacity:1;transform:none}
@@ -699,6 +746,8 @@ body, body * { transition: background-color .55s ease, color .55s ease,
      `.reel-v`— para no tocar ese motor, que funciona.
      ════════════════════════════════════════════════════════════════════════ -->
 <div class="v4">
+<div class="v4-fondo" aria-hidden="true"></div>
+<canvas class="v4-alambre" data-ins="alambre" data-semilla="portada" aria-hidden="true"></canvas>
 
 <!-- ── flanco: la escala que mide la página ─────────────────────────────── -->
 <aside class="v4-flanco" aria-hidden="true">
@@ -916,6 +965,15 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     if (!cara || cara.hasAttribute('data-v4-listo')) return;
     cara.setAttribute('data-v4-listo', '');
 
+    /* La entrada por etapas. Sólo con el motor puesto: si el JS no corre o el
+       sistema pide movimiento reducido, esta clase nunca entra y la página
+       nace construida. Se quita a los 4 s para que no estorbe a nada después
+       -- las animaciones ya terminaron en su estado final (`both`). */
+    if (raiz.classList.contains('v4mov')) {
+      cara.classList.add('v4entra');
+      setTimeout(function () { cara.classList.remove('v4entra'); }, 4000);
+    }
+
     /* ── revelado ──────────────────────────────────────────────────────── */
     if (raiz.classList.contains('v4mov')) {
       var ojo = new IntersectionObserver(function (filas) {
@@ -943,22 +1001,79 @@ body, body * { transition: background-color .55s ease, color .55s ease,
     var telemCaja = document.getElementById('v4-telem');
     var marcas = [];
 
-    /* Semilla fija: mismo dibujo en cada carga. Un adorno que cambia solo es
+    /* ── LAS COORDENADAS NO SE ENCIMAN CON EL TEXTO ────────────────────
+       Antes se sembraban al azar sobre todo el hero y algunas caian encima del
+       titular y de las pistas del agente. No se arregla moviendolas a mano: se
+       arregla MIDIENDO. Se toman las cajas de todo lo que es texto de leer, y
+       cada marca se prueba contra ellas hasta encontrar hueco. Si en veinte
+       intentos no lo halla, esa marca no existe -- el vacio tambien es un
+       elemento, y una coordenada encima de una palabra no es densidad, es
+       suciedad.
+
+       Semilla fija: mismo dibujo en cada carga. Un adorno que cambia solo es
        ruido; uno que no cambia es una marca. */
     var s = 20260827;
     function azar() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
-    if (telemCaja && !telemCaja.childNodes.length) {
-      for (var i = 0; i < 28; i++) {
+
+    function sembrarTelemetria() {
+      if (!telemCaja) return;
+      telemCaja.innerHTML = '';
+      marcas.length = 0;
+      s = 20260827;
+
+      var hero = telemCaja.parentElement;
+      var hr = hero.getBoundingClientRect();
+      if (hr.width < 10) return;
+
+      /* Lo que hay que esquivar: todo texto legible del hero, mas el flanco. */
+      var AIRE = 14;
+      var vetos = [];
+      hero.querySelectorAll('.v4-dsp, .v4-lede, .v4-hero-sup, .v4-demo, .v4-kanji')
+        .forEach(function (n) {
+          var r = n.getBoundingClientRect();
+          if (r.width < 4 || r.height < 4) return;
+          vetos.push({ x1: r.left - hr.left - AIRE, y1: r.top - hr.top - AIRE,
+                       x2: r.right - hr.left + AIRE, y2: r.bottom - hr.top + AIRE });
+        });
+
+      var ANCHO = 108, ALTO = 12;   // tamano aproximado de una marca a 6.5px
+      var puestas = 0;
+      for (var i = 0; i < 30; i++) {
+        var px = 0, py = 0, libre = false;
+        for (var intento = 0; intento < 20 && !libre; intento++) {
+          px = 8 + azar() * (hr.width - ANCHO - 16);
+          py = 10 + azar() * (hr.height - ALTO - 20);
+          libre = true;
+          for (var v = 0; v < vetos.length; v++) {
+            var q = vetos[v];
+            if (px < q.x2 && px + ANCHO > q.x1 && py < q.y2 && py + ALTO > q.y1) { libre = false; break; }
+          }
+        }
+        if (!libre) continue;   // sin hueco: esta marca no va
         var n = document.createElement('span');
-        var x = 4 + azar() * 90, y = 5 + azar() * 88;
-        n.style.cssText = 'position:absolute;left:' + x.toFixed(1) + '%;top:' + y.toFixed(1) +
-          '%;font-family:"IBM Plex Mono",monospace;font-size:6.5px;letter-spacing:.16em;' +
+        n.style.cssText = 'position:absolute;left:' + Math.round(px) + 'px;top:' + Math.round(py) +
+          'px;font-family:"IBM Plex Mono",monospace;font-size:6.5px;letter-spacing:.16em;' +
           'color:rgba(var(--tinta-rgb,8,18,58),.42);white-space:nowrap';
-        n.setAttribute('data-x', String(Math.round(x * 24)));
+        n.setAttribute('data-x', String(Math.round(px * 2.4)));
         telemCaja.appendChild(n);
         marcas.push(n);
+        puestas++;
       }
+      return puestas;
     }
+
+    /* Se re-siembra cuando cambia el tamano: las cajas del texto se mueven y
+       un hueco de antes puede ser una palabra ahora. */
+    var relojSiembra = null;
+    addEventListener('resize', function () {
+      clearTimeout(relojSiembra);
+      relojSiembra = setTimeout(function () { sembrarTelemetria(); medir(); }, 220);
+    });
+    /* Las fuentes cambian las cajas al cargar: se siembra despues de que asienten. */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { sembrarTelemetria(); medir(); });
+    }
+    sembrarTelemetria();
 
     function medir() {
       var alto = document.documentElement.scrollHeight - innerHeight;
