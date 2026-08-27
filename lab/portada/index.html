@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nerv — propuesta de portada v2</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../insignia/insignia.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROPUESTA DE PORTADA — v2: densidad y movimiento
+   Sobre `lab/insignia/`. No toca index.html.
+
+   LA TESIS (v1, aprobada): el hero no DESCRIBE el agente, lo ES. Quien no sabe
+   qué es un agente no necesita la palabra: necesita ver una página cambiar
+   porque él lo pidió.
+
+   LO QUE AÑADE v2. El cuerpo de v1 era legible y tibio -- se leía como una
+   buena agencia genérica. Aquí entra la densidad del catálogo y, sobre todo,
+   un LENGUAJE DE MOVIMIENTO DERIVADO DE LA DOCTRINA, no pegado encima:
+
+     · Las reglas se DIBUJAN al entrar. La regla 5 dice que una regla corre,
+       gira noventa grados y se detiene: verla trazarse es esa regla en el
+       tiempo. Es la animación más de la casa que existe.
+     · La ráfaga se REVELA desde el nudo hacia afuera. Cientos de líneas
+       convergiendo es el dibujo de lo que hace el estudio; revelarla desde el
+       centro lo dice al derecho.
+     · La telemetría dice el SCROLL DE VERDAD. Regla 3 de composición: la
+       información falsa se sostiene si tiene sistema. Aquí ni siquiera es
+       falsa -- `y:` es la posición real en el documento.
+     · La escala graduada del flanco MIDE la página. Es un instrumento, no un
+       adorno: marca dónde vas de 0000 a 9999.
+
+   REGLA 3 DE LA CASA -- nada invisible esperando animación. El estado base de
+   TODO es visible. Sólo se esconde si `html` lleva `.mov`, que la pone el
+   script después de comprobar que hay IntersectionObserver y que el sistema no
+   pide movimiento reducido. Sin JS, o con movimiento reducido, la página se ve
+   entera y quieta. Se puede comprobar quitando esa clase en la consola.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --papel:#f4f7fc; --tinta:#0a0f1c; --senal:#1a4cff;
+  --pelo:rgba(10,15,28,.9); --tenue:rgba(10,15,28,.52);
+  --pad:clamp(20px,4vw,72px); --tope:1560px; --flanco:56px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--papel);color:var(--tinta)}
+body{font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  overflow-x:clip}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.env{max-width:var(--tope);margin:0 auto;padding-inline:var(--pad)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Tres tamaños, ni uno más: 6px textura, 10px rótulo, display. */
+.sup{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.34em;
+  text-transform:uppercase;color:var(--tenue)}
+.sup--senal{color:var(--senal)}
+.dsp{font-weight:800;letter-spacing:-.035em;line-height:.9;
+  font-size:clamp(44px,8.2vw,132px)}
+.lede{font-size:clamp(17px,1.5vw,22px);line-height:1.5;max-width:56ch;color:#16203a}
+
+/* ── EL FLANCO: la escala que mide la página ───────────────────────────────
+   Un instrumento, no un adorno. La cifra es la posición real en el documento,
+   normalizada a cuatro dígitos. Se oculta en móvil: ahí el ancho es carne. */
+.flanco{position:fixed;left:0;top:0;bottom:0;width:var(--flanco);z-index:40;
+  border-right:1px solid var(--pelo);background:var(--papel);
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding-block:18px;pointer-events:none}
+.flanco-marca{font-weight:800;font-size:13px;letter-spacing:-.02em;writing-mode:vertical-rl}
+.flanco-pista{position:relative;flex:1;width:1px;background:rgba(10,15,28,.22);margin-block:16px}
+.flanco-nudo{position:absolute;left:50%;width:11px;height:11px;margin-left:-5px;
+  background:var(--senal);transform:translateY(-50%)}
+.flanco-cifra{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;
+  writing-mode:vertical-rl;color:var(--senal)}
+body{padding-left:var(--flanco)}
+@media (max-width:860px){ .flanco{display:none} body{padding-left:0} }
+
+/* ── HERO ─────────────────────────────────────────────────────────────────── */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
+  justify-content:center;overflow:clip;padding-block:92px 40px}
+.hero-rafaga{position:absolute;inset:-12% -6% -6% 32%;z-index:0;pointer-events:none}
+.hero-rafaga canvas{width:100%;height:100%;display:block}
+.hero-cuerpo{position:relative;z-index:2}
+.hero .dsp{margin:0 0 22px}
+.hero .lede{margin:0 0 40px}
+.marca{display:flex;align-items:baseline;gap:14px;margin-bottom:clamp(36px,6vh,88px)}
+.marca b{font-weight:800;font-size:19px;letter-spacing:-.02em}
+
+/* La ráfaga se revela desde el nudo hacia afuera. Máscara radial: canto duro,
+   nada de blur -- el círculo crece y ya. */
+.mov .hero-rafaga{-webkit-mask-image:radial-gradient(circle at 62% 46%, #000 var(--r,0%), transparent calc(var(--r,0%) + 2%));
+  mask-image:radial-gradient(circle at 62% 46%, #000 var(--r,0%), transparent calc(var(--r,0%) + 2%));
+  animation:abrir-rafaga 1900ms cubic-bezier(.16,.9,.3,1) 120ms forwards}
+@keyframes abrir-rafaga{ from{--r:0%} to{--r:150%} }
+@property --r{syntax:'<percentage>';inherits:false;initial-value:0%}
+
+/* Kanji de margen. Es vocabulario de la insignia (familia D) y dice algo
+   coherente: 観測 = observación, que es de lo que va el estudio. No es adorno
+   ni chiste -- si alguna vez deja de significar algo, se quita. */
+.kanji-margen{position:absolute;right:calc(var(--pad) * .5);top:14%;z-index:1;
+  writing-mode:vertical-rl;font-size:clamp(38px,4.4vw,68px);font-weight:600;
+  letter-spacing:.1em;color:rgba(10,15,28,.11);pointer-events:none}
+
+/* ── LA DEMOSTRACIÓN ──────────────────────────────────────────────────────── */
+.demo{position:relative;z-index:2;max-width:668px}
+.demo-rotulo{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+/* Corchetes: cuatro esquinas, cero lados. El elemento enmarca sin encerrar. */
+.demo-marco{position:relative;padding:14px}
+.demo-marco::before,.demo-marco::after{content:'';position:absolute;width:16px;height:16px;
+  border:1.5px solid var(--senal)}
+.demo-marco::before{left:0;top:0;border-right:0;border-bottom:0}
+.demo-marco::after{right:0;bottom:0;border-left:0;border-top:0}
+.demo-caja{display:flex;border:1px solid var(--pelo);background:#fff}
+.demo-caja input{flex:1;min-width:0;border:0;background:transparent;padding:19px 20px;
+  font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--tinta)}
+.demo-caja input::placeholder{color:rgba(10,15,28,.42)}
+.demo-caja input:focus{outline:2px solid var(--senal);outline-offset:-2px}
+.demo-caja button{border:0;border-left:1px solid var(--pelo);background:var(--tinta);
+  color:#fff;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.2em;
+  text-transform:uppercase;padding-inline:26px;cursor:pointer;transition:background .12s}
+.demo-caja button:hover{background:var(--senal)}
+.demo-pistas{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pista{border:1px solid rgba(10,15,28,.28);background:transparent;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16203a;padding:7px 12px;
+  transition:border-color .12s,color .12s}
+.pista:hover{border-color:var(--senal);color:var(--senal)}
+.demo-nota{margin-top:14px;font-size:12.5px;color:var(--tenue);max-width:52ch;line-height:1.45}
+
+/* ── LA TIRA: el único elemento que corre solo ────────────────────────────── */
+.tira{border-block:1px solid var(--pelo);overflow:hidden;padding-block:11px;
+  background:var(--papel)}
+.tira-int{display:flex;gap:52px;white-space:nowrap;width:max-content}
+.mov .tira-int{animation:correr 38s linear infinite}
+@keyframes correr{ to{ transform:translateX(-50%) } }
+.tira span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--tenue)}
+.tira b{color:var(--senal);font-weight:500}
+
+/* ── SECCIONES ────────────────────────────────────────────────────────────── */
+.sec{padding-block:clamp(76px,11vh,150px);position:relative}
+.sec-cab{display:flex;align-items:baseline;gap:18px;margin-bottom:12px}
+.sec-cab h2{margin:0;font-weight:800;letter-spacing:-.03em;font-size:clamp(28px,4vw,56px)}
+/* Las reglas se dibujan. Corren, y se detienen: no cierran nada. */
+.regla{height:1px;background:var(--pelo);transform-origin:left center;margin-bottom:34px}
+.mov .regla{transform:scaleX(0);transition:transform 900ms cubic-bezier(.16,.9,.3,1)}
+.mov .visto .regla,.mov .regla.visto{transform:scaleX(1)}
+
+.tres{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:1px;
+  background:var(--pelo);border:1px solid var(--pelo)}
+.tres > div{background:var(--papel);padding:30px 26px 34px;position:relative}
+/* Marco quebrado: el elemento más característico del catálogo. Una escuadra
+   que entra por arriba y se corta. */
+.tres > div::before{content:'';position:absolute;left:26px;top:0;width:38%;height:1px;
+  background:var(--senal);transform-origin:left;}
+.mov .tres > div::before{transform:scaleX(0);transition:transform 700ms cubic-bezier(.16,.9,.3,1)}
+.mov .visto .tres > div::before{transform:scaleX(1)}
+.mov .visto .tres > div:nth-child(2)::before{transition-delay:120ms}
+.mov .visto .tres > div:nth-child(3)::before{transition-delay:240ms}
+.tres h3{margin:13px 0 10px;font-size:20px;font-weight:600;letter-spacing:-.015em}
+.tres p{margin:0;font-size:15.5px;line-height:1.55;color:#16203a}
+
+/* ── EL TRABAJO: el resultado en grande, la técnica en 6px ────────────────── */
+.obras{display:grid;gap:1px;background:var(--pelo);border:1px solid var(--pelo)}
+.obra{background:var(--papel);display:grid;grid-template-columns:78px 232px 1fr auto;
+  gap:26px;align-items:center;padding:22px 26px;position:relative}
+.obra-num{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--senal)}
+/* La pieza se enseña, no se cuenta: el reel de verdad, mudo y en bucle. */
+.obra-reel{position:relative;aspect-ratio:16/9;border:1px solid var(--pelo);
+  background:#0a0f1c;overflow:hidden}
+.obra-reel video{width:100%;height:100%;object-fit:cover;display:block;
+  filter:grayscale(1) contrast(1.12);transition:filter .2s}
+.obra:hover .obra-reel video{filter:none}
+.obra-reel::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(10,15,28,.16) 0 1px,transparent 1px 3px)}
+.obra h3{margin:0 0 6px;font-size:clamp(19px,2vw,27px);font-weight:600;letter-spacing:-.02em}
+.obra p{margin:0;font-size:14.5px;color:#16203a;line-height:1.5}
+.obra .tec{margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--tenue)}
+.obra-ver{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;border:1px solid var(--pelo);padding:11px 16px;white-space:nowrap;
+  transition:background .12s,color .12s,border-color .12s}
+.obra:hover .obra-ver{background:var(--senal);color:#fff;border-color:var(--senal)}
+
+/* ── LOS PASOS ────────────────────────────────────────────────────────────── */
+.pasos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:26px;margin-top:8px}
+.paso{border-top:2px solid var(--tinta);padding-top:16px;transform-origin:left}
+.mov .paso{border-top-color:var(--senal)}
+.mov .paso{transform:scaleX(.001);transition:transform 620ms cubic-bezier(.16,.9,.3,1)}
+.mov .visto .paso{transform:scaleX(1)}
+.mov .visto .paso:nth-child(2){transition-delay:100ms}
+.mov .visto .paso:nth-child(3){transition-delay:200ms}
+.mov .visto .paso:nth-child(4){transition-delay:300ms}
+.paso .n{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--senal)}
+.paso h3{margin:8px 0 8px;font-size:17.5px;font-weight:600}
+.paso p{margin:0;font-size:14.5px;line-height:1.5;color:#16203a}
+
+/* ── REVELADO GENERAL ─────────────────────────────────────────────────────── */
+.mov [data-revela]{opacity:0;transform:translateY(14px);
+  transition:opacity 700ms ease,transform 700ms cubic-bezier(.16,.9,.3,1)}
+.mov [data-revela].visto{opacity:1;transform:none}
+
+/* ── CIERRE: negro total ──────────────────────────────────────────────────── */
+.cierre{background:#0a0a0a;color:var(--papel);padding-block:clamp(76px,12vh,152px);
+  position:relative;overflow:clip}
+.cierre .lede{color:rgba(244,247,252,.78)}
+.cierre .sup{color:rgba(244,247,252,.6)}
+/* Semitono: trama de imprenta, no pantalla encendida. */
+.cierre::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(rgba(244,247,252,.5) 1px, transparent 1.4px);
+  background-size:7px 7px}
+.cierre-rej{position:absolute;inset:0;pointer-events:none;opacity:.14;
+  background-image:linear-gradient(rgba(244,247,252,.9) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(244,247,252,.9) 1px,transparent 1px);
+  background-size:40px 40px}
+.cierre-acc{display:flex;flex-wrap:wrap;gap:14px;margin-top:36px}
+.btn{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.2em;
+  text-transform:uppercase;padding:17px 26px;border:1px solid var(--papel);
+  color:var(--papel);text-decoration:none;transition:background .13s,color .13s}
+.btn--p{background:var(--senal);border-color:var(--senal)}
+.btn:hover{background:var(--papel);color:#0a0a0a;border-color:var(--papel)}
+.avatar-hueco{aspect-ratio:3/4;border:1px solid rgba(244,247,252,.34);position:relative;
+  display:grid;place-items:center;min-height:290px}
+.avatar-hueco::before,.avatar-hueco::after{content:'';position:absolute;width:18px;height:18px;
+  border:1.5px solid var(--senal)}
+.avatar-hueco::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+.avatar-hueco::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+
+@media (max-width:900px){
+  .obra{grid-template-columns:1fr;gap:14px}
+  .obra-reel{max-width:340px}
+  .obra-ver{justify-self:start}
+  .hero-rafaga{inset:-6% -22% auto -22%;height:54vh}
+  .kanji-margen{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  .mov .tira-int{animation:none}
+  .mov .hero-rafaga{animation:none;-webkit-mask-image:none;mask-image:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── EL FLANCO ────────────────────────────────────────────────────────── -->
+<aside class="flanco" aria-hidden="true">
+  <span class="flanco-marca">nerv</span>
+  <div class="flanco-pista"><i class="flanco-nudo" id="nudo" style="top:0"></i></div>
+  <span class="flanco-cifra" id="cifra">0000</span>
+</aside>
+
+<!-- ── HERO ─────────────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="hero-rafaga" aria-hidden="true">
+    <canvas data-ins="rafaga" data-semilla="portada-nerv" data-hilos="280"></canvas>
+  </div>
+  <div id="telem" aria-hidden="true" style="position:absolute;inset:0;z-index:1"></div>
+  <div class="kanji-margen" aria-hidden="true">観測</div>
+
+  <div class="env hero-cuerpo">
+    <div class="marca">
+      <b>nerv</b>
+      <span class="sup">estudio de diseño y código · monterrey</span>
+    </div>
+
+    <h1 class="dsp">Hacemos sitios<br>que contestan.</h1>
+
+    <p class="lede">
+      Diseñados desde cero para tu negocio — sin plantillas. Y con alguien
+      adentro que atiende a tus clientes cuando tú no puedes.
+    </p>
+
+    <div class="demo">
+      <div class="demo-rotulo">
+        <span class="sup sup--senal">▶</span>
+        <span class="sup">este sitio es uno · dile cómo lo quieres</span>
+      </div>
+      <div class="demo-marco">
+        <form class="demo-caja" id="demo-form">
+          <label class="sr" for="demo-txt">Pídele un cambio a este sitio</label>
+          <input id="demo-txt" type="text" autocomplete="off" placeholder="ponlo en modo oscuro…">
+          <button type="submit">probar</button>
+        </form>
+      </div>
+      <div class="demo-pistas">
+        <button class="pista" type="button">ponlo en modo oscuro</button>
+        <button class="pista" type="button">hazlo más serio</button>
+        <button class="pista" type="button">enséñame tu trabajo</button>
+        <button class="pista" type="button">¿cuánto cuesta un sitio?</button>
+      </div>
+      <p class="demo-nota">
+        Se cambia de verdad, aquí mismo, mientras lo lees. Lo mismo que puede
+        atender a los clientes de tu negocio.
+      </p>
+    </div>
+  </div>
+</header>
+
+<!-- ── LA TIRA ──────────────────────────────────────────────────────────── -->
+<div class="tira" aria-hidden="true">
+  <div class="tira-int" id="tira"></div>
+</div>
+
+<!-- ── 01 QUÉ HACEMOS ───────────────────────────────────────────────────── -->
+<section class="sec env" data-sec>
+  <div class="sec-cab" data-revela>
+    <span class="sup sup--senal">[ 01 ]</span>
+    <h2>Qué hacemos</h2>
+  </div>
+  <hr class="regla">
+  <div class="tres">
+    <div data-revela>
+      <span class="sup">a medida</span>
+      <h3>Un sitio que no se parece a otro</h3>
+      <p>Se diseña desde cero para tu negocio. Nada de plantillas compradas
+         donde sólo cambia el logo.</p>
+    </div>
+    <div data-revela>
+      <span class="sup">atiende solo</span>
+      <h3>Alguien adentro que contesta</h3>
+      <p>Responde a tus clientes, entiende qué están pidiendo y te pasa el
+         recado con nombre y teléfono. A las tres de la mañana también.</p>
+    </div>
+    <div data-revela>
+      <span class="sup">movimiento</span>
+      <h3>3D y animación cuando suma</h3>
+      <p>No de adorno: cuando ayuda a que se entienda más rápido lo que vendes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 02 EL TRABAJO ────────────────────────────────────────────────────── -->
+<section class="sec env" data-sec>
+  <div class="sec-cab" data-revela>
+    <span class="sup sup--senal">[ 02 ]</span>
+    <h2>El trabajo</h2>
+  </div>
+  <hr class="regla">
+  <div class="obras">
+    <article class="obra" data-revela>
+      <span class="obra-num">001</span>
+      <div class="obra-reel"><video src="/media/work1.mp4" muted loop playsinline preload="metadata"></video></div>
+      <div>
+        <h3>Un tablero que contesta</h3>
+        <p>Centro de mando con metas, inventario y un asistente que sabe en qué
+           anda el estudio. Escribes y te responde mientras escribe.</p>
+        <div class="tec">consola local · tres pantallas · agente en vivo · retrato 3d</div>
+      </div>
+      <span class="obra-ver">ver reel</span>
+    </article>
+    <article class="obra" data-revela>
+      <span class="obra-num">002</span>
+      <div class="obra-reel"><video src="/media/work2.mp4" muted loop playsinline preload="metadata"></video></div>
+      <div>
+        <h3>Un portafolio que se camina</h3>
+        <p>Un pasillo con una puerta por sección: entras a la habitación en vez
+           de bajar por una página. Sin plugins de 3D — puro navegador.</p>
+        <div class="tec">css 3d · cinco habitaciones · teclas 1-5</div>
+      </div>
+      <span class="obra-ver">ver reel</span>
+    </article>
+    <article class="obra" data-revela>
+      <span class="obra-num">003</span>
+      <div class="obra-reel"><video src="/media/work3.mp4" muted loop playsinline preload="metadata"></video></div>
+      <div>
+        <h3>Un sitio que se maneja con el teclado</h3>
+        <p>Menú de comando, cuatro secciones, cero ratón. Para quien vive en
+           atajos y odia dar clics.</p>
+        <div class="tec">menú de comando · flechas · cuatro secciones</div>
+      </div>
+      <span class="obra-ver">ver reel</span>
+    </article>
+  </div>
+</section>
+
+<!-- ── 03 CÓMO ES TRABAJAR CONMIGO ──────────────────────────────────────── -->
+<section class="sec env" data-sec>
+  <div class="sec-cab" data-revela>
+    <span class="sup sup--senal">[ 03 ]</span>
+    <h2>Cómo es trabajar conmigo</h2>
+  </div>
+  <hr class="regla">
+  <div class="pasos">
+    <div class="paso">
+      <span class="n">01</span><h3>Me cuentas</h3>
+      <p>Aquí mismo o por WhatsApp. No hace falta que sepas términos técnicos:
+         basta con qué vendes y a quién.</p>
+    </div>
+    <div class="paso">
+      <span class="n">02</span><h3>Te digo qué haría y cuánto</h3>
+      <p>Una propuesta con alcance y precio cerrado, sin compromiso. Si no es
+         para ti, te lo digo.</p>
+    </div>
+    <div class="paso">
+      <span class="n">03</span><h3>Lo construyo a la vista</h3>
+      <p>Ves avanzar el sitio en una liga privada desde el primer día. Nada de
+         desaparecer un mes.</p>
+    </div>
+    <div class="paso">
+      <span class="n">04</span><h3>Queda tuyo y funcionando</h3>
+      <p>Publicado, con tu dominio y tu correo, y te enseño a moverlo. El
+         código es tuyo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CIERRE ───────────────────────────────────────────────────────────── -->
+<section class="cierre" data-sec>
+  <div class="cierre-rej" aria-hidden="true"></div>
+  <div class="env" style="position:relative;z-index:2;display:grid;
+       grid-template-columns:minmax(0,1.5fr) minmax(0,.75fr);gap:clamp(28px,5vw,80px);align-items:center">
+    <div data-revela>
+      <span class="sup">[ 04 ] empezar</span>
+      <h2 class="dsp" style="margin:18px 0 20px">Pregúntale<br>lo que sea.</h2>
+      <p class="lede">
+        Cuéntale qué negocio tienes y qué necesitas. Te dice qué se puede
+        hacer, cuánto cuesta más o menos, y me pasa el recado.
+      </p>
+      <div class="cierre-acc">
+        <a class="btn btn--p" href="#demo-txt">hablar con el asistente</a>
+        <a class="btn" href="#">whatsapp</a>
+        <a class="btn" href="mailto:dani@nervcenter.online">correo</a>
+      </div>
+    </div>
+    <div class="avatar-hueco" data-revela>
+      <span class="sup">hueco del avatar 3d</span>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="../insignia/insignia.js"></script>
+<script>
+(function () {
+  'use strict';
+  var raiz = document.documentElement;
+  var quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* REGLA 3 DE LA CASA. `.mov` es lo único que esconde algo, y sólo se pone si
+     hay con qué revelarlo. Sin JS, sin IntersectionObserver o con movimiento
+     reducido, la página nace entera y visible. Nada se queda esperando. */
+  if ('IntersectionObserver' in window && !quieto) raiz.classList.add('mov');
+
+  /* ── revelado ────────────────────────────────────────────────────────── */
+  if (raiz.classList.contains('mov')) {
+    var ojo = new IntersectionObserver(function (filas) {
+      filas.forEach(function (f) {
+        if (!f.isIntersecting) return;
+        f.target.classList.add('visto');
+        ojo.unobserve(f.target);
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    document.querySelectorAll('[data-revela],[data-sec],.regla').forEach(function (n) { ojo.observe(n); });
+
+    /* Cinturón: si algo no se reveló en 4 s —pestaña oculta, observador que no
+       entrega, un pane que no compone— se descubre a mano. La regla dice que
+       todo revelado necesita salida al estado final que no dependa del bucle. */
+    setTimeout(function () {
+      document.querySelectorAll('[data-revela]:not(.visto),[data-sec]:not(.visto),.regla:not(.visto)')
+        .forEach(function (n) { n.classList.add('visto'); });
+    }, 4000);
+  }
+
+  /* ── el flanco mide la página de verdad ──────────────────────────────── */
+  var nudo = document.getElementById('nudo');
+  var cifra = document.getElementById('cifra');
+  function medir() {
+    var alto = document.documentElement.scrollHeight - innerHeight;
+    var p = alto > 0 ? Math.min(Math.max(scrollY / alto, 0), 1) : 0;
+    nudo.style.top = (p * 100) + '%';
+    cifra.textContent = String(Math.round(p * 9999)).padStart(4, '0');
+  }
+  addEventListener('scroll', medir, { passive: true });
+  addEventListener('resize', medir);
+  medir();
+
+  /* ── la telemetría dice el scroll REAL ────────────────────────────────
+     Regla 3 de composición: la mentira que se sostiene es la que tiene
+     sistema. Aquí ni siquiera se miente — `y:` es la posición en el documento
+     y `x:` es dónde está puesta la marca. Semilla fija: mismo dibujo siempre. */
+  var caja = document.getElementById('telem');
+  var marcas = [];
+  var s = 20260827;
+  function azar() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+  for (var i = 0; i < 30; i++) {
+    var n = document.createElement('span');
+    var x = 4 + azar() * 92, y = 4 + azar() * 92;
+    n.style.cssText = 'position:absolute;left:' + x.toFixed(1) + '%;top:' + y.toFixed(1) +
+      '%;font-family:"IBM Plex Mono",monospace;font-size:6.5px;letter-spacing:.16em;' +
+      'color:rgba(10,15,28,.42);white-space:nowrap';
+    n.dataset.x = Math.round(x * 24);
+    caja.appendChild(n);
+    marcas.push(n);
+  }
+  function telem() {
+    var y = Math.round(scrollY);
+    marcas.forEach(function (n, i) {
+      n.textContent = '[ x: ' + String(n.dataset.x).padStart(4, '0') +
+                      '  y: ' + String(y + i * 37).padStart(4, '0') + ' ]';
+    });
+  }
+  addEventListener('scroll', telem, { passive: true });
+  telem();
+
+  /* ── la tira ─────────────────────────────────────────────────────────── */
+  var frases = ['sitios a la medida', 'sin plantillas', 'agente incluido',
+    'diseño desde cero', '3d cuando suma', 'monterrey · mx', 'código tuyo',
+    'precio cerrado', 'entrega publicada'];
+  var tira = document.getElementById('tira');
+  var trozo = frases.map(function (f, i) {
+    return '<span>' + f + (i % 3 === 1 ? ' <b>■</b>' : ' ·') + '</span>';
+  }).join('');
+  tira.innerHTML = trozo + trozo;   // dos copias: el bucle cierra en -50%
+
+  /* ── los reels: sólo se mueven cuando se ven ─────────────────────────── */
+  if ('IntersectionObserver' in window) {
+    var ojoV = new IntersectionObserver(function (filas) {
+      filas.forEach(function (f) {
+        var v = f.target;
+        if (f.isIntersecting && !quieto) { v.play().catch(function () {}); }
+        else { v.pause(); }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.obra-reel video').forEach(function (v) { ojoV.observe(v); });
+  }
+
+  /* ── la demostración (simulada en lab: ver nota de v1) ───────────────── */
+  var f = document.getElementById('demo-form');
+  var t = document.getElementById('demo-txt');
+  var oscuro = false;
+  function aplicar(txt) {
+    var q = (txt || '').toLowerCase();
+    if (q.includes('oscuro') || q.includes('dark')) {
+      oscuro = !oscuro;
+      raiz.style.setProperty('--papel', oscuro ? '#0a0f1c' : '#f4f7fc');
+      raiz.style.setProperty('--tinta', oscuro ? '#f4f7fc' : '#0a0f1c');
+      raiz.style.setProperty('--pelo', oscuro ? 'rgba(244,247,252,.85)' : 'rgba(10,15,28,.9)');
+      raiz.style.setProperty('--tenue', oscuro ? 'rgba(244,247,252,.55)' : 'rgba(10,15,28,.52)');
+      document.dispatchEvent(new CustomEvent('nerv:fichas'));
+    } else if (q.includes('serio')) {
+      raiz.style.setProperty('--senal', '#0a2a7a');
+      document.dispatchEvent(new CustomEvent('nerv:fichas'));
+    }
+    t.value = '';
+  }
+  f.addEventListener('submit', function (e) { e.preventDefault(); aplicar(t.value); });
+  document.querySelectorAll('.pista').forEach(function (b) {
+    b.addEventListener('click', function () { aplicar(b.textContent); });
+  });
+})();
+</script>
+</body>
+</html>
