@@ -14,3 +14,9 @@ agente/.build/
 # desarrollo. Nada de esto es del proyecto: es de esta computadora.
 .wrangler/
 .dev.vars
+
+# El motor de prospección. Los datos y los sitios generados NO van al repo:
+# es público en GitHub, y la lista de a quién le estamos escribiendo no lo es.
+datos/
+
+# `p/` SI va al repo: son las propuestas publicadas, y el push es el deploy.

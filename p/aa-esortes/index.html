@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Esto es una propuesta, no el sitio de nadie. Que no se indexe NO es un
+     detalle: sin esto, con el tiempo, un buscador lo pondria por encima de su
+     negocio real y le hariamos un dano en vez de un favor. -->
+<meta name="robots" content="noindex, nofollow">
+<title>AA ESORTES — propuesta de nerv</title>
+<meta name="description" content="Propuesta de sitio web hecha por nerv para AA ESORTES. No es el sitio oficial del negocio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0a; --surface:#0a0a0a; --fg:#ffffff; --fg-2:#e6effb;
+  --muted:#7d8ba3; --meta:#6699ff; --border:#ffffff; --suave:rgba(255,255,255,0.24);
+  --accent:#ccff33; --accent-on:#0a0a0a;
+  --display:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--display); font-size:15px; line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+/* Radio cero en todo. Una sola esquina de 8px mata la gramatica. */
+a { color:inherit; }
+.env { max-width:1420px; margin:0 auto; padding:0 46px; position:relative; }
+@media (max-width:900px) { .env { padding:0 28px; } }
+@media (max-width:560px) { .env { padding:0 14px; } }
+
+/* La barra negra sangra: una barra que respeta el margen no hace nada. */
+.aviso {
+  background:var(--fg); color:var(--bg);
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  text-transform:uppercase; padding:9px 0;
+}
+.aviso .env { display:flex; gap:14px; justify-content:space-between; flex-wrap:wrap; }
+
+.tele { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+.tele i {
+  position:absolute; font-family:var(--mono); font-size:6px;
+  font-style:normal; color:var(--muted); opacity:.62; white-space:nowrap;
+}
+
+header { position:relative; padding:78px 0 40px; overflow:hidden; }
+.et {
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--muted);
+}
+.titulo { position:relative; z-index:1; margin:22px 0 0; }
+/* El display nunca va solo: lleva subrayado de 2px y dos micro-etiquetas. */
+.titulo h1 {
+  font-size:clamp(38px,7vw,92px); font-weight:700; letter-spacing:-.035em;
+  line-height:.92; margin:0; padding-bottom:14px;
+  border-bottom:2px solid var(--accent); display:inline-block; max-width:100%;
+  overflow-wrap:anywhere;
+}
+.flanco { display:flex; gap:18px; margin-top:10px; flex-wrap:wrap; }
+.flanco span {
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--muted);
+}
+.sub { margin:26px 0 0; max-width:62ch; color:var(--fg-2); font-size:17px; }
+
+section { padding:78px 0; position:relative; }
+@media (max-width:900px) { section, header { padding:56px 0; } }
+@media (max-width:560px) { section, header { padding:40px 0; } }
+
+/* Las reglas no cierran: corren, giran 90 grados, hacen una pata y paran. */
+.marco { border-top:1px solid var(--border); border-right:1px solid var(--border);
+  padding:26px 26px 0 0; position:relative; }
+.marco::after { content:""; position:absolute; right:-1px; bottom:0;
+  width:1px; height:28px; background:var(--border); }
+
+.rej { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:56px; }
+@media (max-width:900px) { .rej { grid-template-columns:1fr; gap:34px; } }
+
+h2 { font-size:clamp(24px,3vw,38px); font-weight:700; letter-spacing:-.035em;
+  line-height:1.05; margin:12px 0 0; }
+
+.ficha { font-family:var(--mono); font-size:13px; }
+.fila { display:flex; align-items:baseline; gap:10px; padding:9px 0;
+  border-bottom:1px solid var(--suave); }
+.fila .k { font-size:9px; letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); flex:0 0 auto; min-width:118px; }
+.fila .p { flex:1 1 auto; border-bottom:1px dotted var(--suave);
+  transform:translateY(-3px); }
+.fila .v { flex:0 1 auto; text-align:right; overflow-wrap:anywhere; }
+.fila.alto .v { font-weight:500; }
+/* El valor va en TINTA, no en el acento: a 13px el acento no sostiene texto
+   —rojo sobre papel da 3.72:1— y la regla del sistema es una sola, "un acento
+   y todo lo demas tinta sobre papel". El acento marca la fila con la regla y
+   el punto, que es su trabajo: senalar, no leerse. */
+.fila.alto { border-bottom:1px solid var(--accent); }
+.fila.alto .k::before {
+  content:""; display:inline-block; width:5px; height:5px;
+  background:var(--accent); margin-right:7px; vertical-align:middle;
+}
+
+.p-b { position:relative; padding:22px 0 22px 0; border-top:1px solid var(--border); }
+.p-b h3 { margin:0 0 6px; font-size:17px; font-weight:700; letter-spacing:-.02em; }
+.p-b p { margin:0; color:var(--muted); max-width:52ch; }
+.p-b .n { position:absolute; top:22px; right:0; font-family:var(--mono);
+  font-size:9px; letter-spacing:3px; color:var(--accent); }
+
+.cta { background:var(--fg); color:var(--bg); }
+.cta h2 { color:var(--bg); }
+.cta p { color:var(--bg); opacity:.82; max-width:56ch; }
+.boton {
+  display:inline-block; margin-top:26px; background:var(--accent);
+  color:var(--accent-on); text-decoration:none; font-family:var(--mono);
+  font-size:13px; letter-spacing:2px; text-transform:uppercase;
+  padding:15px 30px; border:0; font-weight:500;
+  transition:transform 120ms cubic-bezier(.16,.84,.3,1);
+}
+.boton:hover { transform:translate(2px,-2px); }
+.boton:focus-visible { outline:none; box-shadow:0 0 0 2px var(--fg),0 0 0 4px var(--accent); }
+
+/* El codigo de barras: deriva de una cadena, no codifica nada, y no pretende. */
+.barras { display:flex; align-items:flex-end; gap:2px; height:38px; margin-top:8px; }
+.barras b { display:block; height:100%; background:var(--fg); opacity:.85; }
+
+footer { border-top:1px solid var(--border); padding:34px 0 56px;
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--muted); }
+.legend { display:flex; gap:16px; flex-wrap:wrap; margin-top:16px; font-size:6px;
+  letter-spacing:2px; }
+.pie-r { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+footer a { color:var(--accent); }
+
+@media (prefers-reduced-motion:reduce) {
+  * { transition:none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="aviso">
+  <div class="env">
+    <span>Propuesta de nerv — no es el sitio oficial de este negocio</span>
+    <span>Folio DENUE 3021235</span>
+  </div>
+</div>
+
+<header>
+  <div class="tele" aria-hidden="true"><i style="left:62.2%;top:12.7%">[ x:1194 y:304 ]</i><i style="left:87.9%;top:62.8%">x:1687 y:1507</i><i style="left:82.8%;top:14.9%">[ x:1589 y:357 ]</i><i style="left:43.7%;top:10.6%">x:839 y:254</i><i style="left:5.0%;top:44.3%">[ x:96 y:1063 ]</i><i style="left:93.1%;top:80.8%">x:1787 y:1939</i><i style="left:77.6%;top:74.5%">[ x:1489 y:1788 ]</i><i style="left:98.5%;top:83.0%">x:1891 y:1992</i><i style="left:48.6%;top:24.7%">[ x:933 y:592 ]</i><i style="left:37.5%;top:67.6%">x:720 y:1622</i><i style="left:11.6%;top:11.7%">[ x:222 y:280 ]</i><i style="left:41.3%;top:89.8%">x:792 y:2155</i><i style="left:53.8%;top:5.9%">[ x:1032 y:141 ]</i><i style="left:71.5%;top:55.2%">x:1372 y:1324</i><i style="left:65.6%;top:48.9%">[ x:1259 y:1173 ]</i><i style="left:12.9%;top:61.4%">x:247 y:1473</i><i style="left:43.0%;top:29.5%">[ x:825 y:708 ]</i><i style="left:91.1%;top:30.8%">x:1749 y:739</i><i style="left:3.6%;top:89.3%">[ x:69 y:2143 ]</i><i style="left:39.7%;top:5.8%">x:762 y:139</i><i style="left:11.4%;top:85.9%">[ x:218 y:2061 ]</i><i style="left:33.9%;top:24.8%">x:650 y:595</i><i style="left:13.6%;top:35.3%">[ x:261 y:847 ]</i><i style="left:32.9%;top:59.8%">x:631 y:1435</i><i style="left:56.6%;top:0.7%">[ x:1086 y:16 ]</i><i style="left:47.1%;top:56.4%">x:904 y:1353</i><i style="left:60.4%;top:23.7%">[ x:1159 y:568 ]</i><i style="left:64.5%;top:49.8%">x:1238 y:1195</i><i style="left:28.2%;top:44.3%">[ x:541 y:1063 ]</i><i style="left:41.1%;top:96.0%">x:789 y:2304</i><i style="left:73.6%;top:64.9%">[ x:1413 y:1557 ]</i><i style="left:7.3%;top:29.4%">x:140 y:705</i><i style="left:98.2%;top:1.5%">[ x:1885 y:36 ]</i><i style="left:66.3%;top:27.6%">x:1272 y:662</i><i style="left:60.4%;top:62.1%">[ x:1159 y:1490 ]</i><i style="left:72.5%;top:79.4%">x:1392 y:1905</i><i style="left:63.4%;top:21.1%">[ x:1217 y:506 ]</i><i style="left:60.3%;top:70.4%">x:1157 y:1689</i></div>
+  <div class="env">
+    <p class="et">PLANTA · Monterrey</p>
+    <div class="titulo">
+      <h1>AA ESORTES</h1>
+      <div class="flanco">
+        <span>Sitio propuesto</span>
+        <span>nerv · https://nervcenter.online</span>
+      </div>
+    </div>
+    <p class="sub">Esto es lo que se vería si AA ESORTES tuviera sitio. Lo armamos
+    con su registro público, sin pedirles nada. Si les sirve, se lo dejamos
+    funcionando con su contenido real.</p>
+  </div>
+</header>
+
+<section>
+  <div class="env">
+    <div class="rej">
+      <div class="marco">
+        <p class="et">Registro público</p>
+        <h2>Lo que ya se sabe de ustedes</h2>
+        <p style="color:var(--muted);max-width:46ch">Todo lo de la derecha sale
+        del Directorio Estadístico Nacional de Unidades Económicas del INEGI. No
+        preguntamos nada ni inventamos nada — está publicado.</p>
+        <div class="barras" aria-hidden="true"><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b><b style="width:1px"></b><b style="width:2px"></b><b style="width:3px"></b><b style="width:4px"></b></div>
+      </div>
+      <div class="ficha"><div class="fila"><span class="k">giro</span><span class="p" aria-hidden="true"></span><span class="v">Fabricación de alambre, productos de alambre y resortes</span></div><div class="fila"><span class="k">scian</span><span class="p" aria-hidden="true"></span><span class="v">332610</span></div><div class="fila"><span class="k">personal</span><span class="p" aria-hidden="true"></span><span class="v">11 a 30 personas</span></div><div class="fila"><span class="k">domicilio</span><span class="p" aria-hidden="true"></span><span class="v">Calle Nueva Escocia 4310, Industrial Habitacional Abraham Lincoln</span></div><div class="fila"><span class="k">municipio</span><span class="p" aria-hidden="true"></span><span class="v">Monterrey, 64310</span></div><div class="fila"><span class="k">teléfono</span><span class="p" aria-hidden="true"></span><span class="v">81 8375 2562</span></div><div class="fila"><span class="k">correo</span><span class="p" aria-hidden="true"></span><span class="v">aaaresortesadmon@gmail.com</span></div><div class="fila"><span class="k">coordenadas</span><span class="p" aria-hidden="true"></span><span class="v">25.71568056, -100.35642296</span></div><div class="fila"><span class="k">alta en el denue</span><span class="p" aria-hidden="true"></span><span class="v">2012-06</span></div><div class="fila alto"><span class="k">sitio web</span><span class="p" aria-hidden="true"></span><span class="v">SIN REGISTRO</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="env">
+    <p class="et">Propuesta</p>
+    <h2>Lo que llevaría el sitio</h2>
+    <div style="margin-top:34px"><article class="p-b"><h3>Catálogo de capacidades</h3><p>Qué procesos corren, con qué tolerancias y en qué volúmenes. Un comprador industrial busca eso y nada más.</p><span class="n" aria-hidden="true">01</span></article><article class="p-b"><h3>Certificaciones a la vista</h3><p>Las normas que ya cumplen, arriba y legibles. Es lo primero que filtra una compra grande.</p><span class="n" aria-hidden="true">02</span></article><article class="p-b"><h3>Cotización que llega</h3><p>Un formulario que aterriza en su correo con el plano adjunto, no un buzón que nadie abre.</p><span class="n" aria-hidden="true">03</span></article></div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="env">
+    <p class="et" style="color:var(--bg);opacity:.7">Siguiente paso</p>
+    <h2>Si les late, se los dejamos funcionando</h2>
+    <p>Esta página ya existe. Ponerle su contenido real, su dominio y un agente
+    que conteste a quien llegue es cuestión de días, no de meses. Y si no les
+    interesa, se borra y no vuelven a saber de nosotros.</p>
+    <a class="boton" href="mailto:dani@nervcenter.online?subject=Sobre%20la%20propuesta%20para%20AA%20ESORTES">Escribir a nerv</a>
+  </div>
+</section>
+
+<footer>
+  <div class="env">
+    <div class="pie-r">
+      <span>nerv · <a href="https://nervcenter.online">https://nervcenter.online</a> · dani@nervcenter.online</span>
+      <span>Propuesta no solicitada · sin indexar</span>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span>TOTAL BLACK #0a0a0a</span><span>ACCENT ACID #ccff33</span>
+      <span>INK #ffffff</span><span>RULE #ffffff</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
