@@ -14,6 +14,7 @@
    cuesta cero. */
 
 import { todas } from './clientes/index.js';
+import * as propuestas from './propuestas.js';
 
 function hoy() {
   return new Date().toISOString().slice(0, 10);
@@ -96,6 +97,15 @@ export async function datos(env) {
     }
 
     salida.clientes.push(c);
+  }
+
+  // ── propuestas ───────────────────────────────────────────────────────────
+  /* Quien esta mirando su propuesta. La cifra util NO es cuantas se generaron
+     —eso es trabajo, no resultado— sino cuantas se abrieron y hace cuanto. */
+  try {
+    salida.propuestas = await propuestas.paraTablero(env.DB);
+  } catch (e) {
+    salida.fuentes.propuestas = String(e);
   }
 
   // ── correo frío ──────────────────────────────────────────────────────────
@@ -342,10 +352,27 @@ function pintarCorreo(m) {
   return seccion('Correo frío', dentro);
 }
 
+function pintarPropuestas(p) {
+  if (!p || !p.abiertas) {
+    return seccion('Propuestas',
+      '<p class="nada">Nadie ha abierto una propuesta todavia. En cuanto ' +
+      'alguien la abra por primera vez te llega aviso por Telegram: es el ' +
+      'momento mas caliente que va a tener ese prospecto.</p>');
+  }
+  var dentro = cifra(p.abiertas, 'abiertas') + cifra(p.lecturas, 'lecturas');
+  dentro += '<table>' + (p.recientes || []).map(function (v) {
+    return '<tr><td><a href="https://nervcenter.online/p/' + esc(v.apodo) +
+      '/">' + esc(v.apodo) + '</a></td><td>' + esc(v.veces) +
+      '</td><td>' + esc(haceCuanto(v.ultima)) + '</td></tr>';
+  }).join('') + '</table>';
+  return seccion('Propuestas', dentro);
+}
+
 function pintar(d) {
   document.getElementById('sello').textContent = 'leído ' + haceCuanto(d.cuando);
   var html = pintarVigilancia(d.vigilancia);
   (d.clientes || []).forEach(function (c) { html += pintarCliente(c); });
+  html += pintarPropuestas(d.propuestas);
   html += pintarCorreo(d.correo);
   document.getElementById('cuerpo').innerHTML = html;
 }

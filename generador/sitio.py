@@ -306,6 +306,7 @@ def construir(p):
         CONTACTO_NERV['correo'], esc(asunto).replace(' ', '%20'))
 
     return PLANTILLA.format(
+        apodo=esc(p['apodo']),
         nombre=esc(nombre),
         nombre_titulo=esc(nombre[:60]),
         giro=esc(p.get('giro', '')),
@@ -540,6 +541,28 @@ footer a {{ color:var(--accent); }}
     </div>
   </div>
 </footer>
+
+<script>
+/* La baliza. Le dice al worker que esta propuesta se abrio, y nada mas: el
+   apodo del sitio. Sin cookies, sin terceros, sin nada del visitante.
+
+   Va en try y con .catch: si el worker esta caido o alguien bloquea la
+   peticion, la pagina no se entera. Una propuesta que se rompe por su propia
+   medicion seria el peor de los mundos -- se pierde el prospecto Y el dato.
+
+   `keepalive` para que sobreviva si cierran la pestana enseguida, que es justo
+   cuando mas importa saber que la abrieron. */
+(function () {{
+  try {{
+    fetch('https://daniel-agente.daniii.workers.dev/vista', {{
+      method: 'POST',
+      headers: {{ 'content-type': 'application/json' }},
+      body: JSON.stringify({{ p: '{apodo}' }}),
+      keepalive: true
+    }}).catch(function () {{}});
+  }} catch (e) {{}}
+}})();
+</script>
 
 </body>
 </html>

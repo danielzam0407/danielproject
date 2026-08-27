@@ -24,6 +24,7 @@ import * as avisos from './avisos.js';
 import * as bandeja from './bandeja.js';
 import * as tablero from './tablero.js';
 import * as whatsapp from './whatsapp.js';
+import * as propuestas from './propuestas.js';
 import {
   BASE,
   MODELO,
@@ -117,6 +118,14 @@ export default {
       const id = new URL(peticion.url).searchParams.get('sesion') || '';
       const turnos = await almacen.hiloVisitante(env.DB, ficha.id, id);
       return json({ turnos: turnos || [] }, 200, { ...cabecerasCors, 'cache-control': 'no-store' });
+    }
+
+    /* La baliza de las propuestas. Va DESPUES del control de origen a
+       proposito: la dispara la propia pagina en nervcenter.online, asi que el
+       portero que ya existe le sirve tal cual. Una puerta nueva seria
+       superficie nueva por comodidad, que es como se abren los agujeros. */
+    if (peticion.method === 'POST' && ruta === '/vista') {
+      return propuestas.baliza(peticion, env, contexto, cabecerasCors, avisos.porTelegram);
     }
 
     if (peticion.method !== 'POST') return json({ error: 'usa POST' }, 405, cabecerasCors);
