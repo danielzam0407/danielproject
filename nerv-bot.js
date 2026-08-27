@@ -6,18 +6,35 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const readVar = (n, f) => (getComputedStyle(document.documentElement).getPropertyValue(n).trim() || f);
 
-/* pose por sección: la mascota recorre la página y cambia de actitud */
-const POSES = {
-  //            sx: posición horizontal · dist: lejanía · crop: base del cuello en pantalla
-  inicio:      { sx: 0.68, crop: 0.45, dist: 1.85, rotY:  0.12, rotZ:  0.00, lean: 0 },
-  prueba:      { sx: 0.74, crop: 0.42, dist: 2.05, rotY: -0.22, rotZ:  0.03, lean: 0 },
-  servicios:   { sx: 0.66, crop: 0.47, dist: 1.75, rotY:  0.30, rotZ: -0.05, lean: 0 },
-  comparativa: { sx: 0.76, crop: 0.43, dist: 2.10, rotY: -0.28, rotZ:  0.05, lean: 0 },
-  proceso:     { sx: 0.66, crop: 0.46, dist: 1.80, rotY:  0.26, rotZ: -0.04, lean: 0 },
-  trabajo:     { sx: 0.78, crop: 0.41, dist: 2.20, rotY: -0.36, rotZ:  0.05, lean: 0 },
-  preguntas:   { sx: 0.67, crop: 0.46, dist: 1.80, rotY:  0.18, rotZ:  0.12, lean: 0 },
-  contacto:    { sx: 0.70, crop: 0.49, dist: 1.65, rotY: -0.30, rotZ: -0.13, lean: 1 }
-};
+/* LA RUTA.
+
+   Antes esto era un diccionario de poses por seccion y el movimiento se
+   disparaba al cruzar una frontera: dentro de una seccion no pasaba nada y
+   subiendo tampoco. Ahora es un CAMINO -- se muestrea con la posicion real
+   del scroll, asi que baja y sube por el mismo trazo y nunca hay un salto.
+
+   sx     posicion horizontal en fraccion de media pantalla: -1 orilla
+          izquierda, 0 centro, +1 orilla derecha. Cruza la pagina de verdad.
+   sy     donde cae su centro, de 0 (arriba) a 1 (abajo).
+   alto   cuanto mide ella en pantalla, en fraccion del alto de la ventana.
+          De aqui sale la distancia de camara, asi que el encuadre es el
+          mismo en cualquier viewport y no hay numeros magicos.
+   atras  1 = el lienzo se va DETRAS del contenido. Es lo unico que le permite
+          recorrer la pagina entera sin taparle el texto a nadie: donde hay
+          parrafo pasa por detras, donde hay aire vuelve al frente.
+   lean   se recarga en el recuadro del agente; el sitio exacto se MIDE. */
+const RUTA = [
+  ['inicio',      { sx:  0.66, sy: 0.60, alto: 0.62, rotY:  0.16, rotZ:  0.00, lean: 0, atras: 0 }],
+  ['prueba',      { sx:  0.86, sy: 0.62, alto: 0.46, rotY: -0.34, rotZ:  0.05, lean: 0, atras: 0 }],
+  ['servicios',   { sx: -0.60, sy: 0.58, alto: 0.72, rotY:  0.46, rotZ: -0.06, lean: 0, atras: 1 }],
+  ['comparativa', { sx:  0.78, sy: 0.62, alto: 0.44, rotY: -0.30, rotZ:  0.06, lean: 0, atras: 0 }],
+  ['proceso',     { sx: -0.52, sy: 0.58, alto: 0.70, rotY:  0.38, rotZ: -0.05, lean: 0, atras: 1 }],
+  ['trabajo',     { sx:  0.88, sy: 0.63, alto: 0.42, rotY: -0.40, rotZ:  0.06, lean: 0, atras: 0 }],
+  ['preguntas',   { sx: -0.36, sy: 0.58, alto: 0.66, rotY:  0.30, rotZ:  0.09, lean: 0, atras: 1 }],
+  ['contacto',    { sx:  0.34, sy: 0.56, alto: 0.86, rotY: -0.32, rotZ: -0.09, lean: 1, atras: 0 }]
+];
+
+const POSES = RUTA.reduce((a, [id, p]) => (a[id] = p, a), {});
 
 class NervBot {
   constructor(canvas) {
@@ -25,8 +42,8 @@ class NervBot {
     this.t = 0;
     this.pointer = { x: 0, y: 0 };
     this.gaze = { x: 0, y: 0, tx: 0, ty: 0, next: 2.5, away: false };
-    this.pose = Object.assign({}, POSES.inicio);
-    this.goal = Object.assign({}, POSES.inicio);
+    this.pose = Object.assign({}, RUTA[0][1]);
+    this.goal = Object.assign({}, RUTA[0][1]);
     this.transit = 0;
     this.gesture = null;
     this.gestureT = 0;
@@ -35,16 +52,23 @@ class NervBot {
     this.rest = new Map();
     this.headVel = 0;
     this.lastHeadY = 0;
+    this.scroll = { y: 0, v: 0 };
+    this.parpadeo = { falta: 1.4 + Math.random() * 2.6, fase: -1, doble: false };
+    this.sacada = { falta: 0.7, x: 0, y: 0 };
+    this.respira = 0;
+    this.tramos = null;
+    this.altoDoc = -1;
 
     this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
-    // corte duro garantizado en el render (el degradado CSS lo suaviza encima)
-    this.clip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    this.renderer.clippingPlanes = [this.clip];
-    this.renderer.localClippingEnabled = true;
+    /* Sin plano de recorte. Venia cortandola a la altura del pecho porque el
+       handoff daba por hecho que abajo el modelo no aguantaba mirada. Medido,
+       si aguanta: la figura esta entera, con torso, brazos y piernas. Y una
+       cabeza flotando dentro de un degradado no es un personaje, es un
+       adorno -- se ve ella completa. */
 
     this.scene = new THREE.Scene();
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -97,8 +121,18 @@ class NervBot {
     }, undefined, () => { this.canvas.style.display = 'none'; });
   }
 
-  /* el GLB llega con metalness 1 y roughness 1 en todo:
-     con eso la piel se ve de plomo y el pelo azul se apaga */
+  /* Los escalares metalness/roughness NO se tocan, a proposito.
+
+     El handoff decia que el GLB llega con metalness 1 en todo y por eso los
+     bajaba por nombre de material. Medido, es al reves: el mapa ORM ya trae
+     la metalicidad por pixel -- 0.5% en la cara, 2% en el cuerpo, 58% solo en
+     el reloj, que es justo lo correcto. El `metallicFactor: 1` que se leia en
+     el JSON es un MULTIPLICADOR de ese mapa, no un valor final.
+
+     Y como multiplica, bajarlo aqui no neutralizaba nada: aplanaba. La
+     rugosidad del cuerpo pasaba de 0.35 a 0.22 y la del pelo de 0.09 a 0.038,
+     o sea espejo. Se quitaron: lo que se pidio fue realismo, y el mapa
+     pintado a mano le gana a seis reglas por nombre. */
   prepMaterials(obj) {
     obj.traverse((c) => {
       if (!c.isMesh && !c.isSkinnedMesh) return;
@@ -106,51 +140,15 @@ class NervBot {
       (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => {
         if (!m) return;
         if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
-        const n = (m.name || '').toLowerCase();
-        if (/watch|metal|jewel/.test(n))      { m.metalness = 0.85; m.roughness = 0.3; }
-        else if (/eye(?!lash)|cornea/.test(n)) { m.metalness = 0.0;  m.roughness = 0.12; }
-        else if (/eyelash|eyeao|brow/.test(n)){ m.metalness = 0.0;  m.roughness = 0.7; }
-        else if (/hair/.test(n))              { m.metalness = 0.0;  m.roughness = 0.42; this.tintHair(m); }
-        else if (/outer|coat|cloth/.test(n))  { m.metalness = 0.0;  m.roughness = 0.75; }
-        else                                  { m.metalness = 0.0;  m.roughness = 0.62; }
-        m.envMapIntensity = 0.7;
+        m.envMapIntensity = 0.9;
         m.needsUpdate = true;
       });
     });
   }
 
-  /* el basecolor del pelo es café casi negro y solo aporta el recorte de
-     mechones: se repinta conservando su alfa para recuperar el azul */
-  tintHair(m) {
-    const src = m.map;
-    if (!src || !src.image || !src.image.width) { m.color.set(0x3f74ff); return; }
-    const img = src.image;
-    const cv = document.createElement('canvas');
-    cv.width = img.width; cv.height = img.height;
-    const cx = cv.getContext('2d');
-    cx.drawImage(img, 0, 0);
-    let d;
-    try { d = cx.getImageData(0, 0, cv.width, cv.height); } catch (e) { m.color.set(0x3f74ff); return; }
-    const p = d.data;
-    for (let i = 0; i < p.length; i += 4) {
-      const lum = (p[i] * 0.3 + p[i + 1] * 0.59 + p[i + 2] * 0.11) / 255;
-      const l = Math.pow(lum, 0.7);
-      p[i]     = Math.min(255, 26 + l * 70);
-      p[i + 1] = Math.min(255, 74 + l * 110);
-      p[i + 2] = Math.min(255, 198 + l * 57);
-    }
-    cx.putImageData(d, 0, 0);
-    const tex = new THREE.CanvasTexture(cv);
-    tex.flipY = src.flipY;
-    tex.wrapS = src.wrapS; tex.wrapT = src.wrapT;
-    tex.repeat.copy(src.repeat); tex.offset.copy(src.offset);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 4;
-    tex.needsUpdate = true;
-    m.map = tex;
-    m.color.set(0xffffff);
-    m.needsUpdate = true;
-  }
+  /* Aqui vivia tintHair(): repintaba el pelo de azul pixel por pixel en un
+     canvas, remapeando la luminancia a (26+l*70, 74+l*110, 198+l*57). Era
+     invento del handoff, no del personaje. El pelo va negro, como viene. */
 
   collectBones(obj) {
     const want = [
@@ -207,14 +205,25 @@ class NervBot {
 
     this.k = unit / 0.085;                 // cabeza-cuello ≈ 8.5 cm en escala real
     this.pivot.position.sub(hp);           // la cabeza queda en el origen
-    // el pecho alto se estima desde la misma cadena de la cabeza:
-    // otros esqueletos del archivo (abrigo, pelo) traen escalas distintas
-    this.chestOffset = -1.9 * unit;
+
+    /* Cuanto mide ella y donde cae su centro.
+
+       NO se usa Box3.setFromObject: en una malla con skin cuenta la escala de
+       la raiz DOS veces y devolvia 181.95 donde la figura mide 1.83. Es la
+       misma trampa por la que este motor ya media la camara del hueso y no de
+       la caja.
+
+       Estos dos factores salen de una medicion directa: camara a 6.0, render,
+       y contar las filas de pixeles opacos de la silueta -> 1.8328 de alto
+       con unit = 0.1219, centro 0.713 debajo del hueso de la cabeza. Para
+       rehacerla con otro personaje: mismo procedimiento, y se ajustan aqui. */
+    this.altoReal = unit * 15.03;
+    this.centroY  = unit * -5.85;
 
     const k = this.k;
     this.camera.near = 0.02 * k;
     this.camera.far = 60 * k;
-    this.camera.position.set(0, 0, this.pose.dist * k);
+    this.camera.position.set(0, 0, this.distanciaPara(this.pose.alto));
     this.camera.lookAt(0, 0, 0);
     this.camera.updateProjectionMatrix();
     this.needsFrame = false;
@@ -227,6 +236,7 @@ class NervBot {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this._w = w; this._h = h;
+    this.tramos = null;               // el trazo se vuelve a medir al redimensionar
   }
 
   setAccent(hex) {
@@ -252,6 +262,72 @@ class NervBot {
 
   setProgress(p) { this.scrollP = clamp(p, 0, 1); }
 
+  /* La distancia de camara que hace que ella ocupe `frac` del alto de la
+     ventana. Se despeja del fov, no se tantea. */
+  distanciaPara(frac) {
+    const vh = this.altoReal / clamp(frac, 0.05, 3);
+    return vh / (2 * Math.tan((this.camera.fov * Math.PI / 180) / 2));
+  }
+
+  /* Donde cae el centro de cada seccion en la pagina. Se mide una vez y se
+     vuelve a medir solo si el documento cambio de alto -- no cada cuadro:
+     getBoundingClientRect fuerza reflow y esto corre a 60 Hz. */
+  medirTramos() {
+    const t = [];
+    for (let i = 0; i < RUTA.length; i++) {
+      const el = document.getElementById(RUTA[i][0]);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      t.push({ centro: r.top + window.scrollY + r.height * 0.5, pose: RUTA[i][1] });
+    }
+    this.tramos = t.length ? t : null;
+    this.altoDoc = document.documentElement.scrollHeight;
+  }
+
+  /* La pose de ESTE instante, interpolada entre los dos tramos vecinos.
+     Continua y reversible: subir deshace exactamente lo que bajar hizo. */
+  poseDeRuta() {
+    if (!this.tramos || this.altoDoc !== document.documentElement.scrollHeight) this.medirTramos();
+    const T = this.tramos;
+    if (!T || !T.length) return this.goal;
+    const mira = (window.scrollY || 0) + window.innerHeight * 0.5;
+    if (mira <= T[0].centro) return T[0].pose;
+    const fin = T[T.length - 1];
+    if (mira >= fin.centro) return fin.pose;
+    for (let i = 0; i < T.length - 1; i++) {
+      if (mira >= T[i].centro && mira <= T[i + 1].centro) {
+        const tramo = T[i + 1].centro - T[i].centro || 1;
+        const x = (mira - T[i].centro) / tramo;
+        const e = x * x * (3 - 2 * x);        // smoothstep: llega y sale sin esquina
+        const a = T[i].pose, b = T[i + 1].pose, o = {};
+        for (const k in a) o[k] = lerp(a[k], b[k], e);
+        return o;
+      }
+    }
+    return fin.pose;
+  }
+
+  /* El recuadro del agente, medido de verdad. Nada de coordenadas a mano: el
+     recargo cae bien en cualquier viewport y aguanta un reflow. */
+  medirPanel() {
+    const el = document.querySelector('[data-panel-agente]')
+            || document.querySelector('#contacto input');
+    if (!el || !this.camera) return null;
+    const r = el.getBoundingClientRect();
+    if (!r.width) return null;
+    const camZ = this.camera.position.z;
+    const vh = 2 * camZ * Math.tan((this.camera.fov * Math.PI / 180) / 2);
+    const vw = vh * this.camera.aspect;
+    /* Se planta al canto DERECHO del recuadro. El recuadro esta pegado a la
+       izquierda de la columna de contenido y lo que queda libre es el carril
+       de la derecha: ponerla del otro lado la mandaba media pantalla afuera.
+       Y la altura se ancla al canto de ARRIBA, no al centro, porque un codo
+       apoyado va a la altura del canto -- no a media caja. */
+    const px = (r.right + r.width * 0.05) / window.innerWidth;
+    const py = (r.top + r.height * 0.15) / window.innerHeight;
+    return { x: (px - 0.5) * vw, y: (0.5 - py) * vh - this.centroY };
+  }
+
   loop() {
     this.raf = requestAnimationFrame(this.loop);
     const dt = 1 / 60;
@@ -261,11 +337,26 @@ class NervBot {
     if (!this.k) { this.renderer.render(this.scene, this.camera); return; }
     const t = this.t;
 
-    // transición suave entre poses de sección
-    ['sx','crop','rotY','rotZ','dist','lean'].forEach(key => {
-      this.pose[key] = lerp(this.pose[key], this.goal[key], 0.032);
+    /* La pose sale del SCROLL, no de la seccion.
+
+       Antes setProgress() guardaba el avance de la pagina y nadie lo leia
+       nunca -- estaba escrito y muerto. Por eso solo se movia al cruzar una
+       frontera de seccion y subiendo no pasaba nada. Ahora se muestrea la
+       ruta continua y encima va un lerp de arrastre, que es lo que le da
+       peso: llega tarde, como un cuerpo, en vez de pegarse al scroll como
+       una barra de progreso. */
+    const objetivo = this.poseDeRuta();
+    ['sx','sy','alto','rotY','rotZ','lean','atras'].forEach(key => {
+      this.pose[key] = lerp(this.pose[key], objetivo[key], 0.07);
     });
     this.transit = Math.max(0, this.transit - dt * 0.5);
+
+    // velocidad del scroll CON SIGNO: de aqui salen el arrastre del pelo y la
+    // inercia del cuerpo, y por eso bajar y subir no se sienten igual
+    const yAhora = window.scrollY || 0;
+    this.scroll.v = lerp(this.scroll.v, (yAhora - this.scroll.y) / Math.max(dt, 0.001), 0.1);
+    this.scroll.y = yAhora;
+    const vel = clamp(this.scroll.v / 2400, -1, 1);
 
     let g = 0;
     if (this.gesture) {
@@ -274,8 +365,10 @@ class NervBot {
       if (g > 2.0) { this.gesture = null; this.gestureT = 0; g = 0; }
     }
 
-    // respiración y micro-desplazamientos: nunca queda quieta
-    const breath = Math.sin(t * 1.05);
+    /* Respiracion con periodo que deriva. Un seno de periodo fijo se
+       reconoce como metronomo aunque nadie sepa decir por que. */
+    this.respira += dt * (1.0 + Math.sin(t * 0.081) * 0.22 + Math.sin(t * 0.037 + 2) * 0.1);
+    const breath = Math.sin(this.respira);
     const sway = Math.sin(t * 0.33) * 0.02 + Math.sin(t * 0.17 + 1.3) * 0.013;
 
     const k = this.k || 1;
@@ -285,17 +378,48 @@ class NervBot {
     const arc = Math.sin(this.transit * Math.PI) * 0.035;
     const driftX = Math.sin(t * 0.23) * 0.012 + Math.sin(t * 0.11 + 2) * 0.008;
     const driftY = Math.sin(t * 0.31 + 1.2) * 0.006;
-    this.root.position.x = (this.pose.sx + driftX) * vw * 0.5;
-    // la altura se calcula para que el pecho caiga en el punto de recorte
-    const chest = this.chestOffset || 0;
-    this.root.position.y = (0.5 - this.pose.crop) * vh - chest
+    // cambio de peso de un pie al otro: periodo largo, casi imperceptible,
+    // y es la mitad de lo que separa a alguien de pie de un maniqui
+    const peso = Math.sin(t * 0.19) * 0.014 + Math.sin(t * 0.07 + 1.1) * 0.009;
+    this.root.position.x = (this.pose.sx + driftX + peso) * vw * 0.5;
+    this.root.position.y = (0.5 - this.pose.sy) * vh - this.centroY
       + (driftY + arc) * vh * 0.5 + (breath * 0.008 + Math.sin(t * 0.21) * 0.006) * k;
+    // inercia: el cuerpo se queda atras un instante y se inclina al viaje
+    this.root.position.y -= vel * 0.10;
+    this.root.rotation.x = lerp(this.root.rotation.x, vel * 0.045, 0.06);
     this.root.rotation.y = lerp(this.root.rotation.y, this.pose.rotY + this.pointer.x * 0.16 + sway, 0.05);
-    this.root.rotation.z = lerp(this.root.rotation.z, this.pose.rotZ + this.pose.lean * -0.06, 0.05);
+    this.root.rotation.z = lerp(this.root.rotation.z, this.pose.rotZ + this.pose.lean * -0.06 - vel * 0.028, 0.05);
+
+    /* El recargo del final. El sitio se MIDE del recuadro real cada cuadro y
+       se entra a el con el mismo `lean`, asi que el gesto empieza antes de
+       llegar y termina exactamente encima. */
+    if (this.pose.lean > 0.02) {
+      const dock = this.medirPanel();
+      if (dock) {
+        const f = this.pose.lean * 0.10;
+        this.root.position.x = lerp(this.root.position.x, dock.x, f);
+        this.root.position.y = lerp(this.root.position.y, dock.y, f);
+      }
+    }
+
+    /* Profundidad. Donde cruza texto se va DETRAS del contenido y el texto
+       siempre gana; donde hay aire, vuelve al frente. Es lo unico que le
+       permite recorrer la pagina entera sin estorbarle a nadie. */
+    if (this.host) {
+      const z = this.pose.atras > 0.5 ? '5' : '55';
+      /* El salto de profundidad se hace cuando ella cruza el centro de la
+         pantalla, no en cuanto la ruta lo pide: ahi es donde esta de perfil y
+         mas lejos del texto, y el cambio no se ve. Todas las transiciones de
+         profundidad de la ruta pasan por el centro, asi que siempre hay cruce. */
+      if (this.host.style.zIndex !== z &&
+          (!this.host.style.zIndex || Math.abs(this.pose.sx) < 0.2)) {
+        this.host.style.zIndex = z;
+      }
+    }
     if (this.pivot) this.pivot.position.z = lerp(this.pivot.position.z, (this.gesture === 'point' ? 0.06 : this.pose.lean * 0.04) * k, 0.05);
 
-    // zoom por sección
-    const d = lerp(this.camera.position.z, this.pose.dist * k, 0.035);
+    // el acercamiento sale del tamano que debe tener en pantalla
+    const d = lerp(this.camera.position.z, this.distanciaPara(this.pose.alto), 0.045);
     this.camera.position.set(0, 0, d);
     this.camera.lookAt(0, 0, 0);
 
@@ -343,14 +467,39 @@ class NervBot {
       b.rotation.y = lerp(b.rotation.y, r.y + this.gaze.x * 0.05 + this.pose.lean * 0.06, 0.05);
     });
 
-    // ojos: gaze fino + parpadeo simulado achatando el globo
-    const blinkPhase = (t % 4.3);
-    const blink = blinkPhase < 0.11 ? 1 - Math.abs(blinkPhase - 0.055) / 0.055 : 0;
+    /* Parpadeo con agenda aleatoria y a veces doble. Uno cada 4.3 s exactos
+       -- que es lo que habia -- es el tic mas delator que puede tener una
+       cara: el ojo lo cacha aunque nadie sepa nombrarlo. */
+    this.parpadeo.falta -= dt;
+    if (this.parpadeo.fase < 0 && this.parpadeo.falta <= 0) {
+      this.parpadeo.fase = 0;
+      this.parpadeo.doble = Math.random() < 0.22;
+    }
+    let blink = 0;
+    if (this.parpadeo.fase >= 0) {
+      this.parpadeo.fase += dt;
+      const f = this.parpadeo.fase;
+      const pulso = (a, d) => (f > a && f < a + d) ? 1 - Math.abs((f - a) / d - 0.5) * 2 : 0;
+      blink = this.parpadeo.doble ? Math.max(pulso(0, 0.12), pulso(0.19, 0.12)) : pulso(0, 0.14);
+      if (f > (this.parpadeo.doble ? 0.34 : 0.16)) {
+        this.parpadeo.fase = -1;
+        this.parpadeo.falta = 1.6 + Math.random() * 4.4;
+      }
+    }
+
+    /* Sacadas: el ojo humano no se desliza, salta. Sin esto la mirada se ve
+       dibujada por suave que sea el seguimiento. */
+    this.sacada.falta -= dt;
+    if (this.sacada.falta <= 0) {
+      this.sacada.x = (Math.random() - 0.5) * 0.10;
+      this.sacada.y = (Math.random() - 0.5) * 0.05;
+      this.sacada.falta = 0.35 + Math.random() * 1.5;
+    }
     [['eyeL', 1], ['eyeR', 1]].forEach(([k]) => {
       const b = B[k]; if (!b) return;
       const r = rest(b);
-      b.rotation.y = lerp(b.rotation.y, r.y + this.gaze.x * 0.22, 0.14);
-      b.rotation.x = lerp(b.rotation.x, r.x + this.gaze.y * 0.14, 0.14);
+      b.rotation.y = lerp(b.rotation.y, r.y + this.gaze.x * 0.22 + this.sacada.x, 0.34);
+      b.rotation.x = lerp(b.rotation.x, r.x + this.gaze.y * 0.14 + this.sacada.y, 0.34);
       const s = 1 - blink * 0.82;
       b.scale.set(1, s, 1);
     });
@@ -362,7 +511,9 @@ class NervBot {
       if (!r) continue;
       const delay = h.depth * 0.35;
       const amp = 0.028 + h.depth * 0.012;
-      const drag = -this.headVel * (0.06 + h.depth * 0.03);
+      // arrastra con el giro de la cabeza Y con el scroll: al bajar rapido el
+      // pelo se queda atras, que es la otra mitad de la sensacion de peso
+      const drag = -this.headVel * (0.06 + h.depth * 0.03) + vel * (0.055 + h.depth * 0.03);
       h.bone.rotation.z = lerp(h.bone.rotation.z, r.z + Math.sin(t * 1.15 - delay + h.chain * 0.4) * amp + drag, 0.09);
       h.bone.rotation.x = lerp(h.bone.rotation.x, r.x + Math.sin(t * 0.9 - delay + h.chain) * amp * 0.6, 0.08);
     }
@@ -371,10 +522,16 @@ class NervBot {
     if (B.armR) {
       const r = rest(B.armR);
       const wave = this.gesture === 'wave' ? 0.9 * Math.min(1, g / 0.3) : 0;
-      B.armR.rotation.z = lerp(B.armR.rotation.z, r.z + wave + breath * 0.01, 0.1);
+      /* Al recargarse, el brazo que descansa sobre el canto es el que queda
+         del lado del recuadro. Ella se planta a la derecha de el, asi que es
+         el derecho -- el izquierdo se quedaria colgando en el aire. */
+      const apoyo = this.pose.lean * 0.40;
+      B.armR.rotation.z = lerp(B.armR.rotation.z, r.z + wave - apoyo + breath * 0.01, 0.1);
+      B.armR.rotation.x = lerp(B.armR.rotation.x, r.x + this.pose.lean * 0.30, 0.07);
       if (B.foreR) {
         const rf = rest(B.foreR);
         B.foreR.rotation.y = lerp(B.foreR.rotation.y, rf.y + (this.gesture === 'wave' ? Math.sin(g * 11) * 0.4 : 0), 0.18);
+        B.foreR.rotation.z = lerp(B.foreR.rotation.z, rf.z + this.pose.lean * 0.52, 0.08);
       }
     }
     if (B.armL) {
@@ -388,24 +545,10 @@ class NervBot {
     }
     if (this.gesture === 'spin') this.root.rotation.y += 0.13;
 
-    // el plano de corte sigue la línea del cuello en cada pose, y el
-    // degradado del contenedor se calcula del MISMO número: así el corte
-    // siempre cae donde la máscara ya es transparente
-    if (this.chestOffset != null) {
-      const cutY = this.root.position.y + this.chestOffset * 1.2;
-      this.clip.constant = -cutY;
-      const frac = 0.5 - cutY / vh;
-      if (this.host && Math.abs((this._maskFrac ?? -9) - frac) > 0.004) {
-        this._maskFrac = frac;
-        const a = Math.max(0.04, frac - 0.17).toFixed(3);
-        const b = Math.max(0.06, frac - 0.085).toFixed(3);
-        const c = Math.max(0.08, frac - 0.005).toFixed(3);
-        const g = 'linear-gradient(to bottom,#000 0 ' + (a * 100).toFixed(1) + '%,rgba(0,0,0,.55) ' +
-          (b * 100).toFixed(1) + '%,transparent ' + (c * 100).toFixed(1) + '%)';
-        this.host.style.webkitMaskImage = g;
-        this.host.style.maskImage = g;
-      }
-    }
+    /* Aqui vivian el plano de corte y el degradado que la encerraban en un
+       recuadro. Los dos se fueron: se ve el cuerpo entero y sin marco. La
+       mascara del contenedor tambien se quito del marcado. */
+
     if (!this.canvas.isConnected) {
       const host = document.getElementById('nerv-bot-host');
       if (host) { this.host = host; host.appendChild(this.canvas); this.resize(); }

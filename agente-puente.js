@@ -182,6 +182,7 @@
 
   function ponerWhatsapp() {
     pendiente = false;
+    marcarPanel();
     if (!urlWhatsapp) return;
     var botones = document.querySelectorAll('[data-cursor="whatsapp"]');
     for (var i = 0; i < botones.length; i++) {
@@ -189,6 +190,25 @@
       botones[i].setAttribute('href', urlWhatsapp);
       botones[i].setAttribute('target', '_blank');
       botones[i].setAttribute('rel', 'noopener noreferrer');
+    }
+  }
+
+  /* La mascota se recarga en el recuadro del agente al final de la pagina, y
+     para eso necesita saber cual es. Se marca desde aqui —fuera del bloque
+     <x-dc>— y se busca por estructura, no por una clase: se sube desde el
+     campo de texto hasta el primer ancestro con sombra, que es el canto del
+     recuadro. Asi aguanta que el diseno cambie de estilos. */
+  function marcarPanel() {
+    if (document.querySelector('[data-panel-agente]')) return;   // idempotente
+    var campo = document.querySelector('#contacto input');
+    if (!campo) return;
+    var el = campo.parentElement;
+    for (var i = 0; i < 6 && el; i++) {
+      if (getComputedStyle(el).boxShadow !== 'none') {
+        el.setAttribute('data-panel-agente', '');
+        return;
+      }
+      el = el.parentElement;
     }
   }
 
@@ -216,6 +236,9 @@
   new MutationObserver(agendarWhatsapp).observe(document.body, {
     childList: true, subtree: true
   });
+
+  // primera pasada: el componente puede montar sin disparar mutacion util
+  setTimeout(ponerWhatsapp, 0);
 
   window.nervAgente = {
     preguntar: preguntar,

@@ -52,7 +52,7 @@ details[open] .faq-plus{transform:rotate(45deg)}
 
   <canvas ref="{{ canvasRef }}" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>
 
-  <div id="nerv-bot-host" ref="{{ botWrapRef }}" style="position:fixed;inset:0;z-index:55;pointer-events:none;-webkit-mask-image:linear-gradient(to bottom,#000 0 28%,rgba(0,0,0,.55) 36%,transparent 44%);mask-image:linear-gradient(to bottom,#000 0 28%,rgba(0,0,0,.55) 36%,transparent 44%)"></div>
+  <div id="nerv-bot-host" ref="{{ botWrapRef }}" style="position:fixed;inset:0;z-index:55;pointer-events:none"></div>
 
   <div ref="{{ cursorRef }}" style="position:fixed;top:0;left:0;z-index:120;pointer-events:none;mix-blend-mode:difference;opacity:0;will-change:transform">
     <div ref="{{ ringRef }}" style="position:absolute;left:-19px;top:-19px;width:38px;height:38px;border:1px solid #fff;border-radius:50%;transition:width .25s cubic-bezier(.2,.8,.2,1),height .25s cubic-bezier(.2,.8,.2,1),left .25s cubic-bezier(.2,.8,.2,1),top .25s cubic-bezier(.2,.8,.2,1)"></div>
@@ -560,28 +560,11 @@ class Component extends DCLogic {
 
   /* el degradado del contenedor se calcula del mismo número que corta el
      render, así el borde duro siempre cae donde la máscara ya es transparente */
-  initMaskSync() {
-    const tick = ()=>{
-      this.maskRaf = requestAnimationFrame(tick);
-      const b = this.bot;
-      if (!b || !b.k || b.chestOffset == null || !this.botWrap) return;
-      const d = b.camera.position.z;
-      const vh = 2 * d * Math.tan((b.camera.fov * Math.PI / 180) / 2);
-      const cutY = b.root.position.y + b.chestOffset * 1.2;
-      if (b.clip) b.clip.constant = -cutY;
-      const frac = 0.5 - cutY / vh;
-      if (!isFinite(frac) || Math.abs((this.maskFrac ?? -9) - frac) < 0.004) return;
-      this.maskFrac = frac;
-      const a = (Math.max(0.04, frac - 0.17) * 100).toFixed(1);
-      const m = (Math.max(0.06, frac - 0.085) * 100).toFixed(1);
-      const z = (Math.max(0.08, frac - 0.005) * 100).toFixed(1);
-      const g = 'linear-gradient(to bottom,#000 0 ' + a + '%,rgba(0,0,0,.55) ' + m + '%,transparent ' + z + '%)';
-      this.botWrap.style.webkitMaskImage = g;
-      this.botWrap.style.maskImage = g;
-    };
-    tick();
-    (this.off = this.off || []).push(()=> cancelAnimationFrame(this.maskRaf));
-  }
+  /* Aqui habia una segunda copia del calculo del corte y la mascara, que
+     escribia clip.constant con un 1.2 fijo. Dos escritores sobre el mismo
+     valor y ganaba el ultimo cuadro. Ya no hay corte ni mascara: se ve
+     completa. */
+  initMaskSync() {}
 
   /* ---------- mascota 3D ---------- */
   initBot() {
@@ -993,7 +976,7 @@ class Component extends DCLogic {
      desde Claude Design regenera el componente y borra lo que este adentro.
      El mapa de importacion va antes del modulo que lo usa. -->
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
-<script type="module" src="./nerv-bot.js?v=1"></script>
-<script src="./agente-puente.js?v=1"></script>
+<script type="module" src="./nerv-bot.js?v=2"></script>
+<script src="./agente-puente.js?v=2"></script>
 </body>
 </html>
