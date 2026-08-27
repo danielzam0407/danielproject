@@ -36,6 +36,100 @@ const RUTA = [
 
 const POSES = RUTA.reduce((a, [id, p]) => (a[id] = p, a), {});
 
+/* EL REPERTORIO.
+
+   Cada gesto devuelve desplazamientos que se SUMAN a la pose que ya quedo
+   puesta, no valores absolutos. Por eso se encima con el paso y con la
+   respiracion sin pelearse: puede saludar mientras camina, y el brazo hace
+   las dos cosas a la vez.
+
+   `e` es una envolvente que entra y sale sola (0 -> 1 -> 0), asi que ningun
+   gesto empieza ni termina con un salto y no hay que escribir transiciones.
+   `p` es el avance de 0 a 1, para los que llevan coreografia por dentro.
+
+   Ejes, todos medidos sobre este esqueleto y no supuestos:
+     upperarm.z +  el brazo se separa del cuerpo    upperarm.x -  brazo adelante
+     lowerarm.y -  el codo dobla                    calf.y     -  la rodilla dobla
+     dedos.y    +  cierran                          thumb.z    -  cierra */
+const GESTOS = {
+  saludar: { dur: 2.6, hacer: (p, e) => ({
+    armR:  [-0.35 * e, 0, 1.15 * e],
+    foreR: [0, -0.75 * e + Math.sin(p * 22) * 0.34 * e, 0],
+    manoR: [0, 0, Math.sin(p * 22) * 0.30 * e],
+    head:  [0, -0.10 * e, 0.06 * e],
+    spine3:[0, -0.07 * e, 0]
+  })},
+
+  pelo: { dur: 3.4, hacer: (p, e) => ({
+    armL:  [-0.55 * e, 0, 1.30 * e],
+    foreL: [0, -1.35 * e, 0],
+    manoL: [0.25 * e, 0, 0],
+    head:  [0.05 * e, 0.16 * e, -0.13 * e],
+    neck1: [0, 0.06 * e, 0]
+  })},
+
+  cruzar: { dur: 5.0, hacer: (p, e) => ({
+    armL:  [-0.62 * e, 0, 0.40 * e],
+    foreL: [0, -1.42 * e, 0],
+    armR:  [-0.55 * e, 0, 0.34 * e],
+    foreR: [0, -1.30 * e, 0],
+    spine3:[0.05 * e, 0, 0],
+    head:  [0.03 * e, 0, 0]
+  })},
+
+  estirar: { dur: 3.8, hacer: (p, e) => ({
+    armL:  [0.30 * e, 0, 1.55 * e],
+    armR:  [0.30 * e, 0, 1.50 * e],
+    foreL: [0, -0.30 * e, 0],
+    foreR: [0, -0.28 * e, 0],
+    spine3:[-0.13 * e, 0, 0],
+    spine2:[-0.09 * e, 0, 0],
+    head:  [-0.16 * e, 0, 0]
+  })},
+
+  pensar: { dur: 4.2, hacer: (p, e) => ({
+    armR:  [-0.70 * e, 0, 0.72 * e],
+    foreR: [0, -1.55 * e, 0],
+    armL:  [-0.20 * e, 0, 0.28 * e],
+    foreL: [0, -0.85 * e, 0],
+    head:  [0.09 * e, -0.13 * e, 0.10 * e],
+    neck1: [0.04 * e, 0, 0]
+  })},
+
+  // se asoma: gira el tronco entero, no solo el cuello
+  asomarse: { dur: 3.0, hacer: (p, e) => ({
+    spine2:[0, 0.16 * e, 0],
+    spine3:[0, 0.20 * e, 0],
+    head:  [0, 0.30 * e, 0.05 * e],
+    armL:  [-0.14 * e, 0, 0.10 * e],
+    armR:  [0.10 * e, 0, 0]
+  })},
+
+  // cambia el peso de un pie al otro: lo mas comun que hace alguien parado
+  peso: { dur: 3.2, hacer: (p, e) => ({
+    pelvis:[0, 0, 0.10 * e],
+    pantL: [0, -0.22 * e, 0],
+    pantR: [0, 0.06 * e, 0],
+    spine2:[0, 0, -0.06 * e],
+    head:  [0, 0, -0.05 * e]
+  })},
+
+  asentir: { dur: 1.8, hacer: (p, e) => ({
+    head:  [Math.sin(p * 13) * 0.17 * e, 0, 0],
+    neck1: [Math.sin(p * 13 - 0.5) * 0.07 * e, 0, 0]
+  })},
+
+  senalar: { dur: 2.8, hacer: (p, e) => ({
+    armL:  [-1.05 * e, 0, 0.55 * e],
+    foreL: [0, -0.35 * e, 0],
+    head:  [0, 0.14 * e, 0],
+    spine3:[0, 0.08 * e, 0]
+  })}
+};
+
+// los que le salen solos cuando esta parada
+const OCIO = ['peso', 'pelo', 'asomarse', 'cruzar', 'pensar', 'estirar', 'peso', 'asomarse'];
+
 class NervBot {
   constructor(canvas) {
     this.canvas = canvas;
@@ -59,6 +153,7 @@ class NervBot {
     this.tramos = null;
     this.altoDoc = -1;
     this.paso = { fase: 0, vx: 0, ultimaX: null, andando: 0, rumbo: 0 };
+    this.acto = { nombre: null, t: 0, falta: 4 + Math.random() * 5, ultimo: -1 };
 
     this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
@@ -323,7 +418,11 @@ class NervBot {
     if (this.hemi) this.hemi.intensity = dark ? 0.8 : 1.15;
   }
 
-  gest(name) { this.gesture = name; this.gestureT = 0; }
+  gest(name) {
+    // los del repertorio van por su propio reloj; los viejos por el de antes
+    if (GESTOS[name]) { this.acto.nombre = name; this.acto.t = 0; return; }
+    this.gesture = name; this.gestureT = 0;
+  }
 
   setSection(name) {
     const p = POSES[name];
@@ -741,6 +840,46 @@ class NervBot {
         d.bone.rotation.z = lerp(d.bone.rotation.z, r.z - micro - cierraAlAndar * 0.6, 0.08);
       } else {
         d.bone.rotation.y = lerp(d.bone.rotation.y, r.y + micro + cierraAlAndar, 0.08);
+      }
+    }
+
+    /* EL RELOJ DE GESTOS.
+
+       Parada le van saliendo gestos solos, nunca el mismo dos veces seguidas.
+       Caminando no se disparan solos -- pero si uno ya venia corriendo, sigue:
+       se puede saludar caminando. */
+    const A2 = this.paso.andando;
+    if (this.acto.nombre) {
+      this.acto.t += dt;
+      if (this.acto.t >= GESTOS[this.acto.nombre].dur) {
+        this.acto.nombre = null;
+        this.acto.falta = 3.5 + Math.random() * 6;
+      }
+    } else if (A2 < 0.25) {
+      this.acto.falta -= dt;
+      if (this.acto.falta <= 0) {
+        let i = Math.floor(Math.random() * OCIO.length);
+        if (i === this.acto.ultimo) i = (i + 1) % OCIO.length;
+        this.acto.ultimo = i;
+        this.gest(OCIO[i]);
+      }
+    }
+
+    /* El gesto se SUMA encima de lo que ya quedo puesto. Las lineas de arriba
+       dejaron cada hueso en su valor base con un lerp; sumar aqui hace que la
+       mezcla se deshaga sola al terminar, sin escribir ni una transicion. */
+    if (this.acto.nombre && GESTOS[this.acto.nombre]) {
+      const G = GESTOS[this.acto.nombre];
+      const p = clamp(this.acto.t / G.dur, 0, 1);
+      const e = Math.sin(p * Math.PI);
+      const ofs = G.hacer(p, e);
+      for (const clave in ofs) {
+        const hueso = B[clave];
+        if (!hueso) continue;
+        const o = ofs[clave];
+        hueso.rotation.x += o[0];
+        hueso.rotation.y += o[1];
+        hueso.rotation.z += o[2];
       }
     }
 
