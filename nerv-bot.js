@@ -58,6 +58,7 @@ class NervBot {
     this.respira = 0;
     this.tramos = null;
     this.altoDoc = -1;
+    this.paso = { fase: 0, vx: 0, ultimaX: null, andando: 0, rumbo: 0 };
 
     this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
@@ -157,7 +158,15 @@ class NervBot {
       ['eyeL', /^eye_l$/i], ['eyeR', /^eye_r$/i],
       ['clavL', /^clavicle_l$/i], ['clavR', /^clavicle_r$/i],
       ['armR', /^upperarm_r$/i], ['foreR', /^lowerarm_r$/i],
-      ['armL', /^upperarm_l$/i], ['foreL', /^lowerarm_l$/i]
+      ['armL', /^upperarm_l$/i], ['foreL', /^lowerarm_l$/i],
+      /* El tren inferior. No estaba: el motor del handoff se escribio para un
+         busto cortado al pecho, asi que de las costillas para abajo no habia
+         nada que animar. Por eso no caminaba -- nadie le movia las piernas. */
+      ['pelvis', /^pelvis$/i], ['spine1', /^spine_01$/i],
+      ['musloL', /^thigh_l$/i], ['musloR', /^thigh_r$/i],
+      ['pantL',  /^calf_l$/i],  ['pantR',  /^calf_r$/i],
+      ['pieL',   /^foot_l$/i],  ['pieR',   /^foot_r$/i],
+      ['manoL',  /^hand_l$/i],  ['manoR',  /^hand_r$/i]
     ];
     obj.traverse((b) => {
       if (!b.isBone) return;
@@ -387,7 +396,8 @@ class NervBot {
     // inercia: el cuerpo se queda atras un instante y se inclina al viaje
     this.root.position.y -= vel * 0.10;
     this.root.rotation.x = lerp(this.root.rotation.x, vel * 0.045, 0.06);
-    this.root.rotation.y = lerp(this.root.rotation.y, this.pose.rotY + this.pointer.x * 0.16 + sway, 0.05);
+    this.root.rotation.y = lerp(this.root.rotation.y,
+      this.pose.rotY + this.pointer.x * 0.16 + sway + this.paso.rumbo, 0.05);
     this.root.rotation.z = lerp(this.root.rotation.z, this.pose.rotZ + this.pose.lean * -0.06 - vel * 0.028, 0.05);
 
     /* El recargo del final. El sitio se MIDE del recuadro real cada cuadro y
@@ -425,6 +435,82 @@ class NervBot {
 
     const rest = (b) => this.rest.get(b);
     const B = this.bones;
+
+    /* ── EL PASO ───────────────────────────────────────────────────────────
+       Los ejes de cada hueso estan medidos sobre el propio esqueleto, girando
+       uno por uno y viendo a donde se va el hueso hijo:
+
+         thigh.x  +0.5 -> el pie se va 0.42 hacia ATRAS   => x+ = pierna atras
+         calf.y   +0.5 -> el pie se va 0.23 hacia ADELANTE => y- = rodilla dobla
+         upperarm.x +0.5 -> la mano se va 0.27 atras       => x+ = brazo atras
+
+       Y los dos lados giran igual (no estan espejeados), asi que la unica
+       diferencia entre pierna izquierda y derecha es media vuelta de fase.
+
+       La cadencia sale de cuanto se esta desplazando ELLA en el mundo, que a
+       su vez lo manda el scroll. Asi el paso no es un bucle decorativo: si la
+       pagina no se mueve, ella no camina. */
+    const P = this.paso;
+    if (P.ultimaX === null) P.ultimaX = this.root.position.x;
+    const dx = this.root.position.x - P.ultimaX;
+    P.ultimaX = this.root.position.x;
+    P.vx = lerp(P.vx, dx / Math.max(dt, 0.001), 0.12);
+
+    const rapidez = Math.abs(P.vx);
+    P.andando = lerp(P.andando, clamp(rapidez / 0.55, 0, 1), 0.06);
+    // una zancada mide ~0.72 m: de ahi sale cuantos pasos por metro recorrido
+    P.fase += (P.vx / 0.72) * Math.PI * 2 * dt * -1;
+    // parada pero viva: sigue meciendose despacio en vez de congelarse
+    P.fase += dt * 0.55 * (1 - P.andando);
+
+    const f = P.fase;
+    const A = P.andando;
+    /* La amplitud va atada a la mezcla, no sumada a una base. Con una base
+       fija las piernas seguian columpiando parada: los pies quedaban a 0.70 de
+       separacion y uno flotaba 9 cm del suelo. Quieta casi no se abren. */
+    const zancada  = 0.05 + A * 0.55;     // cuanto abre la pierna
+    const rodilla  = 0.04 + A * 0.62;
+    const brazoAmp = 0.04 + A * 0.34;
+
+    /* Ella mira hacia donde camina. Cuando se para, vuelve a la pose de la
+       ruta -- si no, quedaria de perfil delante de quien la lee. */
+    P.rumbo = lerp(P.rumbo, clamp(P.vx * 1.6, -1, 1) * 0.5 * A, 0.05);
+
+    const pierna = (muslo, pant, pie, desfase) => {
+      const b1 = B[muslo], b2 = B[pant], b3 = B[pie];
+      const s = Math.sin(f + desfase);
+      if (b1) {
+        const r = rest(b1);
+        b1.rotation.x = lerp(b1.rotation.x, r.x + s * zancada, 0.18);
+      }
+      if (b2) {
+        const r = rest(b2);
+        // la rodilla solo dobla hacia atras, nunca al reves: de ahi el max(0)
+        const dobla = Math.max(0, Math.sin(f + desfase + 0.9));
+        b2.rotation.y = lerp(b2.rotation.y, r.y - dobla * rodilla, 0.18);
+      }
+      if (b3) {
+        const r = rest(b3);
+        b3.rotation.x = lerp(b3.rotation.x, r.x - s * 0.22 * A, 0.16);
+      }
+    };
+    pierna('musloL', 'pantL', 'pieL', 0);
+    pierna('musloR', 'pantR', 'pieR', Math.PI);
+
+    // la pelvis sube y baja dos veces por zancada, y contragira con el tronco
+    if (B.pelvis) {
+      const r = rest(B.pelvis);
+      B.pelvis.rotation.y = lerp(B.pelvis.rotation.y, r.y + Math.sin(f) * 0.12 * A, 0.12);
+      B.pelvis.rotation.z = lerp(B.pelvis.rotation.z, r.z + Math.sin(f) * 0.05, 0.10);
+    }
+    if (B.spine1) {
+      const r = rest(B.spine1);
+      B.spine1.rotation.y = lerp(B.spine1.rotation.y, r.y - Math.sin(f) * 0.09 * A, 0.10);
+      B.spine1.rotation.x = lerp(B.spine1.rotation.x, r.x + breath * 0.010, 0.08);
+    }
+    // el rebote del cuerpo al caminar, y el peso al estar parada
+    this.root.position.y += Math.abs(Math.sin(f)) * 0.018 * A * k
+                          - (1 - A) * Math.sin(f * 0.5) * 0.004 * k;
 
     // mirada: sigue el cursor, y de vez en cuando voltea a otro lado
     this.gaze.next -= dt;
@@ -527,7 +613,9 @@ class NervBot {
          el derecho -- el izquierdo se quedaria colgando en el aire. */
       const apoyo = this.pose.lean * 0.40;
       B.armR.rotation.z = lerp(B.armR.rotation.z, r.z + wave - apoyo + breath * 0.01, 0.1);
-      B.armR.rotation.x = lerp(B.armR.rotation.x, r.x + this.pose.lean * 0.30, 0.07);
+      // el brazo contrabalancea a la pierna del MISMO lado: media vuelta atras
+      B.armR.rotation.x = lerp(B.armR.rotation.x,
+        r.x + this.pose.lean * 0.30 - Math.sin(f + Math.PI) * brazoAmp * (1 - this.pose.lean), 0.14);
       if (B.foreR) {
         const rf = rest(B.foreR);
         B.foreR.rotation.y = lerp(B.foreR.rotation.y, rf.y + (this.gesture === 'wave' ? Math.sin(g * 11) * 0.4 : 0), 0.18);
@@ -538,6 +626,13 @@ class NervBot {
       const r = rest(B.armL);
       const point = this.gesture === 'point' ? 0.5 : 0;
       B.armL.rotation.z = lerp(B.armL.rotation.z, r.z + point + breath * 0.012, 0.09);
+      B.armL.rotation.x = lerp(B.armL.rotation.x, r.x - Math.sin(f) * brazoAmp, 0.14);
+      if (B.foreL) {
+        const rf = rest(B.foreL);
+        // el codo se dobla un poco cuando el brazo va adelante: no es un remo
+        B.foreL.rotation.y = lerp(B.foreL.rotation.y,
+          rf.y - Math.max(0, Math.sin(f)) * 0.30 * A, 0.14);
+      }
     }
     if (B.clavL && this.pose.lean) {
       const r = rest(B.clavL);
