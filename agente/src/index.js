@@ -23,22 +23,18 @@ import * as almacen from './almacen.js';
 import * as avisos from './avisos.js';
 import * as bandeja from './bandeja.js';
 import * as tablero from './tablero.js';
+import * as whatsapp from './whatsapp.js';
+import {
+  BASE,
+  MODELO,
+  MAX_TOKENS,
+  MAX_LARGO_MENSAJE,
+  MAX_VUELTAS_HERRAMIENTA,
+  cupo,
+  levantarAviso,
+} from './motor.js';
 import { verificar } from './verificador.js';
 import { vigilar } from './vigilante.js';
-
-const BASE = 'https://api.deepseek.com/anthropic';
-const MODELO = 'deepseek-v4-pro';
-
-// Un chat, no un ensayo.
-const MAX_TOKENS = 2048;
-
-// Cotas de entrada.
-const MAX_LARGO_MENSAJE = 1500;
-const MAX_VUELTAS_HERRAMIENTA = 4;
-
-function hoy() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function cors(origen) {
   return {
@@ -57,56 +53,6 @@ function json(cuerpo, estado, cabeceras) {
   });
 }
 
-/* Devuelve null si hay cupo, o el motivo si ya no. KV es de consistencia
-   eventual: dos peticiones simultáneas pueden colarse por encima del tope. Da
-   igual — esto es un tope de gasto, no un candado de seguridad.
-
-   Las claves llevan el id del cliente porque si no, la primera empresa que se
-   ponga de moda le agota la cuota del día a todas las demás. */
-async function cupo(kv, clienteId, ip, topes) {
-  if (!kv) return null;
-  const fecha = hoy();
-  const claveIp = `${clienteId}:ip:${ip}:${fecha}`;
-  const claveTotal = `${clienteId}:total:${fecha}`;
-
-  const [crudoIp, crudoTotal] = await Promise.all([kv.get(claveIp), kv.get(claveTotal)]);
-  const usoIp = Number(crudoIp) || 0;
-  const usoTotal = Number(crudoTotal) || 0;
-
-  if (usoIp >= topes.porIp) return 'Llegaste al límite de mensajes por hoy.';
-  if (usoTotal >= topes.global) return 'El agente alcanzó su cuota del día.';
-
-  // 48 h de vida: cubre el día en curso sin importar la zona horaria.
-  const opciones = { expirationTtl: 172800 };
-  await Promise.all([
-    kv.put(claveIp, String(usoIp + 1), opciones),
-    kv.put(claveTotal, String(usoTotal + 1), opciones),
-  ]);
-  return null;
-}
-
-/* Levanta un aviso: primero lo escribe, luego intenta entregarlo.
-
-   Ese orden es el punto. Si entregáramos primero y escribiéramos después, un
-   fallo de Telegram borraría el lead del mundo. Así queda constancia, y si la
-   entrega falla el verificador lo encuentra esa noche con `entregado = 0`. */
-async function levantarAviso(env, clienteId, sesionId, aviso, hilo) {
-  let id = null;
-  try {
-    id = await almacen.registrarAviso(env.DB, sesionId, clienteId, aviso);
-  } catch (e) {
-    console.error('no se pudo registrar el aviso:', e);
-  }
-  const salio = await avisos.porTelegram(env, aviso, hilo);
-  if (salio && id !== null) {
-    try {
-      await almacen.marcarEntregado(env.DB, id);
-    } catch (e) {
-      console.error('no se pudo marcar el aviso como entregado:', e);
-    }
-  }
-}
-
 export default {
   async fetch(peticion, env, contexto) {
     const ruta = new URL(peticion.url).pathname;
@@ -122,6 +68,13 @@ export default {
       peticion, env, ruta, bandeja.autorizado, bandeja.json
     );
     if (deTablero) return deTablero;
+
+    /* WhatsApp también va antes del control de origen, y por una razón que
+       conviene tener presente: un webhook NO trae cabecera Origin. El portero
+       que protege todo lo de abajo no aplica aquí, así que este canal trae su
+       propia puerta —firma HMAC del cuerpo— y es la única que tiene. */
+    const deWhatsapp = await whatsapp.atender(peticion, env, ruta, contexto);
+    if (deWhatsapp) return deWhatsapp;
 
     // El origen decide de quién es esta petición. Si no es de nadie, 403 sin
     // llegar a la API — el navegador no decide esto, lo decide el servidor.

@@ -48,6 +48,23 @@ crons = ["0 9 * * *"]
 #
 #   WHATSAPP_E164       su número en formato E.164 sin +, ej. 528112345678
 #   CAL_URL             su página de reservas
+#   KAPSO_NUMERO_ID     el phone_number_id del número de WhatsApp Business en
+#                       Kapso. NO es el teléfono: es el id que Meta le da al
+#                       número, y es lo que trae el webhook para decir a quién
+#                       le escribieron.
+#
+# El canal de WhatsApp además necesita dos secretos del proyecto de Kapso, que
+# NO son por cliente porque son de la cuenta:
+#
+#   KAPSO_API_KEY       la llave del proyecto (Project Settings > API Keys).
+#                       Con ella se contesta.
+#   KAPSO_WEBHOOK_SECRET  el secreto que Kapso genera al crear el webhook. Es
+#                       la ÚNICA puerta de /whatsapp: un webhook no manda
+#                       cabecera Origin, así que el control de origen —que
+#                       protege todo lo demás— no aplica ahí.
+#
+# Sin los tres, /whatsapp contesta 503 y no gasta nada. Es la postura correcta:
+# un endpoint público que llama al modelo sin puerta es una llave a tu tarjeta.
 #
 # Los dos de Telegram son opcionales: sin ellos el agente funciona igual, y el
 # aviso queda escrito en la base con entregado = 0 para que lo veas en la

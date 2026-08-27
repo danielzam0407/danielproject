@@ -144,6 +144,7 @@ main{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);min-height
 .tag{display:inline-block;border:1px solid currentColor;padding:0 5px;margin-left:6px;font-size:11px;font-style:normal}
 .lead{color:var(--w)}
 .nueva{color:var(--a)}
+.wa{color:var(--w)}
 #hilo{padding:18px;overflow-y:auto;max-height:calc(100vh - 53px)}
 .m{margin:0 0 14px;max-width:70ch}
 .m .q{color:var(--d);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
@@ -250,6 +251,7 @@ function sesiones() {
       }
       $('#lista').innerHTML = ss.map(function (s) {
         var marcas = '';
+        if (s.canal === 'whatsapp') marcas += '<em class="tag wa">whatsapp</em>';
         if (s.avisos) marcas += '<em class="tag lead">' + s.avisos + ' lead</em>';
         if (!s.atendida) marcas += '<em class="tag nueva">nueva</em>';
         return '<div class="s' + (s.id === actual ? ' on' : '') + '" data-id="' + esc(s.id) + '">' +

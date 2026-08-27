@@ -136,6 +136,135 @@ var ENDPOINT = 'https://daniel-agente.daniii.workers.dev/';
 Si se vacía, **el botón deja de dibujarse** — el sitio nunca muestra un chat
 roto, simplemente no hay chat. Es el interruptor para apagarlo sin desplegar.
 
+## Que también conteste por WhatsApp (Kapso)
+
+Hasta aquí el agente vivía sólo en el sitio, y su escalada era un botón
+`wa.me` que abría tu WhatsApp personal: la conversación se te entregaba a mano
+y ahí se acababa el agente. Con esto la sigue él — mismo perfil, misma base,
+misma cuota— y a ti te llega el aviso igual.
+
+El código ya está desplegado y **apagado**: sin los tres secretos de abajo,
+`/whatsapp` contesta 503 y no gasta un peso. Encenderlo son los pasos de esta
+sección.
+
+### Antes que nada: tu número personal NO va aquí
+
+Conectar un número a la API de WhatsApp Business **lo migra a la Cloud API y
+pierdes la app de WhatsApp en ese número**. Deja de funcionar en tu teléfono,
+va en una sola dirección, y recuperarlo es un trámite con Meta.
+
+Kapso da un **número pre-verificado en su plan gratis**. Ése es el que va. Tu
+número personal se queda como está.
+
+### 1. La cuenta
+
+1. Alta en <https://kapso.com>.
+2. Toma el número pre-verificado que te dan (o conecta uno **que no uses en el
+   teléfono**).
+3. `Project Settings > API Keys` → crea una llave de proyecto. Es
+   `KAPSO_API_KEY`.
+4. En el número, copia su **phone number ID**. No es el teléfono: es el
+   identificador que Meta le da al número, quince dígitos. Es
+   `KAPSO_NUMERO_ID`.
+
+### 2. El webhook — en la pestaña **WhatsApp**, no en Platform
+
+Esto es lo primero que se hace mal. En `Webhooks` hay dos pestañas y sólo una
+sirve:
+
+| Pestaña | Qué manda | ¿Nos sirve? |
+|---|---|---|
+| **Platform** (*Project webhooks*) | ciclo de vida, workflows, agent runs | **No.** No manda mensajes. Si lo pones ahí no llega nada. |
+| **WhatsApp** | mensajes y conversaciones, **por número** | Sí |
+
+Los webhooks de mensajes son **por número**: abres el número conectado, le das
+al **lápiz (Edit)** y ahí va la URL.
+
+- **URL**: `https://daniel-agente.daniii.workers.dev/whatsapp`
+- **Kind**: `kapso`. **No `meta`.** `meta` reenvía el formato crudo de Meta
+  (`entry[].changes[].value.messages[]`, firma en `X-Hub-Signature-256`) y este
+  worker no lo entiende: lee el formato de Kapso —`message`, `conversation`,
+  `phone_number_id` arriba— y la firma en `X-Webhook-Signature`. Con `meta` no
+  falla ruidosamente: ignora todo con un 200.
+- **Payload version**: `v2`, si te lo pregunta.
+- **Eventos**: deja **sólo** `Message received`. El panel llega con los once
+  marcados, y el caro es **`Message sent`**: es el aviso de lo que el agente
+  acaba de mandar, o sea el agente contestándose a sí mismo en bucle y pagando
+  cada vuelta. El worker los descarta por el nombre del evento y está probado
+  —ni con el campo `direction` ausente se cuela—, pero desmarcarlos ahorra
+  entregas que no sirven para nada.
+- **Buffering**: déjalo **apagado** para la primera prueba. Sirve para juntar
+  en un sobre los mensajes que alguien escribe seguidos, pero mete la espera de
+  su ventana antes de contestar. El worker atiende las dos formas —el sobre lo
+  procesa en orden y en el mismo hilo—, así que enciéndelo después si ves que
+  la gente escribe en pedacitos.
+- Copia el **secreto que genera**. Es `KAPSO_WEBHOOK_SECRET`, y es la **única**
+  puerta de ese endpoint: un webhook no manda cabecera `Origin`, así que el
+  control de origen que protege todo lo demás no aplica ahí.
+
+### 3. Los tres secretos
+
+Se ponen uno por uno, y **los escribes tú**: un secreto que pasa por el chat de
+alguien más deja de ser secreto.
+
+```
+npx wrangler secret put KAPSO_API_KEY
+npx wrangler secret put KAPSO_WEBHOOK_SECRET
+npx wrangler secret put KAPSO_NUMERO_ID
+```
+
+Los tres, o nada: con dos de tres el endpoint sigue en 503, a propósito.
+
+### 4. Probarlo
+
+Escríbele al número de Kapso desde tu teléfono. Debe contestarte el agente en
+segundos. Si no:
+
+```
+npx wrangler tail
+```
+
+y vuelve a escribir. Lo que vas a ver:
+
+| En el log | Qué pasó |
+|---|---|
+| nada, y `/whatsapp` da 503 | falta alguno de los tres secretos |
+| 401 en `/whatsapp` | el secreto no es el que puso Kapso — **o el webhook quedó como `kind: meta`**, que manda la firma en otra cabecera |
+| 200 y nada más | el `phone_number_id` que manda Kapso no es el de `KAPSO_NUMERO_ID` |
+| `kapso rechazó el envío` | la `KAPSO_API_KEY` no sirve, o el número no está activo |
+
+En la bandeja, esas conversaciones salen marcadas **whatsapp**.
+
+### 5. Lo que decides tú después
+
+- **El botón del sitio.** `pasar_a_whatsapp` sigue apuntando a
+  `WHATSAPP_E164`, que hoy es tu número personal. Si lo cambias al de Kapso,
+  quien toque el botón cae con el agente en vez de contigo — y de paso tu
+  número deja de estar en la respuesta pública de `/contacto`. Si lo dejas
+  como está, el botón te sigue llegando a ti: las dos son defendibles, pero
+  son distintas.
+- **La política de privacidad.** `../privacy.html` describe el chat del sitio.
+  Con este canal se guardan además conversaciones que llegan por WhatsApp
+  (el texto y el id de charla de Kapso; **el teléfono no se guarda**). Eso
+  toca decirlo ahí antes de que el número sea público.
+
+### Lo que el agente puede hacer aquí, y por qué son menos cosas
+
+En el sitio tiene seis herramientas; aquí tiene **dos**.
+
+Las tres de enseñar —`cambiar_piel`, `componer_pagina`, `mostrar_trabajo`—
+pintan algo en la pantalla de quien escribe, y en WhatsApp no hay pantalla
+nuestra. Dárselas sería peor que no dárselas: las llamaría, no pasaría nada, y
+prometería algo que la persona nunca ve. `pasar_a_whatsapp` tampoco tiene
+sentido cuando ya estás en WhatsApp.
+
+Quedan `avisar_a_daniel` —la misma escalada, sin el botón— y
+`agendar_llamada`, que aquí manda la liga escrita en el mensaje.
+
+Quién es el agente y qué no hace es **el mismo texto** en los dos canales: una
+guía de conducta que cambia según por dónde entres es justo el hueco por el que
+se cuela quien la está probando. Lo único que cambia es lo que puede hacer.
+
 ## Que te avise de cada lead
 
 Sin esto dependes de que el visitante toque el botón. Alguien puede leer el

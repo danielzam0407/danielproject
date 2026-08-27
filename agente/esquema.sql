@@ -13,8 +13,28 @@ CREATE TABLE IF NOT EXISTS sesiones (
   vista     TEXT NOT NULL,            -- último turno; ordena la bandeja
   turnos    INTEGER NOT NULL DEFAULT 0,
   ip        TEXT,                     -- para cortar abuso, no para identificar
-  atendida  INTEGER NOT NULL DEFAULT 0
+  atendida  INTEGER NOT NULL DEFAULT 0,
+  canal     TEXT,                     -- NULL = el sitio; 'whatsapp' = webhook de Kapso
+  externo   TEXT                      -- id de la conversación en Kapso, para reencontrar el hilo
 );
+
+-- El puente de un canal externo a su hilo. UNIQUE es lo que lo hace correcto:
+-- dos mensajes de la misma persona que llegan a la vez compiten por insertar y
+-- gana uno solo, así que los dos acaban en la MISMA conversación. Vivió en KV
+-- media hora y se midió el error — KV es de consistencia eventual y los dos
+-- mensajes de un mismo lote abrían dos hilos, cada uno ciego al otro.
+--
+-- SQLite trata cada NULL como distinto, así que las sesiones del sitio (canal
+-- y externo en NULL) no chocan entre sí ni con nada.
+CREATE UNIQUE INDEX IF NOT EXISTS sesiones_por_externo
+  ON sesiones (cliente, canal, externo);
+
+-- Si tu base es anterior al canal de WhatsApp, las dos columnas y el índice se
+-- agregan con (SQLite no tiene ALTER ... ADD COLUMN IF NOT EXISTS, por eso van
+-- aquí abajo y no arriba: meterlos en el CREATE rompería volver a aplicar este
+-- archivo):
+--   npx wrangler d1 execute conversaciones --remote --command "ALTER TABLE sesiones ADD COLUMN canal TEXT"
+--   npx wrangler d1 execute conversaciones --remote --command "ALTER TABLE sesiones ADD COLUMN externo TEXT"
 
 -- Ordenar la bandeja por actividad es LA consulta de la bandeja. Sin este
 -- índice, cada carga lee la tabla entera.

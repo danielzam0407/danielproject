@@ -54,6 +54,29 @@ export function porOrigen(origen, env) {
   return null;
 }
 
+/* Quién es el dueño de un número de WhatsApp. Mismo papel que `porOrigen`:
+   decide de qué cliente es la petición, y sin dueño no se atiende.
+
+   Se resuelve por `ajustes(env)` y no por una lista estática como los orígenes
+   porque el id del número es un secreto —vive en `env`, no en el repo— y una
+   ficha no debe poder leer los secretos de otra. Son cuatro fichas como mucho;
+   recorrerlas cuesta menos que mantener un índice que se puede quedar viejo.
+
+   La firma del webhook prueba una sola cosa: que el mensaje lo mandó Kapso.
+   Quién es el dueño lo decide este número. Eso alcanza mientras todos los
+   números del proyecto sean nuestros. El día que una empresa traiga SU propio
+   proyecto de Kapso traerá también su propio secreto, y entonces hace falta
+   otra puerta — una sola no puede verificar dos firmas distintas. */
+export function porNumeroWhatsapp(numeroId, env) {
+  if (!numeroId) return null;
+  for (const ficha of FICHAS) {
+    if (!ficha.whatsapp) continue;
+    const ajustes = ficha.ajustes(env);
+    if (ajustes.kapsoNumeroId && String(ajustes.kapsoNumeroId) === String(numeroId)) return ficha;
+  }
+  return null;
+}
+
 /* Para el vigilante: los orígenes de producción, tal cual, para que pueda
    revisar que ninguno sea de desarrollo. */
 export function origenesDeProduccion() {

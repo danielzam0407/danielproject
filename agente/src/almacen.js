@@ -33,6 +33,59 @@ export async function abrir(db, clienteId, ip) {
   return id;
 }
 
+/* Lo mismo, para un canal de afuera: WhatsApp y lo que venga después.
+
+   `externo` es el id que ese canal le da a la conversación —en Kapso, el de la
+   charla— y NUNCA el teléfono: un dato personal no tiene por qué vivir en una
+   columna indexada para siempre.
+
+   Lo que hace correcta esta función es el INSERT OR IGNORE contra el índice
+   único: si dos mensajes de la misma persona llegan a la vez, los dos intentan
+   abrir y sólo uno lo consigue; el que pierde recoge el id del que ganó y los
+   dos siguen en el MISMO hilo. Con un puente en KV esto salía mal y se midió:
+   dos mensajes de un mismo lote de Kapso abrían dos conversaciones separadas,
+   cada una ciega a la otra. */
+export async function abrirCanal(db, clienteId, canal, externo) {
+  const id = crypto.randomUUID();
+  const t = ahora();
+  const r = await db
+    .prepare(
+      'INSERT OR IGNORE INTO sesiones (id, cliente, creada, vista, ip, canal, externo) ' +
+        'VALUES (?, ?, ?, ?, NULL, ?, ?)'
+    )
+    .bind(id, clienteId, t, t, canal, externo)
+    .run();
+  if (r.meta.changes > 0) return id;
+
+  const fila = await db
+    .prepare('SELECT id FROM sesiones WHERE cliente = ? AND canal = ? AND externo = ?')
+    .bind(clienteId, canal, externo)
+    .first();
+  return fila ? fila.id : null;
+}
+
+/* El hilo abierto de una conversación de afuera, si todavía está fresco.
+
+   `vidaSegundos` es cuánto dura el puente. Al vencer se suelta —el hilo viejo
+   se queda en la bandeja, sólo deja de ser el hilo "actual" de esa charla— y
+   el siguiente mensaje abre uno nuevo sin chocar con el índice único. Para
+   WhatsApp son 24 h, que es la misma ventana en la que Meta deja contestar sin
+   plantilla: el hilo y el permiso de responder caducan juntos, a propósito. */
+export async function porCanal(db, clienteId, canal, externo, vidaSegundos) {
+  const fila = await db
+    .prepare('SELECT id, vista FROM sesiones WHERE cliente = ? AND canal = ? AND externo = ?')
+    .bind(clienteId, canal, externo)
+    .first();
+  if (!fila) return null;
+
+  const edad = Date.now() - Date.parse(fila.vista);
+  if (!Number.isFinite(edad) || edad > vidaSegundos * 1000) {
+    await db.prepare('UPDATE sesiones SET externo = NULL WHERE id = ?').bind(fila.id).run();
+    return null;
+  }
+  return fila.id;
+}
+
 /* Busca una sesión y comprueba que sea de este cliente.
 
    Esa segunda parte es la que impide que un id filtrado de una empresa sirva
@@ -129,7 +182,7 @@ export async function hiloVisitante(db, clienteId, sesionId) {
 export async function listarSesiones(db, clienteId, limite = 50) {
   const { results } = await db
     .prepare(
-      'SELECT s.id, s.creada, s.vista, s.turnos, s.atendida, ' +
+      'SELECT s.id, s.creada, s.vista, s.turnos, s.atendida, s.canal, ' +
         '(SELECT COUNT(*) FROM avisos a WHERE a.sesion = s.id) AS avisos, ' +
         '(SELECT texto FROM mensajes m WHERE m.sesion = s.id AND m.rol = ' +
         "'visitante' ORDER BY m.id ASC LIMIT 1) AS primera " +
@@ -142,7 +195,7 @@ export async function listarSesiones(db, clienteId, limite = 50) {
 
 export async function leerSesion(db, clienteId, sesionId) {
   const cabeza = await db
-    .prepare('SELECT id, creada, vista, turnos, atendida FROM sesiones WHERE id = ? AND cliente = ?')
+    .prepare('SELECT id, creada, vista, turnos, atendida, canal FROM sesiones WHERE id = ? AND cliente = ?')
     .bind(sesionId, clienteId)
     .first();
   if (!cabeza) return null;
