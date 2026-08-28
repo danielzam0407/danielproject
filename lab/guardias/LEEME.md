@@ -1,8 +1,8 @@
-# Los instrumentos de la cara v4
+# Los instrumentos de la cara
 
-Trece scripts que **miden** la portada en vez de mirarla. Se escribieron
-construyendo `v4.html` y cada uno nació de un defecto que no se veía a simple
-vista. Viven en `lab/`, que el middleware bloquea en producción
+Quince scripts que **miden** la portada en vez de mirarla. Se escribieron
+construyendo `v4.html` y `v5.html`, y cada uno nació de un defecto que no se
+veía a simple vista. Viven en `lab/`, que el middleware bloquea en producción
 (`functions/_middleware.js`, lista `TALLER`), así que están versionados y no se
 sirven.
 
@@ -23,7 +23,7 @@ Para servir el sitio local: `preview_start` con `nerv-estatico`
 | `desb.mjs` | ¿desborda alguna palabra? Las 6 a 5 anchos, en ambos idiomas | El titular giratorio cambia de ancho |
 | `contraste.mjs` | pares bajo 4.5:1, separando la **columna de lectura** (≥12px) del resto | La línea base de la casa. Mata las transiciones antes de medir (regla 9) |
 | `tipo.mjs` | cuántos tamaños, pesos y familias hay de verdad | Destapó 16 tamaños y 5 pesos donde la doctrina pide tres y dos |
-| `mirar.mjs` | captura la página **después de recorrerla**, y con `--sin-mov` la captura sin el motor de animación | La prueba de la regla 3: sin JS la página tiene que verse igual. Reporta cuántos elementos quedaron sin revelar |
+| `mirar.mjs` | captura la página **después de recorrerla**, y con `--sin-mov` la captura sin el motor de animación | La prueba de la regla 3: sin JS la página tiene que verse igual. Reporta cuántos elementos quedaron sin revelar. **Trampa medida el 2026-08-28:** su captura es de página completa, o sea más allá del viewport, y ahí un `background-image` sobre un elemento con `contain:paint` sale EN BLANCO aunque en pantalla se vea. Las cinco tarjetas de `#trabajo` de v5 salían vacías y no les pasaba nada. Para juzgar esa sección, captura el viewport (`og.mjs`), no la página entera |
 | `dx.mjs` | errores y excepciones de consola, y qué hijos del `body` ocupan alto | Cazó los 900px que `#dc-root` seguía ocupando vacío |
 | `reel4.mjs` | los 4 carretes: proporción, diferencia escenario/video, y **cuántos videos quedan varados** tras cerrar | Los videos se apilaban en el escenario en vez de volver a su tarjeta |
 | `es-check.mjs` | ¿se aplicó el español? Qué cadenas siguen en inglés | El diccionario estaba bien y no se disparaba nunca |
@@ -31,6 +31,8 @@ Para servir el sitio local: `preview_start` con `nerv-estatico`
 | `limite.mjs` | **coste en ms** de re-sembrar la ráfaga, viaje del riel, medida real | Había que probar que redibujar cada 2.6s no da tirón (34ms el primero, 5-11 los demás) |
 | `textos.mjs` | vuelca los nodos de texto reales del DOM | Para generar el diccionario ES con las claves **exactas**, no inventadas |
 | `archivar.mjs` | capturas de página completa en varios estados (idioma × modo, escritorio y móvil) | El respaldo visual de `nerv-v3` |
+| `pieza-a-video.mjs` | **graba** una pieza de Claude Design a MP4, cuadro a cuadro | Servir la pieza viva en la portada costaba 654 KB de Babel + 92 KB de JSX compilados en el navegador + medio mega de DOM, **por pieza**. Usa el contrato de exportación de `animations-v3.jsx` (`data-om-seek-to-time-frame` con `sync:true`), así que cada cuadro es determinista |
+| `og.mjs` | la imagen de anuncio (`og:image`), esperando a que el titular tenga una palabra **completa** | El titular se teclea solo: una captura al azar cae a media palabra la mitad de las veces, y «Hacemos portaf\|» en la tarjeta de WhatsApp parece un sitio roto |
 
 ## La lección que los explica a todos
 

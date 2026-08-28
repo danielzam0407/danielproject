@@ -15,3 +15,14 @@
 
 /robots.txt
   Content-Type: text/plain; charset=utf-8
+
+# El nombre del archivo lleva la version dentro (react-18.3.1.js), asi que el
+# contenido de esta URL no cambia nunca: subir de version es un archivo nuevo,
+# no una sobrescritura. Por eso `immutable` -- el navegador ni siquiera pregunta.
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Los carretes: se re-graban con el mismo nombre cuando la pieza cambia, asi
+# que aqui no va `immutable`. Un dia de cache y una revalidacion barata.
+/media/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

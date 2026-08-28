@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Inventario Novatek — pieza de nerv</title>
-<!-- Se sirve dentro de un iframe en /v5. Sin indexar: la pieza vive en la
-     seccion de trabajo, no como pagina suelta que compita en el buscador. -->
+<!-- Esta es la FUENTE de la pieza: de aqui se graba el carrete que se ensena
+     en /v5, cuadro a cuadro, con `lab/guardias/pieza-a-video.mjs`. La seccion
+     de trabajo ya no la mete en un iframe -- servirla viva costaba 654 KB de
+     Babel y 92 KB de JSX compilados en el navegador, por pieza. Sigue en pie y
+     navegable para poder verla, y para volver a grabarla cuando cambie.
+     Sin indexar: no compite en el buscador con la portada. -->
 <meta name="robots" content="noindex, nofollow">
 <script src="../support.js"></script>
 </head>

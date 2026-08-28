@@ -22,3 +22,9 @@
 *.zip binary
 *.pdf binary
 *.glb binary
+
+# Los vendidos van byte a byte como los publica quien los firma: su sha384 esta
+# declarado dentro de support.js y tiene que seguir cuadrando en cualquier
+# maquina. Sin esto, `text=auto` les mete CRLF al sacarlos en Windows y el hash
+# deja de dar.
+/vendor/** -text

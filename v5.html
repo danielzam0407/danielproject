@@ -11,7 +11,52 @@
      el dia que esto se promueva a index.html. -->
 <meta name="robots" content="noindex, nofollow">
 
+<!-- `noindex` es para los buscadores; esto es para WhatsApp, Slack y el correo,
+     que no lo miran. Sin estas seis lineas, mandarle /v5 a un prospecto le
+     llega como una tarjeta gris con una URL dentro. La imagen se saca de esta
+     misma portada, no de `og-nerv.jpg`: esa es la cara NERV anterior y anunciar
+     una cara con otra es peor que no anunciar nada. -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nervcenter.online/v5">
+<meta property="og:title" content="nerv — sitios que contestan">
+<meta property="og:description" content="Sitios web hechos a la medida en Monterrey, con un agente que atiende a tus clientes. Sin plantillas.">
+<meta property="og:image" content="https://nervcenter.online/og-v5.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23eceff5'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%230a0c12' stroke-width='2'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%231c3bf0'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#eceff5">
+
+<!-- La hoja de la tipografia vive dentro del <helmet> del componente, o sea que
+     no empieza a bajar hasta que React ya monto. Repetirla aqui la pone en
+     vuelo con el resto del <head>; el navegador dedupe la misma URL. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+
+<!-- React y ReactDOM servidos desde aqui, no desde unpkg.
+
+     `support.js` los baja solo si `window.React` no existe (`loadReactUmd`),
+     asi que cargarlos antes lo salta entero. Lo que se gana no son los 48 KB
+     de cable: es un viaje completo a un tercero -- DNS, TLS, conexion nueva --
+     en mitad del arranque y con TODA la pagina detras, porque el bloque del
+     componente no existe hasta que React lo dibuja. Medido en produccion antes
+     del cambio: DOMContentLoaded a los 2072 ms, con la pagina en blanco hasta
+     ahi.
+
+     OJO CON ESTE COMENTARIO: aqui arriba NO se puede escribir la etiqueta de
+     apertura del componente, ni dentro de un comentario. El runtime la busca
+     con una expresion regular sobre el TEXTO CRUDO del archivo
+     (`parseDcText`), no sobre el DOM, asi que se queda con la PRIMERA que
+     encuentre. Escribirla aqui hizo que la plantilla empezara en mitad de este
+     parrafo y que la pagina entera acabara metida dentro de un nodo con
+     `display:none`: todo seguia en el DOM y ninguna consulta fallaba, pero no
+     se veia nada. Costo un rato encontrarlo. Mencionala sin los picoparentesis.
+
+     Los bytes son los mismos: el sha384 de los dos archivos coincide con el
+     SRI que `support.js` declara para unpkg. Al subir de version hay que
+     volver a verificar ese hash antes de sustituirlos. -->
+<script src="./vendor/react-18.3.1.js"></script>
+<script src="./vendor/react-dom-18.3.1.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -54,7 +99,13 @@ details[open] .faq-plus{transform:rotate(45deg)}
 
   <div id="nerv-bot-host" ref="{{ botWrapRef }}" style="position:fixed;inset:0;z-index:55;pointer-events:none"></div>
 
-  <div ref="{{ cursorRef }}" style="position:fixed;top:0;left:0;z-index:120;pointer-events:none;mix-blend-mode:difference;opacity:0;will-change:transform">
+  <!-- `contain:layout` no es cosmetico: el anillo crece al pasar sobre algo
+       animando width/height/left/top durante 250 ms, y esas cuatro propiedades
+       obligan a recalcular el diseno del DOCUMENTO ENTERO en cada cuadro de esa
+       transicion. Con contencion de diseno el recalculo se queda dentro de esta
+       caja, que mide 0x0 y tiene tres hijos. Mismo dibujo, sin arrastrar la
+       pagina cada vez que el raton toca un enlace. -->
+  <div ref="{{ cursorRef }}" style="position:fixed;top:0;left:0;z-index:120;pointer-events:none;mix-blend-mode:difference;opacity:0;will-change:transform;contain:layout">
     <div ref="{{ ringRef }}" style="position:absolute;left:-19px;top:-19px;width:38px;height:38px;border:1px solid #fff;border-radius:50%;transition:width .25s cubic-bezier(.2,.8,.2,1),height .25s cubic-bezier(.2,.8,.2,1),left .25s cubic-bezier(.2,.8,.2,1),top .25s cubic-bezier(.2,.8,.2,1)"></div>
     <div style="position:absolute;left:-2px;top:-2px;width:4px;height:4px;background:#fff;border-radius:50%"></div>
     <div ref="{{ cLabelRef }}" style="position:absolute;left:28px;top:14px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#fff;white-space:nowrap;opacity:0;transition:opacity .2s"></div>
@@ -183,10 +234,22 @@ details[open] .faq-plus{transform:rotate(45deg)}
           <div style="font-size:clamp(34px,4.4vw,58px);font-weight:700;letter-spacing:-.05em;line-height:1">2</div>
           <div data-en="weeks from first call to live site" style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:8px;max-width:22ch">semanas de la primera llamada al sitio publicado</div>
         </div>
-        <div data-reveal="1" style="opacity:0;transform:translateY(14px);transition:opacity .7s cubic-bezier(.16,1,.3,1) .24s,transform .7s cubic-bezier(.16,1,.3,1) .24s;border-left:2px solid var(--accent);padding-left:16px">
-          <p data-en="Replace this line with a real client quote — one sentence about the result." style="margin:0;font-size:15px;line-height:1.5">Reemplaza esta línea con una frase real de un cliente: una oración sobre el resultado.</p>
-          <div data-en="client name · business · city" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:10px">nombre · negocio · ciudad</div>
-        </div>
+        <!-- Aqui iba una cuarta celda con el testimonio de un cliente, y decia
+             literalmente «Reemplaza esta linea con una frase real de un
+             cliente: una oracion sobre el resultado». Estaba SERVIDA en
+             publico, en la seccion que se llama «confianza», que es el peor
+             sitio posible para una nota del autor a si mismo.
+
+             Se quita en vez de rellenarse: un testimonio inventado afirma que
+             una persona real dijo algo que no dijo, y eso no es lo mismo que
+             una demo declarada como demo. Cuando haya una frase de un cliente
+             de verdad, vuelve una celda con este molde:
+               <div ... border-left:2px solid var(--accent);padding-left:16px>
+                 <p>la frase</p>
+                 <div>nombre · negocio · ciudad</div>
+               </div>
+             Mientras tanto las tres cifras de arriba se reparten la fila
+             solas: la rejilla es `auto-fit`. -->
       </div>
     </section>
 
@@ -263,7 +326,7 @@ details[open] .faq-plus{transform:rotate(45deg)}
     <section id="proceso" data-screen-label="05 · cómo va" style="padding:clamp(56px,9vh,112px) clamp(22px,5vw,88px);max-width:1500px">
       <div style="display:flex;align-items:baseline;gap:16px;margin-bottom:12px">
         <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--accent)">[ 03 ]</span>
-        <h2 data-reveal="1" data-en="How working with me goes" style="margin:0;font-size:clamp(30px,4.4vw,60px);font-weight:700;letter-spacing:-.04em;opacity:0;transform:translateY(16px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)">Cómo va trabajar conmigo</h2>
+        <h2 data-reveal="1" data-en="How working with me goes" style="margin:0;font-size:clamp(30px,4.4vw,60px);font-weight:700;letter-spacing:-.04em;opacity:0;transform:translateY(16px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)">Cómo es trabajar conmigo</h2>
       </div>
       <div data-reveal="1" style="height:1px;background:var(--fg);opacity:0;transform:scaleX(0);transform-origin:left;margin-bottom:34px;transition:opacity .4s,transform 1.1s cubic-bezier(.16,1,.3,1)"></div>
 
@@ -307,33 +370,12 @@ details[open] .faq-plus{transform:rotate(45deg)}
       <div data-reveal="1" style="height:1px;background:var(--fg);opacity:0;transform:scaleX(0);transform-origin:left;margin-bottom:32px;transition:opacity .4s,transform 1.1s cubic-bezier(.16,1,.3,1)"></div>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px">
-        <a href="#contacto" data-reveal="1" data-cursor="ver caso" style="display:block;opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)">
-          <div style="aspect-ratio:4/3;border:1px solid var(--hair);background-image:repeating-linear-gradient(135deg,var(--hair) 0 1px,transparent 1px 9px);display:flex;align-items:flex-end;padding:14px;transition:border-color .3s" style-hover="border-color:var(--accent)">
-            <span data-en="drop the screenshot here →" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);background:var(--bg);padding:4px 6px">arrastra aquí la captura →</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:11px;gap:12px">
-            <span data-en="A dashboard that answers" style="font-size:16px;font-weight:700;letter-spacing:-.02em">Un tablero que contesta</span>
-            <span data-en="console · live agent" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)">console · agente en vivo</span>
-          </div>
-        </a>
-        <a href="#contacto" data-reveal="1" data-cursor="ver caso" style="display:block;opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.16,1,.3,1) .1s,transform .8s cubic-bezier(.16,1,.3,1) .1s">
-          <div style="aspect-ratio:4/3;border:1px solid var(--hair);background-image:repeating-linear-gradient(135deg,var(--hair) 0 1px,transparent 1px 9px);display:flex;align-items:flex-end;padding:14px;transition:border-color .3s" style-hover="border-color:var(--accent)">
-            <span data-en="drop the screenshot here →" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);background:var(--bg);padding:4px 6px">arrastra aquí la captura →</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:11px;gap:12px">
-            <span data-en="A portfolio you walk through" style="font-size:16px;font-weight:700;letter-spacing:-.02em">Un portafolio que se camina</span>
-            <span data-en="css 3d · five rooms" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)">3d en css · cinco cuartos</span>
-          </div>
-        </a>
-        <a href="#contacto" data-reveal="1" data-cursor="ver caso" style="display:block;opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.16,1,.3,1) .2s,transform .8s cubic-bezier(.16,1,.3,1) .2s">
-          <div style="aspect-ratio:4/3;border:1px solid var(--hair);background-image:repeating-linear-gradient(135deg,var(--hair) 0 1px,transparent 1px 9px);display:flex;align-items:flex-end;padding:14px;transition:border-color .3s" style-hover="border-color:var(--accent)">
-            <span data-en="drop the screenshot here →" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);background:var(--bg);padding:4px 6px">arrastra aquí la captura →</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:11px;gap:12px">
-            <span data-en="A site you drive with the keyboard" style="font-size:16px;font-weight:700;letter-spacing:-.02em">Un sitio que se maneja con teclado</span>
-            <span data-en="command menu · four sections" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)">menú de comando · cuatro secciones</span>
-          </div>
-        </a>
+        <!-- La rejilla llega vacia a proposito. Los cinco carretes los monta
+             v5-trabajos.js desde FUERA del <x-dc>, porque una sincronizacion
+             desde Claude Design regenera este bloque y se lleva lo que este
+             dentro. Aqui vivian tres tarjetas de relleno que decian «arrastra
+             aqui la captura»: eso estaba servido en publico. Si una
+             sincronizacion las devuelve, el script las apaga solo. -->
       </div>
     </section>
 
@@ -450,14 +492,18 @@ const WORDS_EN = ['websites','apps','stores','portfolios','dashboards','catalogu
 class Component extends DCLogic {
   state = { q:'', typed:'', showReply:false, appliedTag:'', lang:'es' };
 
-  renderVals() {
-    if (!this.maskSyncOn) { this.maskSyncOn = true; setTimeout(()=> this.initMaskSync(), 0); }
-    return {
-      q: this.state.q,
-      typed: this.state.typed,
-      showReply: this.state.showReply,
-      appliedTag: this.state.appliedTag,
-      langLabel: this.state.lang === 'es' ? 'en' : 'es',
+  /* Los ganchos se arman UNA vez y se reparten en cada pintada.
+
+     Antes se creaban de cero dentro de renderVals: veintitrés funciones nuevas
+     por render, y React trata un `ref` con identidad nueva como un ref
+     distinto — lo suelta con null y lo vuelve a enganchar. Mientras el agente
+     contesta esto pasa cincuenta y cinco veces por segundo, una por letra
+     escrita, y cada vuelta desengancha y reengancha el lienzo, el cursor, el
+     riel y la barra. De ahí venía el `if (this.canvas !== c) bind()` del bucle
+     de dibujo: era la venda de esta herida. */
+  ganchos() {
+    if (this._ganchos) return this._ganchos;
+    return (this._ganchos = {
       canvasRef: (el)=>{ this.canvas = el; },
       cursorRef: (el)=>{ this.cur = el; },
       ringRef: (el)=>{ this.ring = el; },
@@ -477,7 +523,18 @@ class Component extends DCLogic {
       onSend: ()=> this.ask(this.state.q),
       onLang: ()=> this.toggleLang(),
       onChip: (e)=>{ const q = e.currentTarget.getAttribute('data-q'); this.setState({ q }); this.ask(q); }
-    };
+    });
+  }
+
+  renderVals() {
+    if (!this.maskSyncOn) { this.maskSyncOn = true; setTimeout(()=> this.initMaskSync(), 0); }
+    return Object.assign({
+      q: this.state.q,
+      typed: this.state.typed,
+      showReply: this.state.showReply,
+      appliedTag: this.state.appliedTag,
+      langLabel: this.state.lang === 'es' ? 'en' : 'es'
+    }, this.ganchos());
   }
 
   componentDidMount() {
@@ -620,15 +677,59 @@ class Component extends DCLogic {
     const cs = getComputedStyle(document.documentElement);
     this.tc = {
       bg: cs.getPropertyValue('--bg').trim() || '#eceff5',
-      bgRGB: name === 'dark' ? '7,8,12' : '236,239,245',
       line: name === 'dark' ? '238,241,246' : '10,12,18'
     };
+    /* La rampa de opacidad de la rejilla, calculada una vez por tema. El bucle
+       la indexa en vez de construir una cadena `rgba(...)` por curva y por
+       cuadro. Son 24 escalones sobre un rango de 0.04 a 0.11: a esa opacidad
+       el ojo no separa dos escalones contiguos, y el `toFixed` desaparece. */
+    this.tinta = [];
+    for (let i = 0; i < 24; i++) {
+      this.tinta.push('rgba(' + this.tc.line + ',' + (0.075 + 0.035 * (i / 11.5 - 1)).toFixed(3) + ')');
+    }
+    if (this.repintar) this.repintar();
     if (instant) this.tcTarget = this.tc;
   }
 
+  /* El velo que apaga la rejilla a la izquierda y abajo eran DOS
+     `createLinearGradient` y dos rellenos a pantalla completa por cuadro: dos
+     tercios del coste de relleno del lienzo, gastados en dibujar algo que no
+     cambia nunca. Ahora es una capa de CSS que el compositor pinta una vez.
+
+     Va colgada del <body> y no del componente porque el componente se repinta
+     con cada letra que teclea el agente. Y funciona en z-index 1 —entre el
+     lienzo (0) y el contenido (10)— porque no hay ningun contexto de
+     apilamiento de por medio: medido, de <canvas> a <html> todos los padres son
+     static/relative sin transform, opacity, filter ni contain. Si algun dia
+     alguno gana uno, el velo se hunde o se sube de golpe y se ve al instante. */
+  velo() {
+    let v = document.getElementById('nerv-velo');
+    if (!v) {
+      v = document.createElement('div');
+      v.id = 'nerv-velo';
+      document.body.appendChild(v);
+      (this.off = this.off || []).push(()=> v.remove());
+    }
+    /* Mismos numeros que tenia el lienzo: el degradado de la izquierda corria
+       de 0 a 0.78w con paradas en 0.97 / 0.62 / 0, o sea 0 %, 43 % y 78 % de la
+       pantalla; el de abajo, de 62 % a 100 % hasta 0.95. El de abajo se declara
+       primero porque en CSS el primero queda encima, que es el orden en que se
+       rellenaban. `--bg` lo mueve setTheme, asi que el velo sigue al tema solo. */
+    v.style.cssText = 'position:fixed;inset:0;z-index:1;pointer-events:none;background:' +
+      'linear-gradient(to bottom,transparent 62%,color-mix(in srgb,var(--bg) 95%,transparent) 100%),' +
+      'linear-gradient(to right,color-mix(in srgb,var(--bg) 97%,transparent) 0%,' +
+      'color-mix(in srgb,var(--bg) 62%,transparent) 43%,transparent 78%)';
+  }
+
   initCanvas() {
+    this.velo();
     let c = null, ctx = null, w = 0, h = 0;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    /* La rejilla son curvas de 0.75 px al 7-11 % de opacidad, y el lienzo se
+       repinta ENTERO cada cuadro. A dpr 2 en una pantalla de 2560 eso son
+       14.7 M de pixeles por cuadro para un dibujo cuyo grosor y cuya opacidad
+       no distinguen esa resolucion. Topado en 1.5: el mismo dibujo con 44 %
+       menos de trama. */
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const resize = ()=>{
       if (!c || !ctx) return;
       w = c.clientWidth || window.innerWidth; h = c.clientHeight || window.innerHeight;
@@ -636,7 +737,11 @@ class Component extends DCLogic {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       this.hub = { x: w * 0.74, y: h * 0.4 };
     };
-    const bind = ()=>{ c = this.canvas; ctx = c ? c.getContext('2d') : null; resize(); };
+    /* `alpha:false`: el primer acto de cada cuadro es rellenar la superficie
+       entera de color de fondo, asi que el lienzo nunca tiene un pixel
+       transparente. Decirselo al navegador le ahorra el borrado a transparente
+       y le deja componerlo sin mezclar. */
+    const bind = ()=>{ c = this.canvas; ctx = c ? c.getContext('2d', { alpha:false }) : null; resize(); };
     bind();
     this.on(window, 'resize', resize);
 
@@ -654,30 +759,44 @@ class Component extends DCLogic {
       });
     }
 
-    let t = 0, born = 0;
+    let t = 0, born = 0, ultimo = 0, chequeo = 0;
     const P = [[0,0],[0,0],[0,0]];
-    const draw = ()=>{
-      this.raf = requestAnimationFrame(draw);
+    const pintar = (ahora)=>{
       if (this.canvas !== c) bind();
-      else if (c && (c.clientWidth !== w || c.clientHeight !== h)) resize();
+      /* `clientWidth` fuerza calculo de diseno, y en este mismo cuadro el
+         carril de scroll ya escribio estilos: preguntarlo 60 veces por segundo
+         es pagar un `layout` de mas por cuadro. El `resize` de la ventana cubre
+         el caso de verdad; esto es solo la red por si el lienzo monta en cero. */
+      else if (c && (++chequeo % 15 === 0) && (c.clientWidth !== w || c.clientHeight !== h)) resize();
       if (!ctx || !w || !h) return;
 
-      t += 0.0125 * this.speed;
-      born = Math.min(1, born + 0.008);
+      /* Todo lo que avanza va normalizado por tiempo. Antes eran incrementos
+         por CUADRO, que es lo mismo que le pasaba al cursor: en una pantalla de
+         144 Hz el campo corria al doble de rapido que en una de 60, y el
+         empujon del puntero llegaba antes. El tope de 64 ms evita el salto al
+         volver de una pestana en segundo plano, donde rAF no corre. */
+      const dt = ultimo ? Math.min(64, ahora - ultimo) : 16.7;
+      ultimo = ahora;
+      const paso = dt / 16.7;
+
+      t += 0.0125 * this.speed * paso;
+      born = Math.min(1, born + 0.008 * paso);
       const hub = this.hub;
 
       ctx.fillStyle = this.tc.bg;
       ctx.fillRect(0, 0, w, h);
 
-      this.ptr.sx += (this.ptr.x - this.ptr.sx) * 0.12;
-      this.ptr.sy += (this.ptr.y - this.ptr.sy) * 0.12;
+      const ks = 1 - Math.pow(1 - 0.12, paso);
+      this.ptr.sx += (this.ptr.x - this.ptr.sx) * ks;
+      this.ptr.sy += (this.ptr.y - this.ptr.sy) * ks;
       const px = this.ptr.sx, py = this.ptr.sy, R = 210;
 
       const count = Math.min(seeds.length, Math.round(this.dens * born));
+      const tinta = this.tinta;
       ctx.lineWidth = 0.75;
       for (let i = 0; i < count; i++) {
         const s = seeds[i];
-        s.a0 += s.sp * this.speed; s.a1 += s.sp * this.speed * 0.7;
+        s.a0 += s.sp * this.speed * paso; s.a1 += s.sp * this.speed * 0.7 * paso;
         const wob = Math.sin(t * 0.45 + s.ph) * 0.055;
         P[0][0] = hub.x + Math.cos(s.a0 + wob) * s.r0;
         P[0][1] = hub.y + Math.sin(s.a0 + wob) * s.r0 * 0.8;
@@ -700,25 +819,30 @@ class Component extends DCLogic {
         ctx.beginPath();
         ctx.moveTo(P[0][0], P[0][1]);
         ctx.quadraticCurveTo(P[1][0], P[1][1], P[2][0], P[2][1]);
-        ctx.strokeStyle = 'rgba(' + this.tc.line + ',' + (0.075 + 0.035 * Math.sin(t * 0.6 + i)).toFixed(3) + ')';
+        /* El color de la curva salia de una cadena `rgba(...)` nueva por curva
+           y por cuadro: 12,600 cadenas por segundo a 60 Hz, todas a la basura
+           al cuadro siguiente. Ahora es un indice en la rampa que arma
+           setTheme. Los dos degradados que iban aqui abajo —dos rellenos a
+           pantalla completa por cuadro— se fueron al velo de CSS. */
+        ctx.strokeStyle = tinta[(Math.sin(t * 0.6 + i) + 1) * 11.5 | 0];
         ctx.stroke();
       }
-
-      const bg = this.tc.bgRGB;
-      const gl = ctx.createLinearGradient(0, 0, w * 0.78, 0);
-      gl.addColorStop(0, 'rgba(' + bg + ',0.97)');
-      gl.addColorStop(0.55, 'rgba(' + bg + ',0.62)');
-      gl.addColorStop(1, 'rgba(' + bg + ',0)');
-      ctx.fillStyle = gl;
-      ctx.fillRect(0, 0, w * 0.78, h);
-
-      const gb = ctx.createLinearGradient(0, h, 0, h * 0.62);
-      gb.addColorStop(0, 'rgba(' + bg + ',0.95)');
-      gb.addColorStop(1, 'rgba(' + bg + ',0)');
-      ctx.fillStyle = gb;
-      ctx.fillRect(0, h * 0.62, w, h * 0.38);
     };
-    this.raf = requestAnimationFrame(draw);
+
+    const bucle = (ahora)=>{ this.raf = requestAnimationFrame(bucle); pintar(ahora); };
+
+    /* Menos movimiento: un solo cuadro, con el campo ya nacido, y sin bucle.
+       La rejilla se ve COMPLETA —regla de la casa: nada invisible esperando
+       animacion— pero no late. Se repinta al cambiar de tamano o de tema, que
+       es lo unico que la puede dejar vieja. */
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      born = 1;
+      this.repintar = ()=> pintar(0);
+      this.on(window, 'resize', ()=> this.repintar());
+      this.repintar();
+    } else {
+      this.raf = requestAnimationFrame(bucle);
+    }
   }
 
   initCursor() {
@@ -727,6 +851,8 @@ class Component extends DCLogic {
     document.body.style.cursor = 'none';
     let cx = -100, cy = -100, hx = -100, hy = -100, shown = false;
 
+    /* `passive:true`: este oyente no llama a preventDefault y decirselo al
+       navegador le quita la obligacion de esperarlo antes de seguir. */
     this.on(window, 'mousemove', (e)=>{
       hx = e.clientX; hy = e.clientY;
       this.ptr.x = hx; this.ptr.y = hy;
@@ -753,7 +879,7 @@ class Component extends DCLogic {
           this.cLabel.style.opacity = hit ? '1' : '0';
         }
       }
-    });
+    }, { passive: true });
 
     let ultimo = 0;
     const tick = (ahora)=>{
@@ -782,9 +908,14 @@ class Component extends DCLogic {
     (this.off = this.off || []).push(()=> cancelAnimationFrame(this.craf));
   }
 
-  /* tarjetas ligadas al scroll: se acomodan al bajar y al subir */
+  /* tarjetas ligadas al scroll: se acomodan al bajar y al subir.
+     Aqui solo se preparan; quien las mueve es el carril unico de initScroll.
+
+     `#trabajo` sale de la lista: sus tarjetas ya no son las anclas de relleno
+     del componente sino los carretes que monta v5-trabajos.js, que traen su
+     propia entrada. */
   initFloat() {
-    const sel = '#prueba [data-reveal], #servicios article, #trabajo a, #proceso [data-reveal]';
+    const sel = '#prueba [data-reveal], #servicios article, #proceso [data-reveal]';
     this.floats = Array.from(document.querySelectorAll(sel));
     this.floats.forEach((el, i) => {
       el.removeAttribute('data-reveal');
@@ -794,24 +925,6 @@ class Component extends DCLogic {
       el.style.willChange = 'transform, opacity';
       el.dataset.stagger = String((i % 3) * 0.07);
     });
-    const tick = ()=>{
-      const vh = window.innerHeight;
-      this.floats.forEach((el)=>{
-        const r = el.getBoundingClientRect();
-        const st = parseFloat(el.dataset.stagger || 0);
-        let p = (vh - r.top) / (vh * 0.82) - st;
-        p = Math.min(1, Math.max(0, p));
-        const out = Math.min(1, Math.max(0, (r.bottom + 40) / (vh * 0.3)));
-        const e = 1 - Math.pow(1 - p, 3);
-        el.style.transform = 'translate3d(0,' + ((1 - e) * 46).toFixed(1) + 'px,0) scale(' + (0.975 + e * 0.025).toFixed(4) + ')';
-        el.style.opacity = (0.06 + 0.94 * e * out).toFixed(3);
-      });
-      this.floatQueued = false;
-    };
-    this.floatTick = ()=>{ if (!this.floatQueued) { this.floatQueued = true; requestAnimationFrame(tick); } };
-    this.on(window, 'scroll', this.floatTick, { passive:true });
-    this.on(window, 'resize', this.floatTick);
-    tick();
   }
 
   initReveal() {
@@ -826,30 +939,94 @@ class Component extends DCLogic {
     (this.off = this.off || []).push(()=> clearTimeout(this.fallback));
   }
 
+  /* UN carril por cuadro para todo lo que depende del scroll, y dentro:
+     primero se MIDE todo y despues se ESCRIBE todo.
+
+     Antes eran dos carriles y los dos peleaban con el diseno. El de las
+     tarjetas leia el rectangulo de una y le escribia el transform en el mismo
+     giro del bucle, dieciseis veces: cada escritura invalida el diseno y la
+     lectura siguiente obliga al navegador a recalcularlo entero, asi que un
+     cuadro costaba dieciseis calculos de diseno en vez de uno. El del riel iba
+     peor: colgado del evento `scroll` a pelo —que llega varias veces por
+     cuadro, no una— y pidiendo la altura del documento, siete
+     `getElementById` y siete rectangulos cada vez.
+
+     Esto es lo que hacia sentir LENTO EL CURSOR. El punto ya iba pegado al
+     puntero desde el arreglo anterior; lo que llegaba tarde era el evento
+     `mousemove`, porque el hilo principal estaba recalculando diseno. No se
+     arrastraba la interpolacion: se arrastraba el navegador. */
   initScroll() {
     const marks = [
       ['inicio','00 / inicio'], ['servicios','01 / qué hacemos'], ['comparativa','02 / comparativa'],
       ['proceso','03 / cómo va'], ['trabajo','04 / trabajo'], ['preguntas','05 / preguntas'], ['contacto','06 / contacto']
     ];
-    const upd = ()=>{
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const p = max > 0 ? (window.scrollY / max) * 100 : 0;
-      if (this.prog) this.prog.style.width = p.toFixed(2) + '%';
-      if (this.bot) this.bot.setProgress(max > 0 ? window.scrollY / max : 0);
-      if (this.bar) this.bar.style.transform = window.scrollY > window.innerHeight * 0.72 ? 'translateY(0)' : 'translateY(-102%)';
-      let cur = marks[0][1], curId = 'inicio';
-      marks.forEach(([id, label])=>{
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.4) { cur = label; curId = id; }
-      });
+
+    /* Los desplazamientos de las secciones y la altura del documento se miden
+       aparte del cuadro: cambian cuando entran los carretes o se abre una
+       pregunta, no sesenta veces por segundo. */
+    let secciones = [], alto = 0, vh = window.innerHeight;
+    const medir = ()=>{
+      vh = window.innerHeight;
+      alto = document.documentElement.scrollHeight - vh;
+      secciones = [];
+      for (let i = 0; i < marks.length; i++) {
+        const el = document.getElementById(marks[i][0]);
+        if (el) secciones.push({ id: marks[i][0], label: marks[i][1], top: el.offsetTop });
+      }
+    };
+
+    const cuadro = ()=>{
+      this.enCola = false;
+      const y = window.scrollY;
+
+      // LEER: todos los rectangulos de un tiron, antes de tocar un solo estilo.
+      const rects = [];
+      for (let i = 0; i < this.floats.length; i++) rects.push(this.floats[i].getBoundingClientRect());
+
+      // ESCRIBIR: de aqui para abajo no se vuelve a preguntar nada al diseno.
+      for (let i = 0; i < this.floats.length; i++) {
+        const el = this.floats[i], r = rects[i];
+        const st = parseFloat(el.dataset.stagger || 0);
+        let p = (vh - r.top) / (vh * 0.82) - st;
+        p = Math.min(1, Math.max(0, p));
+        const out = Math.min(1, Math.max(0, (r.bottom + 40) / (vh * 0.3)));
+        const e = 1 - Math.pow(1 - p, 3);
+        el.style.transform = 'translate3d(0,' + ((1 - e) * 46).toFixed(1) + 'px,0) scale(' + (0.975 + e * 0.025).toFixed(4) + ')';
+        el.style.opacity = (0.06 + 0.94 * e * out).toFixed(3);
+      }
+
+      const pc = alto > 0 ? (y / alto) * 100 : 0;
+      if (this.prog) this.prog.style.width = pc.toFixed(2) + '%';
+      if (this.bot) this.bot.setProgress(alto > 0 ? y / alto : 0);
+      if (this.bar) this.bar.style.transform = y > vh * 0.72 ? 'translateY(0)' : 'translateY(-102%)';
+
+      let cur = secciones.length ? secciones[0].label : '', curId = 'inicio';
+      const linea = y + vh * 0.4;
+      for (let i = 0; i < secciones.length; i++) {
+        if (secciones[i].top <= linea) { cur = secciones[i].label; curId = secciones[i].id; }
+      }
       if (this.rail && this.rail.textContent !== cur) this.rail.textContent = cur;
       if (curId !== this.sectionId) {
         this.sectionId = curId;
         if (this.bot) this.bot.setSection(curId);
       }
     };
-    this.on(window, 'scroll', upd, { passive:true });
-    upd();
+
+    this.pasoScroll = ()=>{ if (!this.enCola) { this.enCola = true; requestAnimationFrame(cuadro); } };
+    this.on(window, 'scroll', this.pasoScroll, { passive:true });
+    this.on(window, 'resize', ()=>{ medir(); this.pasoScroll(); });
+
+    /* La pagina crece sola: entran los carretes de la seccion de trabajo, se
+       abre una pregunta del acordeon. Un observador de tamano avisa justo
+       cuando pasa, en vez de re-medir en cada cuadro lo que casi nunca cambia. */
+    if (window.ResizeObserver && this.main) {
+      const ro = new ResizeObserver(()=>{ medir(); this.pasoScroll(); });
+      ro.observe(this.main);
+      (this.off = this.off || []).push(()=> ro.disconnect());
+    }
+
+    medir();
+    cuadro();
   }
 
   scrollTo(id) {
@@ -938,12 +1115,21 @@ class Component extends DCLogic {
       return;
     }
 
-    /* Esta cara no tiene carrete ni bloques: la degradación honesta es llevar
-       a la persona al trabajo, que es lo que el agente quería enseñarle. */
+    /* Ahora esta cara SÍ tiene carretes: `mostrar_trabajo` abre el video en
+       grande en vez de limitarse a bajar la página. Va en try con respaldo
+       —regla 4 de la casa— porque los carretes son un anexo opcional y el
+       chat no: si `v5-trabajos.js` no cargó, o el agente pidió `bloques`, o
+       pidió un id que esta cara no monta, la degradación honesta sigue siendo
+       llevar a la persona al trabajo, que es lo que quería enseñarle. */
     if (a.tipo === 'carrete' || a.tipo === 'bloques') {
+      let abierto = false;
+      try {
+        abierto = a.tipo === 'carrete' && !!window.nervTrabajos &&
+                  window.nervTrabajos.abrir(a.proyecto) === true;
+      } catch (e) { abierto = false; }
       this.setState({ appliedTag: en ? 'applied \u00b7 work' : 'aplicado \u00b7 trabajo' });
       if (this.bot) this.bot.gest('glance');
-      setTimeout(()=> this.scrollTo('trabajo'), 700);
+      if (!abierto) setTimeout(()=> this.scrollTo('trabajo'), 700);
       return;
     }
 
@@ -1008,9 +1194,10 @@ class Component extends DCLogic {
 <script type="module" src="./nerv-bot.js?v=7"></script>
      Mientras tanto el carril que le reservaba el contenido vale 0. -->
 <script src="./agente-puente.js?v=2"></script>
-<!-- Las dos piezas vivas de la seccion de trabajo. Va aqui, fuera del <x-dc>,
+<!-- Los cinco carretes de la seccion de trabajo. Va aqui, fuera del <x-dc>,
      porque `#trabajo` esta DENTRO del componente y una sincronizacion desde
-     Claude Design se lo lleva: el script las vuelve a montar solo. -->
-<script src="./v5-trabajos.js?v=2"></script>
+     Claude Design se lo lleva: el script los vuelve a montar solo, y de paso
+     apaga las tarjetas de relleno que el componente trae. -->
+<script src="./v5-trabajos.js?v=3"></script>
 </body>
 </html>

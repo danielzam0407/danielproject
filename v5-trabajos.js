@@ -1,27 +1,42 @@
-/* Las piezas vivas de la seccion de trabajo.
+/* Los carretes de la seccion de trabajo.
 
-   Dos animaciones hechas en Claude Design —Ferropalacios y el inventario de
-   Novatek— montadas en `#trabajo` de la cara v5.
+   Cinco trabajos, todos video: las dos piezas nuevas —Ferropalacios y el
+   inventario de Novatek— y los tres carretes que ya vivian en la portada
+   anterior.
 
    ── Por que esto vive AQUI y no dentro del HTML ────────────────────────────
 
-   v5.html es una pagina de Claude Design: el bloque <x-dc> va de la linea 18 a
-   la 434, y `#trabajo` esta adentro. Una sincronizacion desde Design regenera
-   ese bloque entero y se lleva lo que este dentro. Asi que las tarjetas se
-   inyectan desde fuera, se re-aplican con un MutationObserver colgado del
-   <body> (nunca de una seccion: muere con ella), y son idempotentes.
+   v5.html es una pagina de Claude Design y `#trabajo` esta DENTRO del bloque
+   <x-dc>. Una sincronizacion desde Design regenera ese bloque entero y se lleva
+   lo que este dentro. Asi que las tarjetas se inyectan desde fuera, se
+   re-aplican con un MutationObserver colgado del <body> (nunca de una seccion:
+   muere con ella), y son idempotentes.
 
-   ── La animacion, y por que NO se re-monta el iframe ───────────────────────
+   Y por eso `montar()` tambien APAGA lo que no sea suyo de la rejilla: lo que
+   trae el componente son tres tarjetas de relleno que dicen «arrastra aqui la
+   captura». Si vuelven con una sincronizacion, se apagan otra vez solas. Un
+   marcador de posicion en la pagina que se le ensena a un prospecto cuesta mas
+   que cualquier otra cosa de este archivo.
 
-   Al abrir una pieza, el marco pasa a `position:fixed` con la geometria FINAL
-   —la pantalla completa— y se le aplica de inmediato la transformacion inversa
-   que lo devuelve visualmente al hueco de la tarjeta. Luego se anima esa
-   transformacion hasta la identidad. Es un FLIP.
+   ── Por que video y no la pieza viva ──────────────────────────────────────
 
-   Se hace asi por una razon dura: mover un <iframe> en el arbol del DOM lo
-   RECARGA. Cualquier version que reparente el nodo reinicia la animacion justo
-   cuando el visitante la abre — que es el unico momento en que la esta viendo.
-   Aqui el iframe no cambia de padre nunca; lo unico que se mueve es su marco.
+   Ferropalacios y Novatek eran dos <iframe> con la pieza de Claude Design
+   corriendo de verdad. Medido en produccion, cada uno costaba 654 KB de
+   @babel/standalone + 92 KB de JSX compilados EN EL NAVEGADOR + medio mega de
+   DOM, y las dos cosas peleaban por el hilo principal con el resto de la
+   pagina. Y son peliculas: su propio `OM_SCENES` las declara como una lista de
+   tomas y `OM_PLAYBACK` dice `loop`. El MP4 ensena exactamente los mismos
+   pixeles —se graba de la pieza, cuadro a cuadro, con
+   `lab/guardias/pieza-a-video.mjs`— pero lo decodifica la GPU y no toca el
+   hilo principal. La pieza sigue viva y navegable en `piezas/<id>`: es la
+   fuente, y es de donde se vuelve a grabar cuando cambie.
+
+   ── Que se descarga y cuando ──────────────────────────────────────────────
+
+   Nada, hasta que hay interes. Los <video> arrancan con `preload="none"` y sin
+   cartel siquiera —el cartel se pone cuando la tarjeta entra a cuadro— y el que
+   mas se ve es el UNICO que se pone a correr. Uno a la vez, no cinco: son diez
+   megas entre todos y un visitante mira una tarjeta, no cinco.
 
    ── Nada invisible esperando animacion (regla 3) ───────────────────────────
 
@@ -32,35 +47,76 @@
 (function () {
   'use strict';
 
-  /* Sin `.html`: Pages sirve esa forma con un 308 a la canonica, y un salto
-     por tarjeta es un viaje de ida y vuelta que no hace falta. */
-  var PIEZAS = [
+  var TRABAJOS = [
     {
       id: 'ferropalacios',
-      src: 'piezas/ferropalacios',
+      src: 'media/ferropalacios.mp4',
+      cartel: 'media/ferropalacios.webp',
       titulo: 'Una ferreteria que vende de noche',
       tituloEn: 'A hardware store that sells at night',
       meta: 'ferropalacios · catalogo y carrito',
       metaEn: 'ferropalacios · catalog and cart',
-      // El acento de la propia pieza: la tarjeta lo toma prestado para el
-      // filo y el punto, y asi cada trabajo se anuncia con su propio color.
+      // El acento de la propia pieza: la tarjeta lo toma prestado para el filo
+      // y la chapa, y asi cada trabajo se anuncia con su propio color.
       tinte: '#e08544',
-      fondo: '#0e1013'
+      grande: true
     },
     {
       id: 'novatek',
-      src: 'piezas/novatek',
+      src: 'media/novatek.mp4',
+      cartel: 'media/novatek.webp',
       titulo: 'Un inventario que lo lleva un agente',
       tituloEn: 'An inventory an agent runs',
       meta: 'novatek · tablero y agente',
       metaEn: 'novatek · dashboard and agent',
       tinte: '#416180',
-      fondo: '#f2f2f3'
+      grande: true
+    },
+    {
+      id: 'console',
+      src: 'media/work1.mp4',
+      cartel: 'media/work1.webp',
+      titulo: 'Un tablero que contesta',
+      tituloEn: 'A dashboard that answers',
+      meta: 'console · agente en vivo',
+      metaEn: 'console · live agent',
+      tinte: '#4f7ad0'
+    },
+    {
+      id: 'recorrido',
+      src: 'media/work2.mp4',
+      cartel: 'media/work2.webp',
+      titulo: 'Un portafolio que se camina',
+      tituloEn: 'A portfolio you walk through',
+      meta: '3d en css · cinco cuartos',
+      metaEn: 'css 3d · five rooms',
+      tinte: '#8a7fd6'
+    },
+    {
+      id: 'teclado',
+      src: 'media/work3.mp4',
+      cartel: 'media/work3.webp',
+      titulo: 'Un sitio que se maneja con teclado',
+      tituloEn: 'A site you drive with the keyboard',
+      meta: 'menú de comando · cuatro secciones',
+      metaEn: 'command menu · four sections',
+      tinte: '#5f9ea0'
     }
   ];
 
   var quieto = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Se reproduce solo donde reproducir solo tiene sentido: raton, pantalla
+     ancha, movimiento permitido y sin ahorro de datos pedido. En lo demas la
+     tarjeta es su cartel hasta que alguien la toca. */
+  function soloCartel() {
+    var con = navigator.connection;
+    return quieto ||
+      (con && (con.saveData === true || /^([23]g|slow-2g)$/.test(con.effectiveType || ''))) ||
+      !(window.matchMedia && window.matchMedia('(pointer:fine)').matches) ||
+      window.innerWidth < 900;
+  }
 
   /* ── el estilo, una sola vez ─────────────────────────────────────────── */
   function estilo() {
@@ -68,35 +124,41 @@
     var s = document.createElement('style');
     s.id = 'pz-estilo';
     s.textContent = [
-      '.pz{display:block;position:relative;text-decoration:none;color:inherit;grid-column:span 1}',
-      '@media(min-width:900px){.pz{grid-column:span 3}}',
+      '.pz{display:block;position:relative;text-decoration:none;color:inherit;',
+      '  grid-column:span 6;cursor:pointer}',
+      '@media(min-width:900px){.pz{grid-column:span 2}.pz-grande{grid-column:span 3}}',
 
-      /* El marco. `contain` lo saca del calculo de layout del resto: sin eso,
-         un iframe de 1920x1080 escalado obliga a recalcular la pagina entera
-         en cada cuadro de la animacion de dentro. */
-      '.pz-marco{position:relative;aspect-ratio:16/10;overflow:hidden;',
-      '  border:1px solid var(--hair);background:var(--panel);contain:paint;',
-      '  transition:border-color .35s cubic-bezier(.16,1,.3,1)}',
-      '.pz:hover .pz-marco{border-color:var(--pz-tinte,var(--accent))}',
+      /* El marco. `contain:paint` lo saca del calculo de diseno del resto de la
+         pagina: es una caja de tamano fijo y lo de dentro no se sale. */
+      /* El cartel entra por una FICHA en el <article>, `--pz-cartel`, no como
+         estilo en linea del marco: al cerrar la vista grande el marco pierde
+         su atributo `style` entero —es como se deshace el FLIP— y con el se
+         habria ido el cartel, dejando la tarjeta en blanco a partir de la
+         primera vez que alguien la abriera y la cerrara. */
+      '.pz-marco{position:relative;aspect-ratio:16/9;overflow:hidden;',
+      '  border:1px solid var(--hair);background-color:var(--panel);',
+      '  background-image:var(--pz-cartel,none);background-size:cover;',
+      '  background-position:center;background-repeat:no-repeat;',
+      '  contain:paint;transition:border-color .35s cubic-bezier(.16,1,.3,1)}',
+      '.pz:hover .pz-marco,.pz:focus-visible .pz-marco{border-color:var(--pz-tinte,var(--accent))}',
+      '.pz:focus-visible{outline:none}',
 
-      /* El iframe corre a 1280x800 y se escala: si se le da el tamano de la
-         tarjeta, la pieza —que esta compuesta para 1920x1080— sale con la
-         tipografia diminuta. Escalar conserva la composicion. */
-      '.pz-lienzo{position:absolute;left:0;top:0;width:1280px;height:800px;',
-      '  transform-origin:0 0;border:0;opacity:0;',
-      '  transition:opacity .6s cubic-bezier(.16,1,.3,1)}',
-      '.pz-marco.lista .pz-lienzo{opacity:1}',
+      /* El video llena el marco. Los cinco carretes son 16:9 y el marco tambien,
+         asi que `cover` no recorta nada: esta ahi por si un carrete futuro
+         llega con otra proporcion, para que no deforme.
 
-      /* El velo: lo que se ve mientras la pieza carga. No es un spinner —
-         es la tarjeta terminada, y la pieza aparece encima cuando esta. */
-      '.pz-velo{position:absolute;inset:0;display:flex;align-items:flex-end;',
-      '  padding:16px;background:var(--pz-fondo,var(--panel));',
-      '  transition:opacity .6s cubic-bezier(.16,1,.3,1)}',
-      '.pz-marco.lista .pz-velo{opacity:0;pointer-events:none}',
-      '.pz-velo span{font-family:"JetBrains Mono",monospace;font-size:9px;',
-      '  letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}',
+         Y va TRANSPARENTE hasta que de verdad esta corriendo, con el cartel
+         debajo puesto como fondo del marco. Un <video> pausado se queda clavado
+         en el cuadro donde estaba, y el primer cuadro de estas dos piezas es su
+         placa de apertura: un rectangulo negro y uno blanco. Medido en la
+         captura de pagina completa -- las dos tarjetas grandes salian vacias.
+         Devolverlo al cartel quitandole la fuente costaria una recarga y un
+         error en la consola; fundirlo no cuesta nada. */
+      '.pz-v{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;',
+      '  display:block;opacity:0;transition:opacity .45s cubic-bezier(.16,1,.3,1)}',
+      '.pz-marco.corriendo .pz-v{opacity:1}',
 
-      /* La chapa de "abrir": aparece al pasar, como en las piezas mismas. */
+      /* La chapa de «abrir»: aparece al pasar, como en las piezas mismas. */
       '.pz-abrir{position:absolute;right:14px;bottom:14px;display:flex;',
       '  align-items:center;gap:8px;padding:9px 14px;',
       '  background:var(--pz-tinte,var(--accent));color:#fff;',
@@ -131,25 +193,85 @@
       '.pz-cerrar.on{opacity:1}',
       '.pz-cerrar:hover{background:rgba(255,255,255,.14)}',
       '@media(prefers-reduced-motion:reduce){',
-      '  .pz,.pz-marco,.pz-lienzo,.pz-velo,.pz-telon,.pz-cerrar{transition:none!important}}'
+      '  .pz,.pz-marco,.pz-v,.pz-telon,.pz-cerrar,.pz-abrir{transition:none!important}}'
     ].join('');
     document.head.appendChild(s);
   }
 
-  /* ── el iframe se escala para llenar su marco ────────────────────────── */
-  function encuadrar(marco) {
-    var lienzo = marco.querySelector('.pz-lienzo');
-    if (!lienzo) return;
-    var r = marco.getBoundingClientRect();
-    if (!r.width) return;
-    var k = Math.max(r.width / 1280, r.height / 800);
-    lienzo.style.transform =
-      'translate(' + ((r.width - 1280 * k) / 2) + 'px,' +
-      ((r.height - 800 * k) / 2) + 'px) scale(' + k + ')';
+  /* ── quien corre: uno a la vez ───────────────────────────────────────── */
+  var vistas = new Map();   // article -> cuanto se ve, de 0 a 1
+  var sonando = null;       // el <video> que corre ahora mismo
+  var fijado = null;        // el que el raton esta senalando, si hay alguno
+  var abierta = null;       // la tarjeta a pantalla completa, si hay alguna
+
+  function fuente(v) {
+    if (!v.getAttribute('src')) v.setAttribute('src', v.dataset.src);
+  }
+
+  /* El cartel tampoco se pide de entrada: cinco carteles son 400 KB que se
+     pagarian antes de que nadie haya bajado a la seccion de trabajo. Se pone
+     cuando la tarjeta entra a cuadro. */
+  function cartel(art) {
+    if (!art.style.getPropertyValue('--pz-cartel')) {
+      art.style.setProperty('--pz-cartel', 'url("' + art.dataset.cartel + '")');
+    }
+  }
+
+  function correr(v) {
+    if (!v || sonando === v) return;
+    apagar();
+    sonando = v;
+    fuente(v);
+    /* El video no se descubre al pedir `play()`, sino cuando el navegador dice
+       que ya esta pintando cuadros. Entre una cosa y otra hay red, y descubrir
+       antes ensena el hueco. */
+    if (!v.dataset.ligado) {
+      v.dataset.ligado = '1';
+      v.addEventListener('playing', function () {
+        if (sonando === v && v.parentElement) v.parentElement.classList.add('corriendo');
+      });
+    }
+    // `play()` devuelve una promesa que se rompe sola si el navegador decide
+    // que no toca (pestana oculta, politica de reproduccion). No es un error.
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+
+  function apagar() {
+    if (!sonando) return;
+    var v = sonando;
+    sonando = null;
+    if (v.parentElement) v.parentElement.classList.remove('corriendo');
+    try { v.pause(); } catch (e) {}
+  }
+
+  /* El carrete que se pone a correr es el que mas centrado esta, y solo si se
+     ve de verdad. Uno a la vez: entre los cinco son diez megas, y nadie mira
+     cinco tarjetas al mismo tiempo. */
+  function repartir() {
+    if (abierta || soloCartel()) return;
+    if (fijado && fijado.isConnected) { correr(fijado.querySelector('.pz-v')); return; }
+    var mejor = null, max = 0.45;
+    vistas.forEach(function (r, art) {
+      if (art.isConnected && r > max) { max = r; mejor = art; }
+    });
+    if (mejor) correr(mejor.querySelector('.pz-v'));
+    else apagar();
   }
 
   /* ── abrir / cerrar, con FLIP ────────────────────────────────────────── */
-  var abierta = null;
+
+  /* La caja grande conserva 16:9, la misma proporcion que la tarjeta. Asi el
+     FLIP es una escala uniforme —nada se estira a mitad de camino— y el video
+     llena la caja sin bandas negras arriba y abajo. */
+  function cajaGrande() {
+    var m = Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.045);
+    var w = Math.min(window.innerWidth - m * 2, (window.innerHeight - m * 2) * 16 / 9);
+    var h = w * 9 / 16;
+    return { w: Math.round(w), h: Math.round(h),
+             x: Math.round((window.innerWidth - w) / 2),
+             y: Math.round((window.innerHeight - h) / 2) };
+  }
 
   function cerrar() {
     if (!abierta) return;
@@ -171,7 +293,6 @@
       marco.classList.remove('abierta');
       marco.removeAttribute('style');
       hueco.style.display = 'none';
-      encuadrar(marco);
       if (abierta) {
         abierta.telon.remove();
         abierta.boton.remove();
@@ -179,6 +300,9 @@
       }
       abierta = null;
       window.removeEventListener('keydown', alaTecla);
+      // De vuelta al reparto normal: el que este centrado sigue corriendo.
+      apagar();
+      repartir();
     };
     // Salida garantizada: si la transicion no corre —pane sin composicion,
     // pestana en segundo plano, menos movimiento— el temporizador cierra igual.
@@ -193,9 +317,10 @@
   function abrir(art) {
     if (abierta) return;
     var marco = art.querySelector('.pz-marco');
-    if (!marco) return;
-    cargar(marco);
+    var v = art.querySelector('.pz-v');
+    if (!marco || !v) return;
 
+    cartel(art);
     var r = marco.getBoundingClientRect();
 
     // El hueco sostiene el espacio de la tarjeta mientras el marco se va a
@@ -207,6 +332,7 @@
     var telon = document.createElement('div');
     telon.className = 'pz-telon';
     document.body.appendChild(telon);
+    telon.addEventListener('click', cerrar);
 
     var boton = document.createElement('button');
     boton.className = 'pz-cerrar';
@@ -215,25 +341,26 @@
     boton.addEventListener('click', cerrar);
     document.body.appendChild(boton);
 
-    // Geometria FINAL primero, transformacion inversa despues: el iframe se
-    // dibuja una sola vez al tamano grande y solo se escala.
-    var m = Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.045);
-    var fw = window.innerWidth - m * 2, fh = window.innerHeight - m * 2;
+    // Geometria FINAL primero, transformacion inversa despues.
+    var g = cajaGrande();
     marco.classList.add('abierta');
-    marco.style.left = m + 'px';
-    marco.style.top = m + 'px';
-    marco.style.width = fw + 'px';
-    marco.style.height = fh + 'px';
+    marco.style.left = g.x + 'px';
+    marco.style.top = g.y + 'px';
+    marco.style.width = g.w + 'px';
+    marco.style.height = g.h + 'px';
     marco.style.transformOrigin = '0 0';
     marco.style.transition = 'none';
     marco.style.transform =
-      'translate(' + (r.left - m) + 'px,' + (r.top - m) + 'px) scale(' +
-      (r.width / fw) + ')';
-    encuadrar(marco);
+      'translate(' + (r.left - g.x) + 'px,' + (r.top - g.y) + 'px) scale(' +
+      (r.width / g.w) + ')';
 
     abierta = { marco: marco, hueco: hueco, telon: telon, boton: boton, foco: art };
     window.addEventListener('keydown', alaTecla);
     document.documentElement.style.overflow = 'hidden';
+
+    // Abrir es la senal mas clara de interes que hay: este es el que suena,
+    // aunque el reparto por centrado dijera otra cosa.
+    correr(v);
 
     // Dos cuadros: uno para que el navegador acepte la geometria inicial, y
     // hasta el siguiente se enciende la transicion. Con uno solo, Chrome
@@ -255,44 +382,24 @@
     setTimeout(soltar, 120);
   }
 
-  /* ── carga diferida ──────────────────────────────────────────────────── */
-  function cargar(marco) {
-    if (marco.dataset.cargado === '1') return;
-    marco.dataset.cargado = '1';
-    var lienzo = marco.querySelector('.pz-lienzo');
-    if (!lienzo) return;
-    lienzo.addEventListener('load', function () {
-      marco.classList.add('lista');
-      encuadrar(marco);
-    });
-    lienzo.src = lienzo.dataset.src;
-    // Respaldo: si el `load` no llega —bloqueado, sin red— el velo se queda
-    // puesto y la tarjeta sigue siendo una tarjeta, no un hueco negro.
-    setTimeout(function () {
-      if (lienzo.contentWindow) { marco.classList.add('lista'); encuadrar(marco); }
-    }, 6000);
-  }
-
   /* ── montaje ─────────────────────────────────────────────────────────── */
   function tarjeta(p, i) {
     var art = document.createElement('article');
-    art.className = 'pz entra';
+    art.className = 'pz entra' + (p.grande ? ' pz-grande' : '');
     art.setAttribute('data-pz', p.id);
-    art.setAttribute('data-cursor', 'ver pieza');
+    art.setAttribute('data-cursor', 'ver trabajo');
     art.setAttribute('tabindex', '0');
     art.setAttribute('role', 'button');
     art.setAttribute('aria-label', p.titulo);
     art.style.setProperty('--pz-tinte', p.tinte);
-    art.style.setProperty('--pz-fondo', p.fondo);
+    art.dataset.cartel = p.cartel;
     art.style.transitionDelay = (i * 0.09) + 's';
 
     art.innerHTML =
       '<div class="pz-hueco" style="display:none"></div>' +
       '<div class="pz-marco">' +
-        '<iframe class="pz-lienzo" title="' + p.titulo + '" loading="lazy" ' +
-          'tabindex="-1" aria-hidden="true" scrolling="no" ' +
-          'sandbox="allow-scripts allow-same-origin" data-src="' + p.src + '"></iframe>' +
-        '<div class="pz-velo"><span>' + p.meta + '</span></div>' +
+        '<video class="pz-v" muted loop playsinline preload="none" tabindex="-1" ' +
+          'aria-hidden="true" data-src="' + p.src + '"></video>' +
         '<span class="pz-abrir">abrir ↗</span>' +
       '</div>' +
       '<div class="pz-pie"><b data-en="' + p.tituloEn + '">' + p.titulo + '</b>' +
@@ -302,6 +409,12 @@
     art.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(art); }
     });
+    // Senalar una tarjeta manda sobre el centrado: si el raton la eligio, esa
+    // es la que corre.
+    art.addEventListener('pointerenter', function () { fijado = art; repartir(); });
+    art.addEventListener('pointerleave', function () {
+      if (fijado === art) { fijado = null; repartir(); }
+    });
     return art;
   }
 
@@ -310,57 +423,118 @@
     if (!seccion) return;
     var rejilla = seccion.querySelector('div[style*="grid-template-columns"]');
     if (!rejilla) return;
-    // Idempotente: el componente se repinta solo, y esto corre en cada pasada
-    // del observador.
-    if (rejilla.querySelector('.pz')) return;
 
     estilo();
 
-    // La rejilla del componente es `auto-fit minmax(300px,1fr)`. Se fija a 6
-    // columnas para que una pieza pueda ocupar media fila y las tarjetas de
-    // relleno una tercera parte: las piezas de verdad van primero y mandan.
-    rejilla.style.gridTemplateColumns = 'repeat(6,minmax(0,1fr))';
-    Array.prototype.forEach.call(rejilla.children, function (n) {
-      if (!n.classList.contains('pz')) n.style.gridColumn = 'span 2';
+    /* Lo que no es nuestro se apaga, en CADA pasada y antes de cualquier otra
+       cosa. El componente trae tres tarjetas de relleno que dicen «arrastra
+       aqui la captura»; si una sincronizacion desde Design las devuelve, se
+       vuelven a apagar solas.
+
+       Se OCULTAN, no se borran: esos nodos los creo React y siguen en su arbol.
+       Arrancarlos del DOM es dejarle referencias a nodos sueltos y arriesgar un
+       `insertBefore` contra un nodo que ya no esta en la pagina. Ocultarlos no
+       le quita nada a nadie y consigue lo mismo. */
+    Array.prototype.slice.call(rejilla.children).forEach(function (n) {
+      if (n.classList.contains('pz')) return;
+      n.style.display = 'none';
+      n.setAttribute('aria-hidden', 'true');
     });
 
-    var arts = PIEZAS.map(tarjeta);
-    arts.reverse().forEach(function (a) { rejilla.insertBefore(a, rejilla.firstChild); });
-    arts = Array.prototype.slice.call(rejilla.querySelectorAll('.pz'));
+    // Idempotente: el componente se repinta solo y esto corre en cada pasada
+    // del observador. Si las tarjetas ya estan, no hay nada mas que hacer.
+    if (rejilla.querySelector('.pz')) return;
 
-    /* Entrada y carga. El observador SOLO quita `entra` y dispara la carga;
-       si no existe, el bucle de abajo lo hace de inmediato y la seccion queda
-       en su estado final igual. */
+    // Un montaje nuevo deja el registro de visibilidad viejo apuntando a
+    // tarjetas que ya no estan en la pagina.
+    vistas.clear();
+    fijado = null;
+    apagar();
+
+    // La rejilla del componente es `auto-fit minmax(300px,1fr)`. Se fija a 6
+    // columnas: las dos piezas nuevas ocupan media fila cada una y los tres
+    // carretes anteriores una tercera parte.
+    rejilla.style.gridTemplateColumns = 'repeat(6,minmax(0,1fr))';
+
+    var arts = TRABAJOS.map(tarjeta);
+    arts.forEach(function (a) { rejilla.appendChild(a); });
+
+    /* Entrada y vigilancia. El observador SOLO quita `entra` y anota cuanto se
+       ve cada tarjeta; si no existe, el bucle de abajo las revela de inmediato
+       y la seccion queda en su estado final igual. */
     if ('IntersectionObserver' in window && !quieto) {
+      var vivo = false;
       var io = new IntersectionObserver(function (es) {
+        vivo = true;
         es.forEach(function (e) {
-          if (!e.isIntersecting) return;
-          e.target.classList.remove('entra');
-          cargar(e.target.querySelector('.pz-marco'));
-          io.unobserve(e.target);
+          if (e.isIntersecting) { e.target.classList.remove('entra'); cartel(e.target); }
+          vistas.set(e.target, e.intersectionRatio);
         });
-      }, { rootMargin: '160px' });
+        repartir();
+      }, { threshold: [0, 0.25, 0.45, 0.7, 0.95] });
       arts.forEach(function (a) { io.observe(a); });
-      // Red de seguridad: si en 2.5 s alguna sigue invisible —observador que
-      // no dispara, pestana en segundo plano— se revela a mano.
+      /* Red de seguridad: si en 2.5 s el observador no ha dado UNA sola senal
+         —contexto que no compone, pestana en segundo plano— se hace a mano lo
+         que el iba a hacer: revelar las tarjetas y ponerles su cartel. Se le
+         pone a las cinco, no solo a las que estan en pantalla: sin observador
+         no hay nadie que se lo ponga a las demas al llegar, y cinco cajas
+         vacias son peores que 400 KB. Si el observador SI vive, no se toca
+         nada: el ya reparte los carteles segun quien va llegando. */
       setTimeout(function () {
         arts.forEach(function (a) { a.classList.remove('entra'); });
+        if (!vivo) arts.forEach(cartel);
       }, 2500);
     } else {
-      arts.forEach(function (a) {
-        a.classList.remove('entra');
-        cargar(a.querySelector('.pz-marco'));
-      });
+      arts.forEach(function (a) { a.classList.remove('entra'); cartel(a); });
     }
 
     if (!montar.ligado) {
       montar.ligado = true;
       window.addEventListener('resize', function () {
-        document.querySelectorAll('.pz-marco').forEach(encuadrar);
+        // Abierta y con la ventana cambiando de tamano: la caja calculada deja
+        // de cuadrar con la pantalla, asi que se cierra en vez de quedar torcida.
         if (abierta) cerrar();
+        else repartir();
+      });
+      // Una pestana en segundo plano no tiene por que estar decodificando video.
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) apagar(); else repartir();
       });
     }
   }
+
+  /* ── la puerta del agente ────────────────────────────────────────────── */
+
+  /* `mostrar_trabajo` del worker devuelve `{tipo:'carrete', proyecto:'001'|
+     '002'|'003'}` -- los ids de la portada anterior. Se traducen aqui y se
+     vuelve a validar contra las tarjetas que de verdad se montaron: lo que
+     viene del modelo NO elige un nodo del DOM sin pasar por esta lista. Mismo
+     contrato que `nervReel.abrir` en la portada vieja, para que el worker no
+     tenga que saber en que cara esta cayendo.
+
+     Ferropalacios y Novatek estan en la lista pero el agente todavia no los
+     puede pedir: su enum sigue siendo de tres. Ampliarlo es tocar las
+     herramientas del agente publico, o sea un cambio de seguridad -- va con su
+     pasada de `auditor-rojo`, no de paso. */
+  window.nervTrabajos = {
+    abrir: function (clave) {
+      var mapa = { '001': 'console', '002': 'recorrido', '003': 'teclado',
+                   console: 'console', work2: 'recorrido', work3: 'teclado',
+                   ferropalacios: 'ferropalacios', novatek: 'novatek' };
+      var id = mapa[String(clave || '').trim().toLowerCase()];
+      if (!id) return false;
+      var art = document.querySelector('.pz[data-pz="' + id + '"]');
+      if (!art) return false;
+      /* `instant` a proposito: la pagina lleva `scroll-behavior:smooth`, y con
+         un desplazamiento suave el rectangulo de partida del FLIP se mide
+         mientras la pagina todavia se mueve y la pieza sale de un sitio que ya
+         no es. El salto no se ve: el telon lo tapa en el mismo cuadro. */
+      art.scrollIntoView({ block: 'center', behavior: 'instant' });
+      requestAnimationFrame(function () { abrir(art); });
+      setTimeout(function () { abrir(art); }, 80);   // por si rAF no corre
+      return true;
+    }
+  };
 
   /* El componente se repinta solo: el observador va colgado del <body> y no
      de una seccion, que muere con ella. */
