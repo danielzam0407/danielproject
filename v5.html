@@ -829,7 +829,31 @@ class Component extends DCLogic {
       }
     };
 
-    const bucle = (ahora)=>{ this.raf = requestAnimationFrame(bucle); pintar(ahora); };
+    /* El campo se dibuja a ~32 cuadros por segundo, no a 60.
+
+       Medido en produccion contra Edge con GPU, moviendo el raton todo el rato:
+       la pagina iba a 20.9 ms por cuadro (48 fps) y escondiendo SOLO este
+       lienzo se iba a 14.3 ms (70 fps). O sea que el fondo se comia 6.6 ms de
+       cada cuadro: rellenar 2400x1350 pixeles y trazar 210 curvas largas con
+       suavizado, sesenta veces por segundo.
+
+       Y eso es lo que se sentia como «el cursor va lento». El punto va pegado
+       al puntero desde hace dos arreglos, pero a 48 fps cada movimiento del
+       raton se pinta hasta 21 ms tarde, y eso el ojo lo lee como arrastre.
+
+       La rejilla es una deriva lenta: a 32 cuadros se ve IGUAL —su movimiento
+       va normalizado por tiempo, asi que no corre distinto, solo se muestrea
+       menos— y cuesta la mitad. Lo que sigue a 60 es el bucle del cursor, que
+       es otro y es el que si se nota.
+
+       Se compara contra `ultimo`, que es lo que pintar() actualiza: al saltarse
+       un cuadro el dt se acumula solo y el campo avanza lo que le toca. */
+    const MS_POR_CUADRO = 31;
+    const bucle = (ahora)=>{
+      this.raf = requestAnimationFrame(bucle);
+      if (ultimo && ahora - ultimo < MS_POR_CUADRO) return;
+      pintar(ahora);
+    };
 
     /* Menos movimiento: un solo cuadro, con el campo ya nacido, y sin bucle.
        La rejilla se ve COMPLETA —regla de la casa: nada invisible esperando
