@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventario Novatek — pieza de nerv</title>
+<!-- Se sirve dentro de un iframe en /v5. Sin indexar: la pieza vive en la
+     seccion de trabajo, no como pagina suelta que compita en el buscador. -->
+<meta name="robots" content="noindex, nofollow">
+<script src="../support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&family=Barlow+Condensed:wght@400;500;600&display=swap">
+<style>
+  html, body { margin: 0; padding: 0; background: #f2f2f3; overflow: hidden; }
+  a { color: #416180; text-decoration: none; }
+  a:hover { color: #5980a6; }
+</style>
+<script>window.OM_SCENES = '[{"name":"Apertura","dur":4,"desc":"La placa de marca Novatek aparece sobre el tablero completo y se disuelve"},{"name":"Overview","dur":5,"desc":"La camara sube a la fila de KPIs y los numeros cuentan hasta su valor"},{"name":"Catalogo","dur":4.5,"desc":"Zoom al catalogo: bolsas, vasos, contenedores y cajas entran en cuadricula"},{"name":"StockAlerta","dur":5.5,"desc":"Una salida hunde el nivel de VAS-POL-12 y Mario levanta la alerta de minimo"},{"name":"OrdenCompra","dur":5,"desc":"La orden de compra OC-2418 se escribe linea por linea y se sella como enviada"},{"name":"Movimientos","dur":4.5,"desc":"Entradas y salidas del dia; el haz recorre el codigo de barras y registra la entrada"},{"name":"Racks","dur":4.5,"desc":"El mapa de racks se llena y el marcador viaja de C-03 a G-07 por reacomodo"},{"name":"Lotes","dur":4.5,"desc":"Lotes de grado alimenticio; el mas proximo a caducar recibe prioridad FEFO"},{"name":"Reportes","dur":4.5,"desc":"Las barras de rotacion crecen y la linea de pronostico a 30 dias se dibuja"},{"name":"AgenteChat","dur":6,"desc":"El cajon del agente entra; el admin pide una cotizacion y Mario ejecuta las acciones"},{"name":"Cierre","dur":4.5,"desc":"La camara se aleja al tablero completo y vuelve la placa de marca para cerrar el ciclo"}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+<!-- `motionEditor` en false: ver la nota en ferropalacios.html. -->
+<script>window.TWEAK_DEFAULTS = {
+  "brand": "NOVATEK",
+  "agent": "MARIO",
+  "theme": "papel",
+  "captions": true,
+  "motionEditor": false
+};</script>
+</helmet>
+<div style="position: relative; width: 100vw; height: 100vh; background: #f2f2f3; overflow: hidden;">
+  <x-import component-from-global-scope="NovatekVideo" from="./animations-v3.jsx ./tweaks-panel.jsx ./novatek-piece.jsx" hint-size="100%,100%"></x-import>
+</div>
+</x-dc>
+</body>
+</html>

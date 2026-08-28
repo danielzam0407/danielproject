@@ -730,6 +730,13 @@ class Component extends DCLogic {
     this.on(window, 'mousemove', (e)=>{
       hx = e.clientX; hy = e.clientY;
       this.ptr.x = hx; this.ptr.y = hy;
+      /* El punto va PEGADO al puntero, sin interpolar.
+
+         El cursor real esta oculto (`cursor:none` arriba), asi que aqui no hay
+         nada que de acuse inmediato: cualquier retraso deja de leerse como un
+         efecto y se lee como que la pagina va lenta. El rastro lo hace el
+         anillo, que si va detras -- eso es el efecto; el punto es el acuse. */
+      if (this.cur) this.cur.style.transform = 'translate(' + hx + 'px,' + hy + 'px)';
       if (!shown && this.cur) { this.cur.style.opacity = '1'; shown = true; }
       const hit = e.target.closest ? e.target.closest('[data-cursor]') : null;
       if (hit !== this.ptr.snap) {
@@ -748,12 +755,30 @@ class Component extends DCLogic {
       }
     });
 
-    const tick = ()=>{
-      cx += (hx - cx) * 0.2; cy += (hy - cy) * 0.2;
-      if (this.cur) this.cur.style.transform = 'translate(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px)';
+    let ultimo = 0;
+    const tick = (ahora)=>{
+      /* Interpolacion normalizada por tiempo.
+
+         Antes era `* 0.2` por cuadro, y eso ata el arrastre a la frecuencia de
+         la pantalla: en 144 Hz el anillo alcanza al puntero casi al instante y
+         en 60 Hz se queda muy atras. El sitio se sentia lento en los monitores
+         mas comunes, que son justo los de 60. Con dt se siente igual en las
+         dos, y 0.34 acerca el anillo sin quitarle el rastro.
+
+         El tope de 64 ms evita el salto al volver de una pestana en segundo
+         plano, donde rAF no corre y el primer dt vale segundos. */
+      const dt = ultimo ? Math.min(64, ahora - ultimo) : 16.7;
+      ultimo = ahora;
+      const k = 1 - Math.pow(1 - 0.34, dt / 16.7);
+      cx += (hx - cx) * k; cy += (hy - cy) * k;
+      /* El anillo se coloca RELATIVO al punto, que ya esta bajo el puntero. */
+      if (this.ring) {
+        this.ring.style.transform =
+          'translate(' + (cx - hx).toFixed(1) + 'px,' + (cy - hy).toFixed(1) + 'px)';
+      }
       this.craf = requestAnimationFrame(tick);
     };
-    tick();
+    this.craf = requestAnimationFrame(tick);
     (this.off = this.off || []).push(()=> cancelAnimationFrame(this.craf));
   }
 
@@ -983,5 +1008,9 @@ class Component extends DCLogic {
 <script type="module" src="./nerv-bot.js?v=7"></script>
      Mientras tanto el carril que le reservaba el contenido vale 0. -->
 <script src="./agente-puente.js?v=2"></script>
+<!-- Las dos piezas vivas de la seccion de trabajo. Va aqui, fuera del <x-dc>,
+     porque `#trabajo` esta DENTRO del componente y una sincronizacion desde
+     Claude Design se lo lleva: el script las vuelve a montar solo. -->
+<script src="./v5-trabajos.js?v=1"></script>
 </body>
 </html>

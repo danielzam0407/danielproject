@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ferropalacios — pieza de nerv</title>
+<!-- Se sirve dentro de un iframe en /v5. Sin indexar: la pieza vive en la
+     seccion de trabajo, no como pagina suelta que compita en el buscador. -->
+<meta name="robots" content="noindex, nofollow">
+<script src="../support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0e1013; height: 100%; overflow: hidden; }
+  a { color: oklch(0.75 0.18 130); text-decoration: none; }
+  a:hover { color: #efeee9; }
+</style>
+<script>window.OM_SCENES = '[{"name":"Apertura","dur":3,"desc":"La marca hexagonal y el nombre FERROPALACIOS se arman letra por letra sobre un plano técnico"},{"name":"Desorden","dur":2.8,"desc":"Docenas de piezas sueltas aparecen dispersas y girando: la búsqueda desordenada de material"},{"name":"Sitio","dur":4,"desc":"Las piezas se ordenan y la ventana del sitio ferropalacios.mx se despliega con su portada"},{"name":"Catalogo","dur":3.6,"desc":"El cursor recorre los departamentos y las tarjetas se levantan al pasar"},{"name":"Busqueda","dur":4,"desc":"El cursor hace clic en el buscador, teclea taladro percutor y caen las sugerencias"},{"name":"Producto","dur":4.8,"desc":"Se abre la ficha del taladro, sube la cantidad y se agrega al carrito"},{"name":"Carrito","dur":3.2,"desc":"El cajón del carrito entra con el total y el cursor confirma el pedido"},{"name":"Entrega","dur":3.4,"desc":"Pedido confirmado: avanza surtido, empaque y mostrador"},{"name":"Cierre","dur":3.8,"desc":"La cámara se aleja y queda el cierre de marca con el dominio"}]';</script>
+<script>window.OM_PLAYBACK = '{"mode":"loop"}';</script>
+<!-- `motionEditor` en false: el panel de ajustes es del taller, no de la
+     pieza publicada. El sustituto de tweaks-panel.jsx no lo pinta de todos
+     modos, pero dejarlo en true seria mentirle al siguiente que lo lea. -->
+<script>window.TWEAK_DEFAULTS = {
+  "accent": "oklch(0.72 0.19 45)",
+  "cuadricula": true,
+  "motionEditor": false
+};</script>
+</helmet>
+<x-import component-from-global-scope="FerroApp" from="./animations-v3.jsx ./tweaks-panel.jsx ./ferro-scene.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+</body>
+</html>
