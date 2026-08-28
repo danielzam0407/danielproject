@@ -32,10 +32,12 @@
 (function () {
   'use strict';
 
+  /* Sin `.html`: Pages sirve esa forma con un 308 a la canonica, y un salto
+     por tarjeta es un viaje de ida y vuelta que no hace falta. */
   var PIEZAS = [
     {
       id: 'ferropalacios',
-      src: 'piezas/ferropalacios.html',
+      src: 'piezas/ferropalacios',
       titulo: 'Una ferreteria que vende de noche',
       tituloEn: 'A hardware store that sells at night',
       meta: 'ferropalacios · catalogo y carrito',
@@ -47,7 +49,7 @@
     },
     {
       id: 'novatek',
-      src: 'piezas/novatek.html',
+      src: 'piezas/novatek',
       titulo: 'Un inventario que lo lleva un agente',
       tituloEn: 'An inventory an agent runs',
       meta: 'novatek · tablero y agente',
