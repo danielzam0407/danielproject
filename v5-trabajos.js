@@ -212,8 +212,9 @@
      pagarian antes de que nadie haya bajado a la seccion de trabajo. Se pone
      cuando la tarjeta entra a cuadro. */
   function cartel(art) {
-    if (!art.style.getPropertyValue('--pz-cartel')) {
-      art.style.setProperty('--pz-cartel', 'url("' + art.dataset.cartel + '")');
+    var m = art.querySelector('.pz-marco');
+    if (m && !m.style.getPropertyValue('--pz-cartel')) {
+      m.style.setProperty('--pz-cartel', 'url("' + art.dataset.cartel + '")');
     }
   }
 
@@ -289,9 +290,22 @@
     abierta.boton.classList.remove('on');
     document.documentElement.style.overflow = '';
 
+    var art = abierta.art;
     var fin = function () {
       marco.classList.remove('abierta');
-      marco.removeAttribute('style');
+      /* Se limpia SOLO lo que puso el FLIP. `removeAttribute('style')` era mas
+         corto y se llevaba por delante `--pz-tinte` y `--pz-cartel`, que viven
+         en el mismo atributo: la tarjeta volvia sin color y sin cartel a partir
+         de la primera vez que alguien la abriera y la cerrara. */
+      ['left', 'top', 'width', 'height', 'transformOrigin', 'transition', 'transform']
+        .forEach(function (k) { marco.style[k] = ''; });
+
+      // De vuelta a su tarjeta, delante del pie. Si el componente se repinto
+      // mientras estaba abierta y la tarjeta ya no existe, el marco se va con
+      // ella en vez de quedarse suelto en el <body>.
+      if (art && art.isConnected) art.insertBefore(marco, art.querySelector('.pz-pie'));
+      else marco.remove();
+
       hueco.style.display = 'none';
       if (abierta) {
         abierta.telon.remove();
@@ -341,6 +355,21 @@
     boton.addEventListener('click', cerrar);
     document.body.appendChild(boton);
 
+    /* El marco se MUDA al <body>, y esto es la corrección del 2026-08-28.
+       Estaba `position:fixed` con `z-index:200` contra el telón, que es 199 —
+       y aun así el telón salía encima y la pantalla se veía gris entera.
+       Motivo: el contenido de la página es `position:relative; z-index:10`, o
+       sea un CONTEXTO DE APILAMIENTO. El 200 del marco sólo compite dentro de
+       ese contexto; hacia afuera todo el bloque vale 10, y el telón, que cuelga
+       del <body>, le gana con su 199. Ningún z-index más alto lo arregla: hay
+       que salir del contexto.
+
+       Mover el marco es barato porque lo de dentro ya es un <video>: cambiar de
+       padre lo PAUSA y se retoma abajo. La versión de iframes no podía hacerlo
+       —un iframe se RECARGA al reparentarlo— y de ahí venía todo el rodeo de
+       animar el marco sin tocarlo nunca. Esa restricción se fue con el iframe. */
+    document.body.appendChild(marco);
+
     // Geometria FINAL primero, transformacion inversa despues.
     var g = cajaGrande();
     marco.classList.add('abierta');
@@ -354,13 +383,20 @@
       'translate(' + (r.left - g.x) + 'px,' + (r.top - g.y) + 'px) scale(' +
       (r.width / g.w) + ')';
 
-    abierta = { marco: marco, hueco: hueco, telon: telon, boton: boton, foco: art };
+    abierta = { marco: marco, hueco: hueco, telon: telon, boton: boton, foco: art, art: art };
     window.addEventListener('keydown', alaTecla);
     document.documentElement.style.overflow = 'hidden';
 
     // Abrir es la senal mas clara de interes que hay: este es el que suena,
     // aunque el reparto por centrado dijera otra cosa.
     correr(v);
+    /* Y si YA era el que sonaba, `correr` sale por la puerta de atras sin hacer
+       nada — pero la mudanza al <body> lo acaba de pausar. Se retoma a mano, o
+       la pieza se abre a pantalla completa y se queda congelada. */
+    if (sonando === v && v.paused) {
+      var reanudar = v.play();
+      if (reanudar && reanudar.catch) reanudar.catch(function () {});
+    }
 
     // Dos cuadros: uno para que el navegador acepte la geometria inicial, y
     // hasta el siguiente se enciende la transicion. Con uno solo, Chrome
@@ -391,13 +427,14 @@
     art.setAttribute('tabindex', '0');
     art.setAttribute('role', 'button');
     art.setAttribute('aria-label', p.titulo);
-    art.style.setProperty('--pz-tinte', p.tinte);
     art.dataset.cartel = p.cartel;
     art.style.transitionDelay = (i * 0.09) + 's';
 
     art.innerHTML =
       '<div class="pz-hueco" style="display:none"></div>' +
-      '<div class="pz-marco">' +
+      /* El tinte va en el MARCO, no en el articulo: al abrirse el marco se muda
+         al <body> y alli ya no hereda las fichas de su tarjeta. */
+      '<div class="pz-marco" style="--pz-tinte:' + p.tinte + '">' +
         '<video class="pz-v" muted loop playsinline preload="none" tabindex="-1" ' +
           'aria-hidden="true" data-src="' + p.src + '"></video>' +
         '<span class="pz-abrir">abrir ↗</span>' +
