@@ -32,6 +32,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+<!-- El pulido de v5. VA AQUI, EN EL <head>, Y ESO NO ES CASUAL: el bloque del
+     componente empieza mas abajo y una sincronizacion desde Claude Design lo
+     regenera entero -- todo lo que este dentro se borra. Aqui fuera, sobrevive.
+
+     TRAMPA QUE COSTO ENCONTRAR: no escribir el nombre de la etiqueta semilla
+     (equis-guion-de-ce, entre picos) en NINGUNA parte del documento, ni
+     siquiera dentro de un comentario como este. support.js vuelve a bajar el
+     HTML y busca la semilla POR TEXTO: se queda con la primera aparicion, y si
+     esa es una mencion en prosa monta un componente vacio. El sintoma es
+     brutal y mudo -- las ocho secciones miden 0x0, la pagina entera queda en
+     900px de alto y la consola no dice ni una palabra.
+
+     v5-pulido.css  el recorte del titular y todo el pulido de telefono. Lleva
+                    !important porque los estilos originales son EN LINEA
+                    dentro del bloque: es la unica forma de ganarles sin
+                    escribir en la zona que se borra sola.
+     v5-color.js    aclara --accent en modo oscuro. Es script y no CSS porque
+                    el tema no define --accent (se queda en el del modo claro,
+                    2.80:1 sobre el fondo) y porque el agente cambia el acento
+                    en vivo: el valor correcto se calcula sobre el que haya. -->
+<link rel="stylesheet" href="./v5-pulido.css?v=3">
+<script src="./v5-color.js?v=2" defer></script>
 
 <!-- React y ReactDOM servidos desde aqui, no desde unpkg.
 

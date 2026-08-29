@@ -1,0 +1,417 @@
+/* ============================================================================
+   v5 — pulido de teléfono y arreglo del titular
+
+   POR QUÉ ESTA HOJA EXISTE Y NO SE EDITA EL BLOQUE
+
+   Todo el CSS visual de v5 vive EN LÍNEA dentro del bloque <x-dc>
+   (v5.html:63-476). Una sincronización desde Claude Design regenera ese bloque
+   y borra lo que se le haya editado — es la regla 1 de la casa. Por eso el
+   pulido vive aquí fuera y por eso casi todo lleva !important: no es descuido,
+   es la única forma de ganarle a un estilo en línea sin escribir dentro de la
+   zona que se borra sola.
+
+   El <link> a esta hoja va en el <head>, que termina en la línea 62: fuera del
+   bloque, así que sobrevive.
+
+   REGLAS QUE ESTA HOJA RESPETA A PROPÓSITO
+   · Cero literales de color, salvo UNO documentado abajo. setTheme() reescribe
+     las cinco fichas sobre <html> en cada cambio de tema y el agente puede
+     mover --accent en vivo: un color cocido aquí se desincroniza solo.
+   · Ningún @keyframes se redefine POR SU NOMBRE. `weave` y sus ocho hermanos
+     los inyecta support.js en tiempo de ejecución, posiblemente DESPUÉS de esta
+     hoja, y la última definición que carga gana. Por eso el arreglo del titular
+     declara un nombre NUEVO (nerv-weave) y sólo reapunta la propiedad.
+   · Nada de transform, filter, contain ni opacity<1 sobre #dc-root ni sus
+     envoltorios: crearían un contexto de apilamiento nuevo y romperían la
+     escalera de z-index del lienzo y el velo.
+   · Nada de opacity/transform con !important sobre [data-float] y [data-reveal]
+     FUERA del bloque de movimiento reducido: el bucle de scroll les escribe
+     transform y opacity en cada cuadro y se pelearían para siempre.
+   · Nada de max-width global: las medidas de línea son tapas en `ch` a
+     propósito (20ch en el h1, 46ch en el párrafo del hero, 66ch en el FAQ).
+
+   Punto de quiebre: 600px para lo que es teléfono de verdad, 900px para las
+   rejillas que sólo necesitan más aire.
+   ========================================================================= */
+
+
+/* ── 1 · EL TITULAR: LA TINTA CORTADA ────────────────────────────────────────
+   El bug que se veía en escritorio: las colas de g, p, q y j cortadas, y más
+   evidente en la palabra que rota porque casi todas las traen (portafolios,
+   paneles, catálogos, agentes, landings).
+
+   NO ES EL INTERLINEADO. La causa es que @keyframes weave TERMINA en
+   clip-path:inset(0 0 0 0) y los dos <span> lo aplican con fill-mode `both`:
+   el recorte se queda PERMANENTE pegado a la caja de borde. Y con
+   line-height:.9 esa caja es más corta que lo que la fuente necesita, así que
+   la cola sobra por abajo y el clip se la come. Medido en vivo a 1440:
+   clip-path computa `inset(0px 0% 0px 0px)` y hay 11px de tinta afuera.
+
+   Se descartó subir el line-height, que fue la primera hipótesis: barrido a
+   1440, hace falta 1.15 para dejar de cortar, y eso engorda el titular de 197
+   a 252px — aplana justo el apretado que ES la dirección de arte. El
+   line-height no se toca.
+
+   La cura es abrir el recorte HACIA ABAJO. -.34em cubre el peor descendente de
+   las cuatro fuentes de la pila con holgura, y como el inset sólo crece hacia
+   afuera no mueve ni un píxel del texto: el h1 sigue midiendo lo mismo.
+
+   Va SIN media query porque el recorte es el mismo en las dos pantallas. */
+@keyframes nerv-weave {
+  from { clip-path: inset(0 100% -.34em 0); filter: blur(7px); opacity: .25 }
+  to   { clip-path: inset(0 0    -.34em 0); filter: blur(0);   opacity: 1 }
+}
+#inicio h1 > span[style*="weave"] { animation-name: nerv-weave !important }
+
+/* Efecto secundario que hay que atender EN EL MISMO CAMBIO: hoy el subrayado
+   azul de la palabra que rota cae por debajo del recorte, así que nadie lo ha
+   visto nunca. Al abrir el clip aparecería — cruzando las descendentes, o sea
+   un bug NUEVO donde antes no había nada. Se cambia por un subrayado de texto
+   real, que sabe abrirse alrededor de la p y la g. */
+#inicio h1 span[style*="border-bottom"] {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--accent) !important;
+  text-decoration-thickness: .06em !important;
+  text-underline-offset: .14em !important;
+  text-decoration-skip-ink: auto !important;
+}
+
+
+/* ── 2 · EL CARRIL DE 44px ───────────────────────────────────────────────────
+   En escritorio el <aside> vertical con el número de sección es una de las
+   mejores decisiones de la página. En un teléfono son 44 de 375 píxeles —
+   11.7% de la pantalla, 12.2% en un teléfono de 360 — gastados en un rótulo
+   girado. Con el padding encima, el texto de las ocho secciones vive en 287px.
+   Ocultarlo devuelve 331px: 15% más de ancho en toda la página, y es lo que
+   hace que los bloques 3, 4 y 8 rindan lo que rinden.
+
+   display:none Y NUNCA remove(): el bucle de scroll le escribe la sección viva
+   en cada cuadro (v5.html:1032). Sin el nodo, eso reventaría 60 veces por
+   segundo. Oculto sigue existiendo y sigue recibiendo su texto. */
+@media (max-width: 599.98px) {
+  #dc-root aside { display: none !important }
+  #dc-root aside + div { padding-left: 0 !important }
+
+  /* La fila interna de la barra reserva 56px a mano para librar el carril. Sin
+     el carril, eso es un hueco a la izquierda del logo. */
+  #dc-root div:has(> a[href="#inicio"]:not([data-cursor])) {
+    padding-left: clamp(14px, 3vw, 26px) !important;
+  }
+}
+
+
+/* ── 3 · EL PRIMER PLIEGUE ───────────────────────────────────────────────────
+   Cuatro cosas del mismo sitio, que es el que decide si el prospecto sigue.
+
+   (a) 100svh en vez de 100vh. En iOS Safari, 100vh cuenta la barra de
+       direcciones que todavía no se ha escondido, así que el hero nace más
+       alto que la pantalla y salta al primer scroll. svh mide la ventana
+       chica: nunca salta. Se deja el 100vh antes como respaldo para el
+       navegador que no lo entienda.
+   (b) El campo a 16px. Debajo de 16px, iOS hace zoom automático al enfocar un
+       input y deja al usuario dentro de una página ampliada de la que tiene
+       que salir a pellizcos. 16px lo desactiva — y es la forma correcta, no
+       bloquear el zoom en el <meta viewport>, que sería cambiar una molestia
+       por una falla de accesibilidad.
+   (c) El botón "enviar" a ancho completo. Medido: 143x14 px. La fila es flex
+       con wrap y el botón trae padding sólo horizontal; al envolverse pierde el
+       estirado y se queda con su altura de línea. Catorce píxeles de alto en EL
+       control de conversión de la página.
+   (d) El kanji decorativo vertical, fuera: en teléfono se encima con el texto
+       y no aporta nada que no aporte ya el resto. */
+@media (max-width: 599.98px) {
+  #inicio { min-height: 100vh !important; min-height: 100svh !important }
+
+  #inicio div[style*="vertical-rl"] { display: none !important }
+
+  #inicio input { font-size: 16px !important }
+
+  #inicio  div:has(> input),
+  #contacto div:has(> input) { flex-wrap: wrap !important }
+
+  #inicio  div:has(> input) > button,
+  #contacto div:has(> input) > button {
+    flex: 1 0 100% !important;
+    display: flex !important;
+    min-height: 52px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-top: 1px solid var(--hair) !important;
+  }
+}
+
+
+/* ── 4 · LA COMPARATIVA Y EL PROCESO ─────────────────────────────────────────
+   #comparativa es la sección "nerv vs. una plantilla": el argumento entero de
+   por qué pagarle a él en vez de comprar un Wix. En teléfono sus tres columnas
+   dejan celdas de 88px y el argumento se vuelve ilegible justo donde más
+   importa. A dos columnas, con el encabezado de fila ocupando el ancho, se lee.
+
+   Hasta 900 y no hasta 600: ensanchar prosa no empeora nunca, y en tableta las
+   tres columnas ya venían apretadas. */
+@media (max-width: 899.98px) {
+  #comparativa div[style*="1.2fr"] { grid-template-columns: 1fr 1fr !important }
+
+  #comparativa div[style*="1.2fr"] > div {
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+  #comparativa div[style*="1.2fr"] > div:first-child {
+    grid-column: 1 / -1 !important;
+    border-bottom: 1px solid var(--hair) !important;
+  }
+  #comparativa div[style*="1.2fr"] > div:nth-child(2) { border-left: 0 !important }
+  #comparativa div[style*="1.2fr"]:first-child > div:first-child { display: none !important }
+
+  #proceso div[style*="minmax(96px"] {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+}
+@media (max-width: 599.98px) {
+  /* El compromiso de precio deja de ir vestido de rótulo técnico: es una
+     promesa que el prospecto tiene que poder LEER, no un adorno. */
+  #comparativa > div:last-child {
+    font-size: 12px !important;
+    text-transform: none !important;
+    letter-spacing: .04em !important;
+    line-height: 1.4 !important;
+  }
+}
+
+
+/* ── 5 · LA BARRA SUPERIOR ───────────────────────────────────────────────────
+   Medida a 375 forzando su posición visible: 142px de alto en tres renglones
+   envueltos — 17.5% de la ventana. Los cinco enlaces del menú miden 13px de
+   alto: no se pican con el pulgar, se pican con suerte.
+
+   Se podan los cuatro enlaces de sección (el contenido ya se recorre bajando,
+   y la sección viva la dice el encabezado que se está leyendo) y quedan los
+   tres controles que sí hacen algo: el logo, el idioma y "empezar". Los tres
+   suben a 44px de alto real. */
+@media (max-width: 599.98px) {
+  #dc-root a[href="#servicios"],
+  #dc-root a[href="#proceso"],
+  #dc-root a[href="#trabajo"],
+  #dc-root a[href="#preguntas"] { display: none !important }
+
+  /* los separadores verticales que quedaban entre los enlaces podados */
+  #dc-root div:has(> a[href="#inicio"]:not([data-cursor])) > span[style*="height:16px"],
+  #dc-root div:has(> a[href="#inicio"]:not([data-cursor])) > span[style*="height: 16px"] {
+    display: none !important;
+  }
+
+  #dc-root a[href="#inicio"]:not([data-cursor]),
+  #dc-root button[data-cursor="switch"],
+  #dc-root a[data-cursor="empezar"] {
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  #dc-root button[data-cursor="switch"] {
+    min-width: 44px !important;
+    justify-content: center !important;
+  }
+}
+
+/* La barra se esconde al bajar. Si alguien llega a ella con el tabulador
+   estando escondida, el foco cae en un control invisible. Esto la baja sola en
+   cuanto recibe foco de teclado. Sin media query: pasa en las dos pantallas. */
+#dc-root div:has(> div > a[href="#inicio"]:not([data-cursor])):focus-within {
+  transform: translateY(0) !important;
+}
+
+
+/* ── 6 · COLOR ───────────────────────────────────────────────────────────────
+   El acento en modo oscuro lo arregla v5-color.js, no esta hoja: THEMES
+   (v5.html:478-481) define --bg, --fg, --dim, --panel y --hair pero NO
+   --accent, y setTheme sólo recorre las llaves que existen. Resultado medido:
+   en oscuro el azul se queda en el del modo claro y da 2.80:1 sobre el fondo y
+   2.64:1 sobre el panel. Se arregla con JS porque el valor correcto depende del
+   acento que esté puesto — y el agente lo cambia en vivo.
+
+   Aquí sólo queda lo que SÍ es CSS: cuando el script aclaró el acento, la tinta
+   que va encima de él tiene que voltear a oscura o se pierde. */
+:root[data-acento-aclarado] [data-cursor="empezar"],
+:root[data-acento-aclarado] [data-cursor="probar"],
+:root[data-acento-aclarado] [data-cursor="enviar"],
+:root[data-acento-aclarado] .pz-abrir { color: var(--bg) !important }
+
+/* ÚNICO literal de color de toda la hoja, y por eso lleva su justificación
+   pegada: el placeholder de los campos en modo claro. #626a7c da 5.42:1 sobre
+   blanco y 4.71:1 sobre el fondo claro; el --dim del tema (#737d90) se queda en
+   4.15:1, que no pasa. No puede salir de una ficha porque ninguna ficha tiene
+   este valor, y en oscuro no hace falta: ahí --dim ya da 5.14:1. */
+:root:not([data-tema="oscuro"]) #dc-root input::placeholder { color: #626a7c !important }
+
+
+/* ── 7 · ACUSE AL TOQUE ──────────────────────────────────────────────────────
+   Barrido de las 93 reglas de todas las hojas: cero con :active, cero con
+   @media (hover:none), cero con -webkit-tap-highlight-color.
+
+   En un teléfono eso se nota de dos formas feas. Una: el :hover se aplica al
+   tocar y SE QUEDA PEGADO hasta que tocas otra cosa, así que el botón que
+   acabas de usar queda encendido. Dos: no hay ningún acuse propio de que el
+   toque se registró, y el usuario vuelve a picar.
+
+   La cura son las dos mitades: apagar el hover donde no hay puntero fino, y dar
+   un acuse real con :active. */
+@media (hover: none) {
+  #dc-root button[data-q]:hover {
+    background: var(--panel) !important;
+    color: var(--fg) !important;
+    border-color: var(--hair) !important;
+    transform: none !important;
+  }
+  #dc-root a[data-cursor="enviar correo"]:hover {
+    background: transparent !important;
+    color: var(--fg) !important;
+  }
+  #dc-root a[data-cursor="empezar"]:hover,
+  #dc-root button[data-cursor="probar"]:hover,
+  #dc-root button[data-cursor="enviar"]:hover {
+    filter: none !important;
+    letter-spacing: .26em !important;
+  }
+  /* la chapa "abrir" de los carretes vive en :hover, o sea que en teléfono no
+     aparecía nunca */
+  #dc-root .pz-abrir { opacity: 1 !important; transform: none !important }
+}
+
+#dc-root button:active,
+#dc-root a[data-cursor]:active,
+#dc-root summary:active,
+#dc-root .pz:active { filter: brightness(.86) !important }
+
+/* El recuadro gris que Android pinta solo al tocar; el :active de arriba ya da
+   un acuse mejor y acorde al canto duro de la casa. */
+* { -webkit-tap-highlight-color: transparent }
+
+
+/* ── 8 · SERVICIOS Y BLANCOS DE TOQUE ────────────────────────────────────────
+   El min-height:300px de las tarjetas existe para igualar tres EN FILA en
+   escritorio. En teléfono la rejilla ya colapsó a una columna, así que no hay
+   nada que igualar: son 118px de aire muerto por tarjeta, casi media pantalla
+   de scroll regalada entre las tres. */
+@media (max-width: 599.98px) {
+  #servicios article { min-height: 0 !important; padding: 24px 20px 26px !important }
+  #servicios article > span[style*="flex:1"],
+  #servicios article > span[style*="flex: 1"] { min-height: 18px !important }
+
+  #dc-root button[data-q] { min-height: 44px !important }
+
+  /* "contacto" mide 17px de alto. Se le da área de toque de 44px con un
+     pseudo-elemento en vez de padding: así crece el blanco sin mover ni un
+     píxel de la maqueta. */
+  #inicio a[href="#contacto"] { position: relative !important }
+  #inicio a[href="#contacto"]::after {
+    content: "" !important;
+    position: absolute !important;
+    left: -8px; right: -8px; top: 50%;
+    transform: translateY(-50%);
+    height: 44px;
+  }
+}
+
+
+/* ── 9 · FOCO Y MOVIMIENTO REDUCIDO ──────────────────────────────────────────
+   Los dos <input> traen outline:0 y border:0 en línea: con el foco puesto no
+   hay NINGÚN indicador, y son las paradas 9 y 27 de las 34 del tabulador. Es
+   falla plana sobre el único control que convierte. */
+#dc-root input:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: -4px !important;
+}
+
+/* Movimiento reducido de verdad. Éste es el ÚNICO lugar de la hoja donde se
+   escribe opacity/transform sobre [data-float] y [data-reveal] — y aquí es
+   obligatorio: si el usuario pidió menos movimiento y el bucle de scroll no
+   corre, esos doce nodos se quedan invisibles PARA SIEMPRE. Es la regla 3 de la
+   casa: nada invisible esperando animación. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important }
+
+  #dc-root * {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  #dc-root [data-float],
+  #dc-root [data-reveal] { opacity: 1 !important; transform: none !important }
+
+  /* y el titular, que nace recortado y llega a su sitio por la animación */
+  #inicio h1 > span[style*="weave"] {
+    clip-path: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+
+/* ── 10 · LAS FRASES DE VENTA QUE IBAN VESTIDAS DE RÓTULO ────────────────────
+   Siete cadenas comparten la misma firma en línea: JetBrains Mono, 9–9.5px,
+   versalitas y 0.2em de espaciado. Esa receta es la dirección de arte de la
+   casa y en un rótulo de dos palabras funciona. El problema es que aquí viste
+   FRASES COMPLETAS, y son justo las que convencen:
+
+     · «sitios hechos a mano, sin constructores»
+     · «el agente contesta también a las tres de la mañana»
+     · «semanas de la primera llamada al sitio publicado»
+     · «el de arriba es real — pruébalo»
+     · «cada mensaje llega a una persona»
+     · «hecho a mano, no con plantilla»
+
+   Versalitas a 9px con espaciado ancho es el peor caso de legibilidad que
+   existe: se pierde el perfil de la palabra, que es de lo que se agarra el ojo
+   para leer rápido. En un teléfono eso deja de ser texto y pasa a ser textura.
+
+   No se aplana el estilo — siguen en mono y en versalitas, que ES la estética.
+   Sólo suben a 11.5px y se les cierra un poco el espaciado, que es lo que
+   devuelve el perfil. Sólo en teléfono: en escritorio se leen bien y ahí la
+   textura sí está haciendo su trabajo. */
+@media (max-width: 599.98px) {
+  /* OJO CON LA SINTAXIS. En el ARCHIVO estos estilos se escriben pegados
+     (`letter-spacing:.2em`), pero React reescribe el atributo al montar y en el
+     DOM quedan normalizados con espacio y con cero (`letter-spacing: 0.2em`).
+     El selector compara contra el DOM, así que va la forma normalizada.
+     Medido: con espacio casan 11 elementos, pegado casan 0 — y un selector que
+     casa con cero NO da error, así que se despliega y uno cree que ya quedó. */
+  #dc-root [style*="letter-spacing: 0.2em"] {
+    font-size: 11.5px !important;
+    letter-spacing: .12em !important;
+    line-height: 1.5 !important;
+  }
+}
+
+
+/* ── 11 · EL LOGO ────────────────────────────────────────────────────────────
+   Mide 33px de ancho: es la vuelta al inicio y el único ancla de marca de la
+   barra. Se le da el ancho mínimo sin tocar la tipografía. */
+@media (max-width: 599.98px) {
+  #dc-root a[href="#inicio"]:not([data-cursor]) {
+    min-width: 44px !important;
+    justify-content: flex-start !important;
+  }
+}
+
+
+/* ── 12 · EL PIE Y EL ENVOLTORIO ─────────────────────────────────────────────
+   El <footer> se pone 9px a sí mismo y sus dos frases lo heredan — entre ellas
+   «hecho a mano, no con plantilla», que es un argumento de venta, no un
+   colofón. No tiene estilo en línea, así que no lo alcanzaba el bloque 10.
+
+   Y el envoltorio de todo trae min-height:100vh igual que el hero: la misma
+   trampa de iOS, y aquí además hace que el documento entero herede la altura
+   equivocada. svh mide la ventana chica y no salta cuando la barra de
+   direcciones se esconde. */
+@media (max-width: 599.98px) {
+  #dc-root footer { font-size: 11.5px !important; letter-spacing: .12em !important }
+
+  #dc-root > div[style*="min-height: 100vh"],
+  #dc-root div[style*="min-height:100vh"] {
+    min-height: 100svh !important;
+  }
+}
