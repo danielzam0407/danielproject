@@ -10,6 +10,15 @@ en la raíz, sin build.
    Claude Design regenera el componente y borra lo que esté adentro. El árbol
    vivo del componente es `#dc-root` (la etiqueta `<x-dc>` es sólo la semilla) —
    los anexos se montan tras `#dc-root`, no tras la etiqueta.
+1b. **Nunca escribir el nombre de la etiqueta semilla en prosa** — ni en un
+   comentario, ni en un texto, ni en ninguna parte del documento antes de la
+   etiqueta de verdad. `support.js` vuelve a bajar el HTML y busca la semilla
+   **por texto**: se queda con la primera aparición, y si ésa es una mención en
+   prosa monta un componente vacío. El síntoma es brutal y **mudo** — las ocho
+   secciones miden 0×0, la página entera queda en 900px de alto, y la consola
+   no dice ni una palabra. Costó media hora de bisección el 2026-08-28. Para
+   hablar de ella en un comentario, deletrearla.
+
 2. **El componente se repinta solo.** Todo lo que se cuelgue del DOM debe ser
    idempotente y re-aplicarse con un MutationObserver colgado del `<body>`
    (nunca de una sección: muere con ella).
