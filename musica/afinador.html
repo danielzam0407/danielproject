@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>afinador · nerv</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23eceff5'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%230a0c12' stroke-width='2'/%3E%3Crect x='15' y='4' width='2' height='24' fill='%231c3bf0'/%3E%3C/svg%3E">
+<style>
+/* Tinta y papel, canto duro, una sola tinta de acento. La anotación técnica de
+   abajo NO es decorado: dice cosas verdaderas del motor y por eso está separada
+   y rotulada como diagnóstico — es una herramienta de trabajo, no una lámina. */
+:root{
+  --papel:#eceff5; --tinta:#0a0c12; --tenue:#5a6377; --linea:#c8cedb;
+  --acento:#1c3bf0; --bien:#0a6b45; --mal:#c1121f; --panel:#fff;
+  --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--papel);color:var(--tinta);font-family:var(--sans);
+  min-height:100vh;display:flex;flex-direction:column}
+button,select{font:inherit;color:inherit}
+
+.barra{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:14px clamp(16px,4vw,32px);border-bottom:1px solid var(--linea);background:var(--panel)}
+.marca{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+.marca b{color:var(--acento);font-weight:700}
+.barra select{margin-left:auto;max-width:min(46vw,340px);font-family:var(--mono);font-size:11px;
+  letter-spacing:.06em;padding:8px 10px;border:1px solid var(--linea);background:var(--papel);
+  border-radius:0}
+.barra button{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  padding:9px 16px;border:1px solid var(--tinta);background:var(--tinta);color:var(--papel);
+  cursor:pointer;border-radius:0}
+.barra button:hover{background:var(--acento);border-color:var(--acento)}
+.barra button[disabled]{opacity:.4;cursor:default}
+
+main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
+
+/* aviso */
+#aviso{padding:14px clamp(16px,4vw,32px);border-bottom:1px solid var(--linea);
+  font-family:var(--mono);font-size:12px;line-height:1.7;background:#fff5f5;color:var(--mal);
+  display:none}
+#aviso.on{display:block}
+#aviso b{font-weight:700}
+
+/* lectura */
+.lectura{padding:clamp(24px,5vw,52px) clamp(16px,4vw,32px) clamp(16px,3vw,28px);
+  display:flex;align-items:baseline;gap:clamp(16px,4vw,44px);flex-wrap:wrap}
+.nota{font-size:clamp(64px,16vw,148px);line-height:.86;letter-spacing:-.04em;font-weight:600;
+  font-variant-numeric:tabular-nums;min-width:2.4ch}
+.nota sub{font-size:.3em;font-weight:400;color:var(--tenue);vertical-align:baseline;margin-left:.06em}
+.cifras{display:flex;flex-direction:column;gap:10px;font-family:var(--mono)}
+.cifras div{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--tenue)}
+.cifras b{display:block;font-size:26px;letter-spacing:-.01em;color:var(--tinta);
+  font-variant-numeric:tabular-nums;margin-top:2px;text-transform:none}
+#veredicto{margin-left:auto;font-family:var(--mono);font-size:13px;letter-spacing:.28em;
+  text-transform:uppercase;padding:10px 18px;border:1px solid var(--linea);color:var(--tenue);
+  align-self:center;white-space:nowrap}
+#veredicto.bien{color:#fff;background:var(--bien);border-color:var(--bien)}
+#veredicto.cerca{color:var(--acento);border-color:var(--acento)}
+
+/* aguja */
+.aguja{position:relative;height:76px;margin:0 clamp(16px,4vw,32px);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);background:var(--panel)}
+.aguja .banda{position:absolute;top:0;bottom:0;left:45%;width:10%;background:rgba(10,107,69,.12);
+  border-left:1px solid rgba(10,107,69,.45);border-right:1px solid rgba(10,107,69,.45)}
+.aguja .centro{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--tinta)}
+.aguja .marca-c{position:absolute;top:0;bottom:0;width:1px;background:var(--linea)}
+.aguja .rot{position:absolute;bottom:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.14em;color:var(--tenue);transform:translateX(-50%)}
+#pluma{position:absolute;top:6px;bottom:6px;width:3px;background:var(--acento);left:50%;
+  transform:translateX(-50%);transition:left .06s linear}
+#pluma.bien{background:var(--bien)}
+#pluma.muda{opacity:.18}
+
+/* cuerdas */
+.cuerdas{display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid var(--linea);
+  background:var(--panel)}
+.cuerda{padding:14px 8px;text-align:center;border-right:1px solid var(--linea);
+  font-family:var(--mono)}
+.cuerda:last-child{border-right:0}
+.cuerda .n{font-size:20px;font-weight:700;letter-spacing:.02em}
+.cuerda .hz{font-size:10px;letter-spacing:.14em;color:var(--tenue);margin-top:4px}
+.cuerda.on{background:var(--acento);color:#fff}
+.cuerda.on .hz{color:rgba(255,255,255,.82)}
+.cuerda.on.bien{background:var(--bien)}
+
+/* diagnostico */
+.diag{padding:18px clamp(16px,4vw,32px) 28px;font-family:var(--mono)}
+.diag h2{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--tenue);
+  font-weight:400;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.diag h2::after{content:"";flex:1;height:1px;background:var(--linea)}
+/* Las lineas van en el BORDE de cada celda, no en un hueco de rejilla sobre
+   fondo oscuro. Con el truco del hueco, la cola de la ultima fila —cuando los
+   ocho campos no la llenan— queda como un bloque gris sin nada dentro. */
+.rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  background:var(--panel);border:1px solid var(--linea);border-width:1px 0 0 1px}
+.rejilla > div{background:var(--panel);padding:10px 12px;
+  border:1px solid var(--linea);border-width:0 1px 1px 0}
+.rejilla > div > span{display:block;font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--tenue);margin-bottom:4px}
+.rejilla > div > b{font-size:12px;font-weight:400;letter-spacing:.04em;word-break:break-word}
+.rejilla > div > b.mal{color:var(--mal);font-weight:700}
+.rejilla > div > b.bien{color:var(--bien)}
+.nivel{height:5px;background:var(--linea);margin-top:6px;overflow:hidden}
+.nivel i{display:block;height:100%;width:0;background:var(--acento);transition:width .08s linear}
+.nota-pie{margin-top:16px;font-size:11px;line-height:1.8;color:var(--tenue);max-width:78ch}
+.nota-pie b{color:var(--tinta);font-weight:700}
+
+@media(max-width:640px){
+  .cuerdas{grid-template-columns:repeat(3,1fr)}
+  .cuerda:nth-child(3){border-right:0}
+  .cuerda:nth-child(-n+3){border-bottom:1px solid var(--linea)}
+  #veredicto{margin-left:0;order:9;width:100%;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <span class="marca">afinador <b>//</b> nerv</span>
+  <select id="disp" aria-label="Entrada de audio"><option>— sin permiso todavía —</option></select>
+  <button id="arrancar" type="button">Escuchar</button>
+</header>
+
+<main>
+  <p id="aviso"></p>
+
+  <section class="lectura">
+    <div class="nota" id="nota">—<sub id="octava"></sub></div>
+    <div class="cifras">
+      <div>desviación<b id="cents">—</b></div>
+    </div>
+    <div class="cifras">
+      <div>frecuencia<b id="hz">—</b></div>
+    </div>
+    <div id="veredicto">en silencio</div>
+  </section>
+
+  <section class="aguja" aria-hidden="true">
+    <div class="banda"></div>
+    <div class="marca-c" style="left:10%"></div>
+    <div class="marca-c" style="left:30%"></div>
+    <div class="marca-c" style="left:70%"></div>
+    <div class="marca-c" style="left:90%"></div>
+    <div class="centro"></div>
+    <span class="rot" style="left:10%">−40</span>
+    <span class="rot" style="left:30%">−20</span>
+    <span class="rot" style="left:50%">0</span>
+    <span class="rot" style="left:70%">+20</span>
+    <span class="rot" style="left:90%">+40</span>
+    <div id="pluma" class="muda"></div>
+  </section>
+
+  <section class="cuerdas" id="cuerdas"></section>
+
+  <section class="diag">
+    <h2>diagnóstico</h2>
+    <div class="rejilla">
+      <div><span>entrada</span><b id="dEntrada">—</b></div>
+      <div><span>muestreo</span><b id="dHz">—</b></div>
+      <div><span>cancelación de eco</span><b id="dEco">—</b></div>
+      <div><span>supresión de ruido</span><b id="dRuido">—</b></div>
+      <div><span>ganancia automática</span><b id="dAgc">—</b></div>
+      <div><span>lecturas por segundo</span><b id="dLps">—</b></div>
+      <div><span>latencia base</span><b id="dLat">—</b></div>
+      <div><span>nivel</span><b id="dNivel">—</b><div class="nivel"><i id="barra"></i></div></div>
+    </div>
+    <p class="nota-pie">
+      Los tres interruptores de arriba tienen que decir <b>apagada</b>. Vienen
+      encendidos por omisión, son para videollamadas, y arruinan la medición: la
+      ganancia automática mueve la amplitud —adiós a medir el ataque— y la
+      supresión de ruido se come los armónicos que necesita el detector.
+      Si alguno dice <b>ENCENDIDA</b>, el navegador ignoró la petición y el número
+      de cents no vale.
+      <br><br>
+      Toca <b>limpio, sin distorsión</b>: el detector se equivoca de octava con
+      señales de muchos armónicos. Y si el nivel se queda en cero, la entrada
+      elegida no es la interfaz — o Reaper la tiene tomada en exclusiva por
+      ASIO, y entonces el navegador se queda sin señal sin decir nada.
+    </p>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* ── constantes del instrumento ─────────────────────────────────────────
+     La ventana es de 2048 muestras y el retardo maximo que se busca, 720. A
+     48 kHz eso llega hasta 66.7 Hz, por debajo del Mi grave (82.4), asi que
+     cubre la guitarra entera con margen y no gasta en frecuencias que no
+     existen aqui. El tramo que se compara son 1024 muestras: 1024+720 = 1744,
+     y cabe en la ventana. */
+  var N = 2048, TAU_MAX = 720, W = 1024, UMBRAL = 0.12;
+  var RUIDO = 0.004;          // por debajo de esto es silencio, no nota
+  var NOMBRES = ['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
+  var CUERDAS = [
+    { n: '6·Mi', f: 82.41 }, { n: '5·La', f: 110.00 }, { n: '4·Re', f: 146.83 },
+    { n: '3·Sol', f: 196.00 }, { n: '2·Si', f: 246.94 }, { n: '1·Mi', f: 329.63 }
+  ];
+
+  /* El worklet no analiza: SOLO acarrea. Un paso de YIN son ~737 mil
+     operaciones y el hilo de audio tiene 2.7 ms por bloque para todo — meterlo
+     ahi produce cortes. Asi que el worklet junta la ventana y la manda; el
+     analisis corre en el hilo principal, donde 2 ms de mas no rompen nada.
+     Lo que SI se gana con el worklet es una cadencia fija: 23 lecturas por
+     segundo pase lo que pase, sin depender del bucle de cuadros, que se frena
+     en cuanto la pestana pasa a segundo plano. */
+  var FUENTE_WORKLET = [
+    'class Acarreo extends AudioWorkletProcessor {',
+    '  constructor(o){ super();',
+    '    this.N = o.processorOptions.N;',
+    '    this.buf = new Float32Array(this.N); this.i = 0; }',
+    '  process(entradas){',
+    '    const c = entradas[0] && entradas[0][0];',
+    '    if (!c) return true;',
+    '    for (let k = 0; k < c.length; k++){',
+    '      this.buf[this.i++] = c[k];',
+    '      if (this.i >= this.N){',
+    '        this.port.postMessage(this.buf.slice(0));',
+    '        this.i = 0;',
+    '      }',
+    '    }',
+    '    return true; }',
+    '}',
+    'registerProcessor("acarreo", Acarreo);'
+  ].join('\n');
+
+  /* ── YIN ────────────────────────────────────────────────────────────────
+     Devuelve 0 si no hay altura clara. El paso que evita el error de octava es
+     quedarse con el PRIMER minimo que baja del umbral, no con el mas profundo:
+     el mas profundo suele ser el doble del periodo. */
+  var d = new Float32Array(TAU_MAX);
+  function yin(x, sr) {
+    var acum = 0, tau, j, s, dif;
+    d[0] = 1;
+    for (tau = 1; tau < TAU_MAX; tau++) {
+      s = 0;
+      for (j = 0; j < W; j++) { dif = x[j] - x[j + tau]; s += dif * dif; }
+      acum += s;
+      d[tau] = acum === 0 ? 1 : (s * tau) / acum;
+    }
+    var t = -1;
+    for (j = 2; j < TAU_MAX; j++) {
+      if (d[j] < UMBRAL) {
+        while (j + 1 < TAU_MAX && d[j + 1] < d[j]) j++;
+        t = j; break;
+      }
+    }
+    if (t < 1) return 0;
+    // Interpolacion parabolica: sin esto la resolucion se topa en el tamano de
+    // una muestra, que en la primera cuerda son ~17 cents.
+    var mejor = t;
+    if (t > 0 && t + 1 < TAU_MAX) {
+      var a = d[t - 1], b = d[t], c = d[t + 1];
+      var den = 2 * (2 * b - c - a);
+      if (den !== 0) mejor = t + (c - a) / den;
+    }
+    return mejor > 0 ? sr / mejor : 0;
+  }
+
+  function rms(x) {
+    var s = 0;
+    for (var i = 0; i < x.length; i++) s += x[i] * x[i];
+    return Math.sqrt(s / x.length);
+  }
+
+  /* ── estado ─────────────────────────────────────────────────────────── */
+  var ctx = null, flujo = null, nodo = null;
+  var ultimas = [];           // mediana movil: mata los saltos de octava sueltos
+  var lecturas = 0, tLps = 0;
+  var estables = 0;           // cuantas lecturas seguidas dentro de ±5 cents
+
+  var elNota = $('#nota'), elOct = $('#octava'), elCents = $('#cents'), elHz = $('#hz');
+  var elVer = $('#veredicto'), elPluma = $('#pluma'), elBarra = $('#barra');
+
+  /* ── cuerdas ─────────────────────────────────────────────────────────── */
+  var celdas = CUERDAS.map(function (c) {
+    var el = document.createElement('div');
+    el.className = 'cuerda';
+    el.innerHTML = '<div class="n">' + c.n + '</div><div class="hz">' + c.f.toFixed(2) + ' Hz</div>';
+    $('#cuerdas').appendChild(el);
+    return el;
+  });
+
+  function pintar(f, nivel) {
+    elBarra.style.width = Math.min(100, nivel * 900) + '%';
+    $('#dNivel').textContent = nivel > 0 ? (20 * Math.log10(nivel)).toFixed(1) + ' dBFS' : '—';
+
+    if (!f) {
+      elNota.firstChild.nodeValue = '—'; elOct.textContent = '';
+      elCents.textContent = '—'; elHz.textContent = '—';
+      elVer.textContent = 'en silencio'; elVer.className = '';
+      elPluma.className = 'muda'; elPluma.style.left = '50%';
+      celdas.forEach(function (c) { c.className = 'cuerda'; });
+      estables = 0;
+      return;
+    }
+
+    var midi = 69 + 12 * Math.log2(f / 440);
+    var n = Math.round(midi);
+    var cents = (midi - n) * 100;
+    var afinada = Math.abs(cents) <= 5;
+
+    elNota.firstChild.nodeValue = NOMBRES[((n % 12) + 12) % 12];
+    elOct.textContent = Math.floor(n / 12) - 1;
+    elCents.textContent = (cents >= 0 ? '+' : '') + cents.toFixed(1) + ' ¢';
+    elHz.textContent = f.toFixed(2) + ' Hz';
+
+    elPluma.style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';
+    elPluma.className = afinada ? 'bien' : '';
+
+    estables = afinada ? estables + 1 : 0;
+    if (estables >= 12) { elVer.textContent = 'afinada'; elVer.className = 'bien'; }
+    else if (afinada) { elVer.textContent = 'sostén…'; elVer.className = 'cerca'; }
+    else { elVer.textContent = cents < 0 ? 'baja · sube la clavija' : 'alta · bájala'; elVer.className = ''; }
+
+    // La cuerda mas cercana en semitonos, no en Hz: en Hz la primera cuerda
+    // siempre gana porque las distancias de arriba son mas grandes.
+    var mejor = 0, min = Infinity;
+    CUERDAS.forEach(function (c, i) {
+      var dist = Math.abs(12 * Math.log2(f / c.f));
+      if (dist < min) { min = dist; mejor = i; }
+    });
+    celdas.forEach(function (c, i) {
+      c.className = 'cuerda' + (i === mejor && min < 3 ? ' on' + (afinada ? ' bien' : '') : '');
+    });
+  }
+
+  /* ── lecturas por segundo ────────────────────────────────────────────── */
+  setInterval(function () {
+    $('#dLps').textContent = lecturas ? lecturas + ' /s' : '—';
+    lecturas = 0;
+  }, 1000);
+
+  /* ── arranque ────────────────────────────────────────────────────────── */
+  function avisar(msg) { var a = $('#aviso'); a.innerHTML = msg; a.className = 'on'; }
+
+  function bandera(el, valor) {
+    var b = $(el);
+    if (valor === undefined) { b.textContent = 'no lo dice'; b.className = ''; return; }
+    b.textContent = valor ? 'ENCENDIDA' : 'apagada';
+    b.className = valor ? 'mal' : 'bien';
+  }
+
+  /* `preferido` es el dispositivo que debe quedar seleccionado al terminar. Sin
+     eso, volver a listar despues de conceder el permiso —que es cuando por fin
+     hay nombres— borraba la eleccion y dejaba el selector marcando la primera
+     entrada mientras el micrófono abierto era otro. El desplegable mentia. */
+  async function listar(preferido) {
+    try {
+      var sel = $('#disp');
+      var quiero = preferido || sel.value;
+      var ds = await navigator.mediaDevices.enumerateDevices();
+      sel.innerHTML = '';
+      ds.filter(function (x) { return x.kind === 'audioinput'; })
+        .forEach(function (x) {
+          var o = document.createElement('option');
+          o.value = x.deviceId;
+          o.textContent = x.label || 'entrada sin nombre';
+          sel.appendChild(o);
+        });
+      if (!sel.children.length) { sel.innerHTML = '<option>— sin entradas —</option>'; return; }
+      if (quiero) sel.value = quiero;
+      // `sel.value = algo que no esta` deja el selector vacio, no en el primero.
+      if (!sel.value) sel.selectedIndex = 0;
+    } catch (e) { /* sin permiso todavia: se llena despues */ }
+  }
+
+  /* Dos llamadas a la vez —doble clic, o cambiar de entrada mientras arranca—
+     dejaban dos contextos vivos: el primero nunca se cerraba y sus mensajes
+     seguian pintando encima de los del segundo. */
+  var arrancando = false;
+
+  async function escuchar() {
+    if (arrancando) return;
+    arrancando = true;
+    $('#arrancar').disabled = true;
+    try { await abrir(); } finally { arrancando = false; $('#arrancar').disabled = false; }
+  }
+
+  async function abrir() {
+    $('#aviso').className = '';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return avisar('Este navegador no da acceso al micrófono. Hace falta Chrome, Edge o Firefox al día.');
+    }
+    if (!window.isSecureContext) {
+      return avisar('<b>Contexto inseguro.</b> El micrófono sólo se abre por <b>https</b> o desde <b>localhost</b>. ' +
+        'Abierto como archivo suelto (<code>file://</code>) el navegador lo niega siempre.');
+    }
+
+    try {
+      if (flujo) flujo.getTracks().forEach(function (t) { t.stop(); });
+      var id = $('#disp').value;
+      /* Los tres en false EXPLICITAMENTE. Es la linea que separa ±5 cents de
+         basura, y es la que todo el mundo olvida porque el valor por omision
+         no se ve en ningun lado. */
+      flujo = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: id ? { exact: id } : undefined,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1
+        }
+      });
+    } catch (e) {
+      return avisar('<b>No se pudo abrir la entrada.</b> ' + (e && e.name ? e.name + ': ' : '') +
+        (e && e.message ? e.message : '') +
+        '<br>Si dice NotAllowedError, hay que dar permiso al micrófono en el candado de la barra de direcciones. ' +
+        'Si dice NotReadableError, otra aplicación tiene el dispositivo tomado: cierra Reaper.');
+    }
+
+    var pista = flujo.getAudioTracks()[0];
+    var aj = pista.getSettings ? pista.getSettings() : {};
+    // Se re-lista con el id REAL de lo que se abrio, no con lo que se pidio:
+    // si el navegador entrego otra cosa, el desplegable lo dice.
+    await listar(aj.deviceId);
+    $('#dEntrada').textContent = pista.label || '—';
+    bandera('#dEco', aj.echoCancellation);
+    bandera('#dRuido', aj.noiseSuppression);
+    bandera('#dAgc', aj.autoGainControl);
+
+    if (ctx) { try { await ctx.close(); } catch (e) {} }
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') await ctx.resume();
+    $('#dHz').textContent = ctx.sampleRate + ' Hz';
+    $('#dLat').textContent = (ctx.baseLatency != null)
+      ? (ctx.baseLatency * 1000).toFixed(1) + ' ms' : 'no la dice';
+
+    var url = URL.createObjectURL(new Blob([FUENTE_WORKLET], { type: 'text/javascript' }));
+    try {
+      await ctx.audioWorklet.addModule(url);
+    } catch (e) {
+      return avisar('<b>No cargó el módulo de audio.</b> ' + (e && e.message ? e.message : ''));
+    } finally { URL.revokeObjectURL(url); }
+
+    nodo = new AudioWorkletNode(ctx, 'acarreo', { processorOptions: { N: N } });
+    ctx.createMediaStreamSource(flujo).connect(nodo);
+    /* No se conecta a los altavoces a proposito: es un afinador, no un
+       monitor, y devolverle el sonido a alguien que toca con ampli es un
+       acople. El worklet no produce salida, asi que no hace falta. */
+
+    nodo.port.onmessage = function (ev) {
+      var x = ev.data;
+      lecturas++;
+      var nivel = rms(x);
+      if (nivel < RUIDO) { ultimas.length = 0; return pintar(0, nivel); }
+
+      var f = yin(x, ctx.sampleRate);
+      if (!f || f < 60 || f > 1400) { return pintar(0, nivel); }
+
+      ultimas.push(f);
+      if (ultimas.length > 5) ultimas.shift();
+      var orden = ultimas.slice().sort(function (a, b) { return a - b; });
+      pintar(orden[orden.length >> 1], nivel);
+    };
+
+    $('#arrancar').textContent = 'Reiniciar';
+  }
+
+  $('#arrancar').addEventListener('click', escuchar);
+  $('#disp').addEventListener('change', function () { if (ctx) escuchar(); });
+  if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) listar();
+})();
+</script>
+</body>
+</html>

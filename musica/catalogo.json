@@ -1,0 +1,550 @@
+{
+  "version": 1,
+  "actualizado": "2026-08-30",
+  "para": "El profesor de guitarra. El modelo NO inventa ejercicios: escoge de aquí.",
+
+  "medidas": {
+    "cambios_por_minuto": {
+      "unidad": "cambios limpios en 60 s",
+      "sentido": "sube",
+      "como": "Cuenta cada vez que los dos acordes suenan completos y limpios uno tras otro. Un acorde a medias no cuenta.",
+      "necesita": "deteccion de acorde (varias cuerdas) o de la nota mas grave + limpieza"
+    },
+    "desviacion_ms": {
+      "unidad": "milisegundos de desviación media absoluta contra el clic",
+      "sentido": "baja",
+      "como": "Detección de ataque. Se compara cada ataque con el pulso más cercano.",
+      "necesita": "calibrar primero el desfase del sistema — ver README, es obligatorio"
+    },
+    "cents": {
+      "unidad": "cents de desviación media absoluta",
+      "sentido": "baja",
+      "como": "YIN en un AudioWorklet. Se promedia sobre la parte estable de la nota, no sobre el ataque.",
+      "necesita": "guitarra limpia, sin distorsión — YIN falla de octava con muchos armónicos"
+    },
+    "tiempo_ms": {
+      "unidad": "milisegundos desde que suena la referencia hasta que tocas la nota correcta",
+      "sentido": "baja",
+      "como": "Se cronometra hasta el primer ataque cuya altura coincide dentro de ±35 cents.",
+      "necesita": "lo mismo que cents"
+    },
+    "cuerdas_limpias": {
+      "unidad": "porcentaje de cuerdas del acorde que suenan sin trastear ni apagarse",
+      "sentido": "sube",
+      "como": "Rasgueo lento; se busca cada altura esperada en el espectro.",
+      "necesita": "análisis polifónico simple — es lo menos fiable de la lista, ver README"
+    },
+    "acierto_pct": {
+      "unidad": "porcentaje de aciertos en la ronda",
+      "sentido": "sube",
+      "como": "Pregunta cerrada; el sistema sabe la respuesta porque él generó el sonido.",
+      "necesita": "nada del micrófono si se responde con el teclado"
+    },
+    "notas_correctas_pct": {
+      "unidad": "porcentaje de notas de la secuencia que salieron bien y en orden",
+      "sentido": "sube",
+      "como": "Se compara la secuencia detectada contra la esperada.",
+      "necesita": "lo mismo que cents"
+    },
+    "ninguna": {
+      "unidad": "—",
+      "sentido": "—",
+      "como": "No se mide. A propósito.",
+      "necesita": "nada"
+    }
+  },
+
+  "sesion": {
+    "duracion_min": 12,
+    "forma": [
+      { "bloque": "calentamiento", "minutos": 3, "de": ["calentamiento", "pua"] },
+      { "bloque": "el trabajo del día", "minutos": 6, "de": ["acordes", "cambios", "ritmo", "oido", "power", "escala"] },
+      { "bloque": "libre", "minutos": 3, "de": ["libre"] }
+    ],
+    "regla": "El bloque del día es UNO solo. Tres ejercicios de bloques distintos en seis minutos es un recorrido turístico, no práctica."
+  },
+
+  "ejercicios": [
+    {
+      "id": "cal-arana-1234",
+      "bloque": "calentamiento",
+      "nombre": "La araña, una cuerda",
+      "dice": "En la cuerda más gruesa: dedo 1 en el traste 1, 2 en el 2, 3 en el 3, 4 en el 4. Una nota por clic, sin levantar los dedos que ya pusiste.",
+      "requiere": [],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 60,
+      "ficha": { "bpm": 60, "cuerdas": [6], "trastes": [1, 4] }
+    },
+    {
+      "id": "cal-arana-cuerdas",
+      "bloque": "calentamiento",
+      "nombre": "La araña, las seis cuerdas",
+      "dice": "El mismo 1-2-3-4, pero bajando cuerda por cuerda hasta la más delgada y regresando.",
+      "requiere": ["cal-arana-1234"],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 90,
+      "ficha": { "bpm": 60, "cuerdas": [6, 5, 4, 3, 2, 1], "trastes": [1, 4] }
+    },
+    {
+      "id": "cal-perm-1324",
+      "bloque": "calentamiento",
+      "nombre": "Orden cambiado: 1-3-2-4",
+      "dice": "Mismos cuatro trastes, otro orden de dedos: 1, 3, 2, 4. Es más difícil de lo que parece y por eso sirve.",
+      "requiere": ["cal-arana-cuerdas"],
+      "mide": "desviacion_ms",
+      "aprobar": 50,
+      "duracion_s": 60,
+      "ficha": { "bpm": 60, "cuerdas": [6, 5, 4], "trastes": [1, 4] }
+    },
+    {
+      "id": "cal-estiramiento",
+      "bloque": "calentamiento",
+      "nombre": "Abrir la mano",
+      "dice": "Dedo 1 en el traste 1 y dedo 4 en el 5, alternando. Despacio. Si duele, paras.",
+      "requiere": ["cal-arana-1234"],
+      "mide": "desviacion_ms",
+      "aprobar": 60,
+      "duracion_s": 45,
+      "ficha": { "bpm": 50, "cuerdas": [6, 5], "trastes": [1, 5] }
+    },
+
+    {
+      "id": "pua-alterna-negras",
+      "bloque": "pua",
+      "nombre": "Abajo y arriba, una por clic",
+      "dice": "Una sola cuerda al aire. Púa abajo, arriba, abajo, arriba — una por clic, sin apurarte.",
+      "requiere": [],
+      "mide": "desviacion_ms",
+      "aprobar": 40,
+      "duracion_s": 60,
+      "ficha": { "bpm": 70, "cuerdas": [5] }
+    },
+    {
+      "id": "pua-alterna-corcheas",
+      "bloque": "pua",
+      "nombre": "Dos por clic",
+      "dice": "Lo mismo, pero dos golpes por cada clic. El de abajo cae en el clic, el de arriba entre dos clics.",
+      "requiere": ["pua-alterna-negras"],
+      "mide": "desviacion_ms",
+      "aprobar": 40,
+      "duracion_s": 60,
+      "ficha": { "bpm": 70, "cuerdas": [5] }
+    },
+    {
+      "id": "pua-cruce",
+      "bloque": "pua",
+      "nombre": "Cruzar de cuerda sin perder el paso",
+      "dice": "Dos golpes en una cuerda, dos en la de al lado, y de regreso. Sin dejar de alternar abajo-arriba.",
+      "requiere": ["pua-alterna-corcheas"],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 60,
+      "ficha": { "bpm": 65, "cuerdas": [5, 4] }
+    },
+    {
+      "id": "pua-mute",
+      "bloque": "pua",
+      "nombre": "Apagar con la palma",
+      "dice": "Apoya el canto de la mano de la púa donde las cuerdas salen del puente y toca negras. Debe sonar corto y seco, no muerto.",
+      "requiere": ["pua-alterna-negras"],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 60,
+      "ficha": { "bpm": 70, "cuerdas": [6, 5] }
+    },
+
+    {
+      "id": "ac-em",
+      "bloque": "acordes",
+      "nombre": "Mi menor",
+      "dice": "Dos dedos nada más. Rasguea despacio y escucha si las seis cuerdas suenan; si alguna se apaga, mueve el dedo un poco más cerca del traste.",
+      "requiere": [],
+      "mide": "cuerdas_limpias",
+      "aprobar": 85,
+      "duracion_s": 60,
+      "ficha": { "acorde": "Em", "cuerdas": [6, 5, 4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-am",
+      "bloque": "acordes",
+      "nombre": "La menor",
+      "dice": "Tres dedos. La cuerda más gruesa no se toca. Rasguea desde la quinta.",
+      "requiere": ["ac-em"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 85,
+      "duracion_s": 60,
+      "ficha": { "acorde": "Am", "cuerdas": [5, 4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-d",
+      "bloque": "acordes",
+      "nombre": "Re mayor",
+      "dice": "Tres dedos en triángulo, y solo suenan las cuatro cuerdas delgadas. Cuida que la primera no se apague.",
+      "requiere": ["ac-am"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 85,
+      "duracion_s": 60,
+      "ficha": { "acorde": "D", "cuerdas": [4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-e",
+      "bloque": "acordes",
+      "nombre": "Mi mayor",
+      "dice": "Es La menor movido una cuerda hacia arriba. Suenan las seis.",
+      "requiere": ["ac-am"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 85,
+      "duracion_s": 60,
+      "ficha": { "acorde": "E", "cuerdas": [6, 5, 4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-a",
+      "bloque": "acordes",
+      "nombre": "La mayor",
+      "dice": "Tres dedos apretados en el mismo traste. Si no caben, prueba con un solo dedo acostado sobre los tres.",
+      "requiere": ["ac-d"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 85,
+      "duracion_s": 60,
+      "ficha": { "acorde": "A", "cuerdas": [5, 4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-g",
+      "bloque": "acordes",
+      "nombre": "Sol mayor",
+      "dice": "La mano se abre mucho. Empieza colocando el dedo de la cuerda más delgada y arma el resto alrededor.",
+      "requiere": ["ac-d"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 80,
+      "duracion_s": 60,
+      "ficha": { "acorde": "G", "cuerdas": [6, 5, 4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-c",
+      "bloque": "acordes",
+      "nombre": "Do mayor",
+      "dice": "El dedo 3 en la quinta cuerda es el ancla. La cuerda más gruesa no se toca.",
+      "requiere": ["ac-g"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 80,
+      "duracion_s": 60,
+      "ficha": { "acorde": "C", "cuerdas": [5, 4, 3, 2, 1] }
+    },
+    {
+      "id": "ac-dm",
+      "bloque": "acordes",
+      "nombre": "Re menor",
+      "dice": "Re mayor con la primera cuerda un traste más abajo. Suena triste; ésa es la diferencia.",
+      "requiere": ["ac-d"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 85,
+      "duracion_s": 60,
+      "ficha": { "acorde": "Dm", "cuerdas": [4, 3, 2, 1] }
+    },
+
+    {
+      "id": "cam-em-am",
+      "bloque": "cambios",
+      "nombre": "Mi menor ↔ La menor, un minuto",
+      "dice": "Sin metrónomo. Cambia de uno al otro tantas veces como puedas en un minuto; cada cambio cuenta solo si el acorde suena completo. Tu número de ayer está arriba.",
+      "requiere": ["ac-em", "ac-am"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 30,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["Em", "Am"], "tonalidad": "Am" }
+    },
+    {
+      "id": "cam-am-e",
+      "bloque": "cambios",
+      "nombre": "La menor ↔ Mi mayor, un minuto",
+      "dice": "Los dedos casi no se mueven: es la misma forma corrida una cuerda. Aprovéchalo.",
+      "requiere": ["ac-am", "ac-e"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 30,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["Am", "E"], "tonalidad": "Am" }
+    },
+    {
+      "id": "cam-am-d",
+      "bloque": "cambios",
+      "nombre": "La menor ↔ Re mayor, un minuto",
+      "dice": "Aquí la mano sí viaja. No corras: cuenta el cambio limpio, no el rápido.",
+      "requiere": ["ac-am", "ac-d"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 28,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["Am", "D"], "tonalidad": "D" }
+    },
+    {
+      "id": "cam-d-a",
+      "bloque": "cambios",
+      "nombre": "Re ↔ La, un minuto",
+      "dice": "Dos de los tres dedos se quedan casi en el mismo sitio. Búscalos y no los levantes.",
+      "requiere": ["ac-d", "ac-a"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 28,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["D", "A"], "tonalidad": "D" }
+    },
+    {
+      "id": "cam-g-d",
+      "bloque": "cambios",
+      "nombre": "Sol ↔ Re, un minuto",
+      "dice": "El par más común de toda la música popular. Vale la pena que salga solo.",
+      "requiere": ["ac-g", "ac-d"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 26,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["G", "D"], "tonalidad": "G" }
+    },
+    {
+      "id": "cam-c-d",
+      "bloque": "cambios",
+      "nombre": "Do ↔ Re, un minuto",
+      "dice": "Toda la mano se muda. Es de los caros; no te asustes si el número baja.",
+      "requiere": ["ac-c", "ac-d"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 26,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["C", "D"], "tonalidad": "G" }
+    },
+    {
+      "id": "cam-g-c",
+      "bloque": "cambios",
+      "nombre": "Sol ↔ Do, un minuto",
+      "dice": "El cambio que más se atora al principio. Si hoy sale poco, está bien: es el que más sube con los días.",
+      "requiere": ["ac-g", "ac-c"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 24,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["G", "C"], "tonalidad": "G" }
+    },
+    {
+      "id": "cam-g-cadd9",
+      "bloque": "cambios",
+      "nombre": "El atajo: Sol ↔ Do con dos dedos quietos",
+      "dice": "Deja los dedos 3 y 4 clavados en las dos cuerdas delgadas y mueve solo los otros dos. El mismo par de antes, mucho más barato.",
+      "requiere": ["cam-g-c"],
+      "mide": "cambios_por_minuto",
+      "aprobar": 36,
+      "duracion_s": 60,
+      "ficha": { "acordes": ["G", "Cadd9"], "tonalidad": "G" }
+    },
+    {
+      "id": "cam-al-pulso-4",
+      "bloque": "cambios",
+      "nombre": "Cambiar en el pulso, cada cuatro",
+      "dice": "Cuatro clics con un acorde, cuatro con el otro. El cambio tiene que caer EN el clic, no antes ni después.",
+      "requiere": ["cam-em-am"],
+      "mide": "desviacion_ms",
+      "aprobar": 60,
+      "duracion_s": 90,
+      "ficha": { "bpm": 60, "acordes": ["Em", "Am"], "compas": 4, "tonalidad": "Am" }
+    },
+    {
+      "id": "cam-al-pulso-2",
+      "bloque": "cambios",
+      "nombre": "Cambiar en el pulso, cada dos",
+      "dice": "Ahora dos clics cada uno. Vas a llegar tarde las primeras veces; eso es lo que se está midiendo.",
+      "requiere": ["cam-al-pulso-4"],
+      "mide": "desviacion_ms",
+      "aprobar": 60,
+      "duracion_s": 90,
+      "ficha": { "bpm": 60, "acordes": ["Em", "Am"], "compas": 2, "tonalidad": "Am" }
+    },
+
+    {
+      "id": "rit-negras",
+      "bloque": "ritmo",
+      "nombre": "Solo abajo, uno por clic",
+      "dice": "Un acorde y ya. Rasguea hacia abajo una vez por clic, con el brazo suelto desde el codo.",
+      "requiere": ["ac-em"],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 60,
+      "ficha": { "bpm": 70, "acordes": ["Em"], "patron": "A - A - A - A -" }
+    },
+    {
+      "id": "rit-corcheas",
+      "bloque": "ritmo",
+      "nombre": "Abajo y arriba sin parar",
+      "dice": "El brazo no deja de subir y bajar nunca, aunque no toque. Abajo en el clic, arriba entre clics.",
+      "requiere": ["rit-negras"],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 60,
+      "ficha": { "bpm": 70, "acordes": ["Em"], "patron": "A a A a A a A a" }
+    },
+    {
+      "id": "rit-patron-8",
+      "bloque": "ritmo",
+      "nombre": "El patrón que sirve para casi todo",
+      "dice": "Abajo, abajo-arriba, arriba-abajo-arriba. El brazo sigue moviéndose igual; lo único que cambia es cuándo toca las cuerdas.",
+      "requiere": ["rit-corcheas"],
+      "mide": "desviacion_ms",
+      "aprobar": 50,
+      "duracion_s": 90,
+      "ficha": { "bpm": 70, "acordes": ["Em"], "patron": "A - A a - a A a" }
+    },
+    {
+      "id": "rit-silencio",
+      "bloque": "ritmo",
+      "nombre": "Saltarse un golpe",
+      "dice": "El mismo patrón, pero uno de los golpes no suena. El brazo lo hace igual — si el brazo se detiene, se pierde el compás.",
+      "requiere": ["rit-patron-8"],
+      "mide": "desviacion_ms",
+      "aprobar": 55,
+      "duracion_s": 90,
+      "ficha": { "bpm": 70, "acordes": ["Em", "Am"], "patron": "A - A a - a A a" }
+    },
+
+    {
+      "id": "oid-afinar",
+      "bloque": "oido",
+      "nombre": "Afinar",
+      "dice": "Cuerda por cuerda, hasta que la aguja se quede quieta en el centro. Empieza por la más gruesa.",
+      "requiere": [],
+      "mide": "cents",
+      "aprobar": 5,
+      "duracion_s": 120,
+      "ficha": { "cuerdas": [6, 5, 4, 3, 2, 1], "afinacion": "E A D G B E" }
+    },
+    {
+      "id": "oid-igualar",
+      "bloque": "oido",
+      "nombre": "Igualar la nota que suena",
+      "dice": "Suena una nota. Encuéntrala en la guitarra y tócala hasta que las dos se confundan en una.",
+      "requiere": ["oid-afinar"],
+      "mide": "cents",
+      "aprobar": 12,
+      "duracion_s": 120,
+      "ficha": { "cuerdas": [6, 5], "trastes": [0, 5] }
+    },
+    {
+      "id": "oid-encontrar-6",
+      "bloque": "oido",
+      "nombre": "Encontrar en la cuerda más gruesa",
+      "dice": "El sistema dice un nombre y toca la nota. Búscala en la sexta cuerda. Se cronometra cuánto tardas.",
+      "requiere": [],
+      "mide": "tiempo_ms",
+      "aprobar": 4000,
+      "duracion_s": 120,
+      "ficha": { "cuerdas": [6], "trastes": [0, 12] }
+    },
+    {
+      "id": "oid-encontrar-5",
+      "bloque": "oido",
+      "nombre": "Encontrar en la quinta",
+      "dice": "Lo mismo en la quinta cuerda. Con estas dos ya puedes colocar cualquier acorde con cejilla o de potencia.",
+      "requiere": ["oid-encontrar-6"],
+      "mide": "tiempo_ms",
+      "aprobar": 4000,
+      "duracion_s": 120,
+      "ficha": { "cuerdas": [5], "trastes": [0, 12] }
+    },
+    {
+      "id": "oid-quinta",
+      "bloque": "oido",
+      "nombre": "Reconocer la quinta",
+      "dice": "Suenan dos notas. ¿Es una quinta o no? Es el sonido del acorde de potencia, así que lo vas a usar todos los días.",
+      "requiere": ["oid-igualar"],
+      "mide": "acierto_pct",
+      "aprobar": 80,
+      "duracion_s": 90,
+      "ficha": { "intervalos": ["5J", "4J", "8J"] }
+    },
+    {
+      "id": "oid-tercera",
+      "bloque": "oido",
+      "nombre": "Alegre o triste",
+      "dice": "Suena un acorde. ¿Mayor o menor? No hay más opciones y no hay que saber nada de teoría: es la única pregunta que importa al principio.",
+      "requiere": ["oid-quinta"],
+      "mide": "acierto_pct",
+      "aprobar": 85,
+      "duracion_s": 90,
+      "ficha": { "intervalos": ["3M", "3m"] }
+    },
+
+    {
+      "id": "pow-forma-6",
+      "bloque": "power",
+      "nombre": "Acorde de potencia con raíz gruesa",
+      "dice": "Dos cuerdas, dos dedos. Es la forma que sostiene casi todo el rock. Apaga las demás con la palma.",
+      "requiere": ["oid-encontrar-6", "ac-em"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 90,
+      "duracion_s": 60,
+      "ficha": { "cuerdas": [6, 5], "trastes": [3, 5] }
+    },
+    {
+      "id": "pow-forma-5",
+      "bloque": "power",
+      "nombre": "El mismo, una cuerda abajo",
+      "dice": "La misma forma con la raíz en la quinta cuerda. Con las dos formas ya puedes tocar cualquier acorde de potencia que exista.",
+      "requiere": ["pow-forma-6", "oid-encontrar-5"],
+      "mide": "cuerdas_limpias",
+      "aprobar": 90,
+      "duracion_s": 60,
+      "ficha": { "cuerdas": [5, 4], "trastes": [3, 5] }
+    },
+    {
+      "id": "pow-cambios",
+      "bloque": "power",
+      "nombre": "Moverlo en el pulso",
+      "dice": "La misma forma saltando de traste en traste, cayendo justo en el clic. La mano viaja entera, sin recolocar los dedos.",
+      "requiere": ["pow-forma-5"],
+      "mide": "desviacion_ms",
+      "aprobar": 50,
+      "duracion_s": 90,
+      "ficha": { "bpm": 80, "cuerdas": [6, 5], "trastes": [3, 7] }
+    },
+    {
+      "id": "pow-riff",
+      "bloque": "power",
+      "nombre": "Dos compases que ya son un riff",
+      "dice": "Tres posiciones y un silencio. Es corto a propósito: la gracia es tocarlo diez veces seguidas sin que se despeine.",
+      "requiere": ["pow-cambios"],
+      "mide": "desviacion_ms",
+      "aprobar": 50,
+      "duracion_s": 120,
+      "ficha": { "bpm": 80, "cuerdas": [6, 5], "trastes": [3, 8], "tonalidad": "Em" }
+    },
+
+    {
+      "id": "esc-penta-1",
+      "bloque": "escala",
+      "nombre": "La escala de los solos, primera posición",
+      "dice": "Dos notas por cuerda, subiendo y bajando. Es la escala con la que se improvisa casi todo; memorizarla es de lo más rentable que hay.",
+      "requiere": ["pua-cruce", "oid-encontrar-6"],
+      "mide": "notas_correctas_pct",
+      "aprobar": 90,
+      "duracion_s": 120,
+      "ficha": { "escala": "pentatonica_menor", "posicion": 1, "tonalidad": "Am", "trastes": [5, 8] }
+    },
+    {
+      "id": "esc-penta-metronomo",
+      "bloque": "escala",
+      "nombre": "La misma escala, a tiempo",
+      "dice": "Una nota por clic. Cuando bajes del umbral dos días seguidos, el tempo sube solo.",
+      "requiere": ["esc-penta-1"],
+      "mide": "desviacion_ms",
+      "aprobar": 45,
+      "duracion_s": 120,
+      "ficha": { "bpm": 70, "escala": "pentatonica_menor", "posicion": 1, "tonalidad": "Am" }
+    },
+
+    {
+      "id": "lib-jam",
+      "bloque": "libre",
+      "nombre": "Toca lo que quieras",
+      "dice": "Va a sonar una base en la tonalidad de lo que acabas de practicar. No se mide nada, no hay nota, no hay veredicto. Toca hasta que se acabe.",
+      "requiere": [],
+      "mide": "ninguna",
+      "aprobar": null,
+      "duracion_s": 180,
+      "ficha": { "tonalidad": "hereda_del_dia", "bpm": "hereda_del_dia" }
+    }
+  ]
+}
