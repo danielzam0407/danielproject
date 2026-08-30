@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>entradas · nerv</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23eceff5'/%3E%3Crect x='6' y='6' width='20' height='20' fill='none' stroke='%230a0c12' stroke-width='2'/%3E%3Crect x='15' y='4' width='2' height='24' fill='%231c3bf0'/%3E%3C/svg%3E">
+<style>
+:root{
+  --papel:#eceff5; --tinta:#0a0c12; --tenue:#5a6377; --linea:#c8cedb;
+  --acento:#1c3bf0; --bien:#0a6b45; --mal:#c1121f; --tibio:#8a5a00; --panel:#fff;
+  --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--papel);color:var(--tinta);font-family:var(--sans)}
+button{font:inherit;color:inherit}
+
+.barra{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:14px clamp(16px,4vw,32px);border-bottom:1px solid var(--linea);background:var(--panel)}
+.marca{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+.marca b{color:var(--acento);font-weight:700}
+.barra button{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;padding:9px 16px;border:1px solid var(--tinta);background:var(--tinta);
+  color:var(--papel);cursor:pointer}
+.barra button:hover{background:var(--acento);border-color:var(--acento)}
+.barra button[disabled]{opacity:.4;cursor:default}
+
+.intro{padding:20px clamp(16px,4vw,32px);border-bottom:1px solid var(--linea);
+  font-size:14px;line-height:1.75;max-width:82ch}
+.intro b{font-weight:700}
+.intro .grande{display:block;font-size:16px;margin-bottom:10px;font-weight:600}
+.mitad{padding:18px clamp(16px,4vw,32px);border-bottom:1px solid var(--linea);
+  max-width:82ch;background:var(--panel)}
+.mitad h2{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--acento);margin-bottom:8px}
+.mitad p{font-size:14px;line-height:1.75}
+.mitad b{font-weight:700}
+.fila{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.fila select{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:8px 10px;
+  border:1px solid var(--linea);background:var(--papel);max-width:min(60vw,320px)}
+.fila button{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  padding:9px 16px;border:1px solid var(--tinta);background:var(--tinta);color:var(--papel);
+  cursor:pointer}
+.fila button:hover{background:var(--acento);border-color:var(--acento)}
+.fila button[disabled]{opacity:.4;cursor:default}
+.fila .ch{font-family:var(--mono);font-size:11px;color:var(--tenue)}
+
+#estado{padding:12px clamp(16px,4vw,32px);font-family:var(--mono);font-size:12px;
+  letter-spacing:.1em;color:var(--tenue);border-bottom:1px solid var(--linea);background:var(--panel)}
+
+.tabla{padding:0 clamp(16px,4vw,32px) 32px}
+table{width:100%;border-collapse:collapse;margin-top:20px;font-family:var(--mono);font-size:12px}
+th{text-align:left;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--tenue);
+  font-weight:400;padding:8px 10px;border-bottom:1px solid var(--linea)}
+td{padding:10px;border-bottom:1px solid var(--linea);vertical-align:middle}
+tr.mirando td{background:#fffbe8}
+.nom{font-size:13px;letter-spacing:0}
+.vd{font-weight:700;letter-spacing:.1em;white-space:nowrap}
+.vd.si{color:var(--bien)} .vd.no{color:var(--mal)} .vd.bajo{color:var(--tibio)}
+.medidor{position:relative;height:8px;background:var(--linea);min-width:90px}
+.medidor i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--acento)}
+.medidor i.si{background:var(--bien)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ch{color:var(--tenue)}
+.pie{padding:0 clamp(16px,4vw,32px) 40px;font-family:var(--mono);font-size:11px;
+  line-height:1.9;color:var(--tenue);max-width:84ch}
+.pie b{color:var(--tinta);font-weight:700}
+.pie ol{margin:10px 0 0 20px}
+.pie li{margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <span class="marca">entradas <b>//</b> nerv</span>
+  <button id="ir" type="button">Revisar entradas</button>
+</header>
+
+<section class="intro">
+  <b class="grande">Dos mitades, y hay que saber cuál falla</b>
+  Cuando no se oye nada y el afinador no se mueve, el problema está en la mitad
+  de <b>salida</b> (interfaz → audífonos) o en la de <b>entrada</b>
+  (guitarra → interfaz → computadora). Son independientes y se prueban por
+  separado. Empieza por la de arriba: es la que se descarta en diez segundos.
+</section>
+
+<section class="mitad">
+  <h2>1 · ¿SALE sonido?</h2>
+  <p>Con los audífonos puestos <b>en la interfaz</b>, elige la salida TEYUN y
+  dale al tono. Si lo oyes, los audífonos, el cable y la perilla de volumen de
+  la interfaz están bien, y el problema está entero del lado de la entrada.</p>
+  <div class="fila">
+    <select id="salida" aria-label="Salida de audio"><option>— sin permiso todavía —</option></select>
+    <button id="tono" type="button">Sonar tono</button>
+    <span id="estadoTono" class="ch"></span>
+  </div>
+</section>
+
+<section class="mitad">
+  <h2>2 · ¿ENTRA sonido?</h2>
+  <p>Abre <b>una por una</b> todas las entradas de la máquina, escucha segundo y
+  medio en cada una, y mide el pico <b>por canal</b>. Contesta la única pregunta
+  que importa: <b>¿cuál de todas trae la guitarra?</b>
+  <br><br>
+  <b>Toca la guitarra sin parar mientras corre</b> — rasguea fuerte y seguido.
+  Sólo cuenta lo que suene mientras le toca el turno a cada entrada.</p>
+</section>
+
+<p id="estado">sin revisar todavía</p>
+
+<div class="tabla">
+  <table id="tabla" hidden>
+    <thead><tr>
+      <th>entrada</th><th>canales</th><th>muestreo</th>
+      <th>pico</th><th>nivel</th><th>veredicto</th>
+    </tr></thead>
+    <tbody id="cuerpo"></tbody>
+  </table>
+</div>
+
+<div class="pie" id="pie"></div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+
+  var MS = 1500;              // cuanto se escucha cada entrada
+  var SILENCIO = -90;         // por debajo de esto es silencio digital, no ruido
+  var BAJO = -45;             // hay algo, pero no sirve para medir
+
+  function dB(v) { return v > 0 ? 20 * Math.log10(v) : -Infinity; }
+  function txt(x) { return x === -Infinity ? '−∞' : x.toFixed(1); }
+
+  /* Mide UNA entrada. Abre el dispositivo con los tres interruptores apagados
+     —igual que el afinador, para que lo que se mida sea lo mismo que el
+     afinador va a recibir— y parte la senal por canales: si la guitarra esta
+     en la entrada 2 de la interfaz, en la mezcla a mono aparece a la mitad y
+     puede confundirse con ruido; por canal se ve sin lugar a dudas. */
+  async function medir(disp) {
+    var flujo = null, ctx = null;
+    try {
+      flujo = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: disp.deviceId },
+          echoCancellation: false, noiseSuppression: false, autoGainControl: false
+        }
+      });
+    } catch (e) {
+      return { error: (e && e.name ? e.name : 'error') + (e && e.message ? ': ' + e.message : '') };
+    }
+    try {
+      var pista = flujo.getAudioTracks()[0];
+      var aj = pista.getSettings ? pista.getSettings() : {};
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      var origen = ctx.createMediaStreamSource(flujo);
+      var nCh = Math.max(1, Math.min(2, origen.channelCount || aj.channelCount || 1));
+      var partidor = ctx.createChannelSplitter(nCh);
+      origen.connect(partidor);
+
+      var anas = [], bufs = [];
+      for (var c = 0; c < nCh; c++) {
+        var a = ctx.createAnalyser();
+        a.fftSize = 2048;
+        partidor.connect(a, c);
+        anas.push(a);
+        bufs.push(new Float32Array(a.fftSize));
+      }
+
+      var picos = new Array(nCh).fill(0), sumas = new Array(nCh).fill(0), n = 0;
+      var t0 = performance.now();
+      while (performance.now() - t0 < MS) {
+        for (var k = 0; k < nCh; k++) {
+          anas[k].getFloatTimeDomainData(bufs[k]);
+          var p = 0, s = 0;
+          for (var i = 0; i < bufs[k].length; i++) {
+            var v = Math.abs(bufs[k][i]);
+            if (v > p) p = v;
+            s += bufs[k][i] * bufs[k][i];
+          }
+          if (p > picos[k]) picos[k] = p;
+          sumas[k] += s / bufs[k].length;
+        }
+        n++;
+        await new Promise(function (r) { setTimeout(r, 25); });
+      }
+
+      return {
+        canales: nCh,
+        hz: ctx.sampleRate,
+        picos: picos.map(dB),
+        rms: sumas.map(function (x) { return dB(Math.sqrt(x / Math.max(1, n))); })
+      };
+    } finally {
+      if (flujo) flujo.getTracks().forEach(function (t) { t.stop(); });
+      if (ctx) { try { await ctx.close(); } catch (e) {} }
+    }
+  }
+
+  function fila(disp, r) {
+    var tr = document.createElement('tr');
+    if (r.error) {
+      tr.innerHTML = '<td class="nom">' + disp.label + '</td>' +
+        '<td colspan="4" class="ch">' + r.error + '</td>' +
+        '<td class="vd no">NO ABRE</td>';
+      return tr;
+    }
+    var mejor = Math.max.apply(null, r.picos);
+    var v, clase;
+    if (mejor <= SILENCIO) { v = 'SILENCIO DIGITAL'; clase = 'no'; }
+    else if (mejor < BAJO) { v = 'sólo ruido'; clase = 'bajo'; }
+    else { v = 'HAY SEÑAL'; clase = 'si'; }
+
+    var barras = r.picos.map(function (p, i) {
+      var pc = Math.max(0, Math.min(100, (p + 90) / 90 * 100));
+      return '<div class="medidor" title="canal ' + (i + 1) + '">' +
+        '<i class="' + (p >= BAJO ? 'si' : '') + '" style="width:' + pc + '%"></i></div>';
+    }).join('<div style="height:3px"></div>');
+
+    tr.innerHTML =
+      '<td class="nom">' + disp.label + '</td>' +
+      '<td class="ch">' + r.canales + '</td>' +
+      '<td class="ch num">' + r.hz + ' Hz</td>' +
+      '<td class="num">' + r.picos.map(function (p, i) {
+        return (r.canales > 1 ? 'c' + (i + 1) + ' ' : '') + txt(p);
+      }).join('<br>') + ' dBFS</td>' +
+      '<td>' + barras + '</td>' +
+      '<td class="vd ' + clase + '">' + v + '</td>';
+    return tr;
+  }
+
+  function consejo(filas) {
+    var conSenal = filas.filter(function (f) { return f.mejor >= BAJO; });
+    var p = ['<b>Cómo se lee esto</b>',
+      '<b>SILENCIO DIGITAL</b> — la entrada se abrió y entregó ceros exactos. No es ' +
+      'que esté baja: no está llegando nada. Casi siempre es una entrada virtual ' +
+      '(Steam, NVIDIA, Mezcla estéreo) o un dispositivo tomado en exclusiva por otra aplicación.',
+      '<b>sólo ruido</b> — hay corriente pero nadie tocó, o la ganancia está en cero.',
+      '<b>HAY SEÑAL</b> — ésa es la buena. Elígela en el afinador.'];
+
+    if (!conSenal.length) {
+      p.push('<b style="color:#c1121f">Ninguna entrada trajo señal.</b> En orden, y ' +
+        'parando en cuanto una lo arregle:');
+      p.push('<ol>' +
+        '<li>¿La guitarra está en la entrada <b>1</b> de la TEYUN y el cable bien metido?</li>' +
+        '<li>La perilla de <b>GAIN</b> de ese canal, ¿está arriba? En cero no pasa nada.</li>' +
+        '<li>Si la interfaz tiene interruptor <b>INST / LINE</b>, va en <b>INST</b> ' +
+        'para una eléctrica pasiva.</li>' +
+        '<li>Cierra <b>Reaper</b>. Con WASAPI en modo <b>exclusivo</b> se queda el ' +
+        'dispositivo entero y ninguna otra aplicación —incluido el navegador— recibe nada. ' +
+        'En Reaper eso se cambia en Options → Preferences → Audio → Device.</li>' +
+        '<li>En Windows: Configuración → Sistema → Sonido → la TEYUN → comprueba que el ' +
+        '<b>volumen de entrada</b> no esté en 0.</li>' +
+        '</ol>');
+    } else {
+      p.push('<b style="color:#0a6b45">Usa «' + conSenal[0].nombre + '»</b> en el afinador. ' +
+        (conSenal[0].canal ? 'La señal viene por el <b>canal ' + conSenal[0].canal + '</b>. ' : '') +
+        'Si son varias, elige la de pico más alto sin llegar a 0 dBFS.');
+    }
+    $('#pie').innerHTML = p.map(function (x) { return '<p>' + x + '</p>'; }).join('');
+  }
+
+  async function revisar() {
+    var b = $('#ir');
+    b.disabled = true;
+    $('#pie').innerHTML = '';
+    $('#cuerpo').innerHTML = '';
+    $('#tabla').hidden = true;
+
+    if (!window.isSecureContext) {
+      $('#estado').textContent = 'contexto inseguro: el micrófono sólo se abre por https o localhost';
+      b.disabled = false; return;
+    }
+
+    // Un permiso primero, para que los nombres dejen de venir vacíos.
+    $('#estado').textContent = 'pidiendo permiso…';
+    try {
+      var previo = await navigator.mediaDevices.getUserMedia({ audio: true });
+      previo.getTracks().forEach(function (t) { t.stop(); });
+      await listarSalidas();   // con permiso ya hay nombres, tambien de salida
+    } catch (e) {
+      $('#estado').textContent = 'sin permiso de micrófono: ' + (e && e.name ? e.name : '');
+      b.disabled = false; return;
+    }
+
+    var ds = (await navigator.mediaDevices.enumerateDevices())
+      .filter(function (x) { return x.kind === 'audioinput'; });
+    // `default` y `communications` son alias de otra de la lista: se miden igual
+    // pero se marcan, para que no parezca que hay mas tarjetas de las que hay.
+    $('#tabla').hidden = false;
+
+    var resumen = [];
+    for (var i = 0; i < ds.length; i++) {
+      var d = ds[i];
+      $('#estado').textContent = 'escuchando ' + (i + 1) + ' de ' + ds.length + ': ' +
+        (d.label || 'sin nombre') + '  — toca la guitarra';
+      var tr = document.createElement('tr');
+      tr.className = 'mirando';
+      tr.innerHTML = '<td class="nom">' + (d.label || 'sin nombre') +
+        '</td><td colspan="5" class="ch">escuchando…</td>';
+      $('#cuerpo').appendChild(tr);
+
+      var r = await medir({ deviceId: d.deviceId, label: d.label || 'sin nombre' });
+      var nueva = fila({ deviceId: d.deviceId, label: d.label || 'sin nombre' }, r);
+      $('#cuerpo').replaceChild(nueva, tr);
+
+      if (!r.error) {
+        var mejor = Math.max.apply(null, r.picos);
+        resumen.push({
+          nombre: d.label || 'sin nombre', mejor: mejor,
+          canal: r.canales > 1 ? (r.picos.indexOf(mejor) + 1) : 0
+        });
+      }
+    }
+    resumen.sort(function (a, b2) { return b2.mejor - a.mejor; });
+    $('#estado').textContent = 'listo: ' + ds.length + ' entradas revisadas';
+    consejo(resumen);
+    b.disabled = false;
+  }
+
+  /* ── mitad de SALIDA ──────────────────────────────────────────────────
+     Un tono por la salida que se elija. Va por un <audio> con `setSinkId` y no
+     por `AudioContext.setSinkId` porque el elemento lo soporta desde hace
+     mucho mas tiempo y aqui lo que importa es que suene, no la latencia.
+     Los nombres de las salidas llegan vacios hasta que hay permiso de
+     microfono — es la misma puerta para las dos listas. */
+  var sonando = null;
+
+  async function listarSalidas() {
+    try {
+      var sel = $('#salida');
+      var quiero = sel.value;
+      var ds = (await navigator.mediaDevices.enumerateDevices())
+        .filter(function (x) { return x.kind === 'audiooutput'; });
+      sel.innerHTML = '';
+      ds.forEach(function (x) {
+        var o = document.createElement('option');
+        o.value = x.deviceId;
+        o.textContent = x.label || 'salida sin nombre';
+        sel.appendChild(o);
+      });
+      if (!sel.children.length) { sel.innerHTML = '<option>— sin salidas —</option>'; return; }
+      if (quiero) sel.value = quiero;
+      if (!sel.value) {
+        // Se preselecciona la TEYUN si esta: es la que se quiere probar.
+        var teyun = Array.prototype.filter.call(sel.options, function (o) {
+          return /teyun/i.test(o.textContent);
+        })[0];
+        sel.value = teyun ? teyun.value : sel.options[0].value;
+      }
+    } catch (e) { /* sin permiso todavia */ }
+  }
+
+  async function tono() {
+    var b = $('#tono'), est = $('#estadoTono');
+    if (sonando) { try { sonando(); } catch (e) {} sonando = null; }
+    b.disabled = true;
+    est.textContent = '';
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') await ctx.resume();
+      var dest = ctx.createMediaStreamDestination();
+      var osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 440;
+      var g = ctx.createGain();
+      var t = ctx.currentTime;
+      // Rampas para que no truene al empezar ni al cortar.
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.18, t + 0.05);
+      g.gain.setValueAtTime(0.18, t + 1.95);
+      g.gain.linearRampToValueAtTime(0, t + 2.0);
+      osc.connect(g); g.connect(dest);
+      osc.start(t); osc.stop(t + 2.05);
+
+      var el = new Audio();
+      el.srcObject = dest.stream;
+      var id = $('#salida').value;
+      if (el.setSinkId && id) {
+        try { await el.setSinkId(id); }
+        catch (e) { est.textContent = 'no se pudo dirigir a esa salida: ' + (e && e.name ? e.name : ''); }
+      } else if (!el.setSinkId) {
+        est.textContent = 'este navegador no deja elegir salida — suena por la de Windows';
+      }
+      await el.play();
+      est.textContent = est.textContent || 'sonando 2 s por «' +
+        ($('#salida').options[$('#salida').selectedIndex] || {}).textContent + '»';
+      sonando = function () { try { el.pause(); ctx.close(); } catch (e) {} };
+      setTimeout(function () {
+        if (sonando) { sonando(); sonando = null; }
+        b.disabled = false;
+      }, 2300);
+    } catch (e) {
+      est.textContent = 'falló: ' + (e && e.message ? e.message : e);
+      b.disabled = false;
+    }
+  }
+
+  $('#tono').addEventListener('click', tono);
+  $('#ir').addEventListener('click', revisar);
+  if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) listarSalidas();
+})();
+</script>
+</body>
+</html>
