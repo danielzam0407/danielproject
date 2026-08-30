@@ -585,11 +585,26 @@
      pasada de `auditor-rojo`, no de paso. */
   window.nervTrabajos = {
     abrir: function (clave) {
-      /* `001`/`console` ya no estan: esa tarjeta se quito. El enum del worker
-         SIGUE siendo de tres, asi que si alguien le pide el 001 al agente, esto
-         devuelve false y el agente se queda sin ensenar nada. Arreglarlo es
-         tocar las herramientas del agente publico -- cambio de seguridad, con
-         su pasada de `auditor-rojo`, no de paso. */
+      /* `001`/`console` ya no estan AQUI: esa tarjeta se quito de esta cara.
+         El enum del worker sigue ofreciendola, y eso NO es un descuido -- se
+         queda a proposito. Medido el 2026-08-30:
+
+           - `index.html`, que es la portada de verdad y se lleva todo el
+             trafico, SIGUE montando `001` con `media/work1.mp4`. Para esa cara
+             el enum es correcto.
+           - `/v5` no esta en el sitemap ni enlazado desde la portada, y lleva
+             `noindex`: a esta cara no se llega solo.
+           - El worker solo ve el `origin`, nunca la ruta, asi que no puede
+             saber en cual de las dos caras esta hablando.
+
+         O sea que quitar `console` del enum romperia la pagina que sí recibe
+         visitas para arreglar una a la que nadie llega. El precio de dejarlo es
+         barato y esta contemplado: si el agente pide `console` aqui, esto
+         devuelve false y v5.html cae a bajar a la seccion de trabajo, que es la
+         degradacion honesta que ya estaba escrita.
+
+         El dia que v5 se promueva a portada, el enum cambia CON esa mudanza --
+         es un solo cambio de seguridad, con su `auditor-rojo`, no dos. */
       var mapa = { '002': 'recorrido', '003': 'teclado',
                    work2: 'recorrido', work3: 'teclado',
                    ferropalacios: 'ferropalacios', novatek: 'novatek' };
