@@ -42,6 +42,8 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
   display:none}
 #aviso.on{display:block}
 #aviso b{font-weight:700}
+#aviso.tibio{background:#fffbe8;color:#8a5a00}
+#aviso a{color:inherit;text-decoration:underline}
 
 /* lectura */
 .lectura{padding:clamp(24px,5vw,52px) clamp(16px,4vw,32px) clamp(16px,3vw,28px);
@@ -195,7 +197,13 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
      existen aqui. El tramo que se compara son 1024 muestras: 1024+720 = 1744,
      y cabe en la ventana. */
   var N = 2048, TAU_MAX = 720, W = 1024, UMBRAL = 0.12;
-  var RUIDO = 0.004;          // por debajo de esto es silencio, no nota
+  /* Umbral de silencio, en RMS. 0.0025 son ~-52 dBFS: unos diez decibeles
+     por encima del piso de ruido MEDIDO de su interfaz en reposo (-63 dBFS
+     el 2026-08-30). Estaba en 0.004 (~-48) y era demasiado justo: con la
+     ganancia baja, una nota tocada normal se quedaba por debajo y el
+     afinador la tiraba como si fuera silencio. YIN igual descarta lo que no
+     tiene altura clara, asi que bajar el porton cuesta poco. */
+  var RUIDO = 0.0025;
   var NOMBRES = ['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
   var CUERDAS = [
     { n: '6·Mi', f: 82.41 }, { n: '5·La', f: 110.00 }, { n: '4·Re', f: 146.83 },
@@ -271,8 +279,10 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
   /* ── estado ─────────────────────────────────────────────────────────── */
   var ctx = null, flujo = null, nodo = null;
   var ultimas = [];           // mediana movil: mata los saltos de octava sueltos
-  var lecturas = 0, tLps = 0;
+  var lecturas = 0;
   var estables = 0;           // cuantas lecturas seguidas dentro de ±5 cents
+  var maxNivel = 0;           // el pico mas alto visto desde que arranco
+  var tArranque = 0, avisadoMudo = false;
 
   var elNota = $('#nota'), elOct = $('#octava'), elCents = $('#cents'), elHz = $('#hz');
   var elVer = $('#veredicto'), elPluma = $('#pluma'), elBarra = $('#barra');
@@ -288,7 +298,12 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
 
   function pintar(f, nivel) {
     elBarra.style.width = Math.min(100, nivel * 900) + '%';
-    $('#dNivel').textContent = nivel > 0 ? (20 * Math.log10(nivel)).toFixed(1) + ' dBFS' : '—';
+    if (nivel > maxNivel) maxNivel = nivel;
+    // El MAXIMO es lo que de verdad contesta "¿esta llegando algo?". El nivel
+    // instantaneo entre nota y nota siempre es bajo y no dice nada.
+    $('#dNivel').textContent =
+      (nivel > 0 ? (20 * Math.log10(nivel)).toFixed(1) : '−∞') + ' dBFS' +
+      (maxNivel > 0 ? '  ·  máx ' + (20 * Math.log10(maxNivel)).toFixed(1) : '');
 
     if (!f) {
       elNota.firstChild.nodeValue = '—'; elOct.textContent = '';
@@ -334,10 +349,30 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
   setInterval(function () {
     $('#dLps').textContent = lecturas ? lecturas + ' /s' : '—';
     lecturas = 0;
+
+    /* La falla que no se ve: la entrada elegida no es la que tiene la guitarra.
+       El afinador se queda en «en silencio» y parece descompuesto. Cuatro
+       segundos sin que el pico pase del umbral y lo dice con todas sus letras,
+       con el numero medido para que no sea una corazonada. */
+    if (!ctx || avisadoMudo || !tArranque) return;
+    if (performance.now() - tArranque < 4000) return;
+    avisadoMudo = true;
+    if (maxNivel >= RUIDO) return;
+    var pico = maxNivel > 0 ? (20 * Math.log10(maxNivel)).toFixed(1) + ' dBFS' : 'silencio digital';
+    avisar('<b>«' + ($('#dEntrada').textContent || 'esa entrada') + '» no está trayendo señal.</b> ' +
+      'En cuatro segundos el pico no pasó de ' + pico + '. ' +
+      'Si tu guitarra está en otra entrada, elígela arriba y vuelve a dar Escuchar — ' +
+      'ojo con las que empiezan por «Predeterminado» o «Comunicaciones», que son alias ' +
+      'del micrófono interno. Para verlas todas de un golpe: ' +
+      '<a href="entradas" target="_blank">revisar entradas</a>.', true);
   }, 1000);
 
   /* ── arranque ────────────────────────────────────────────────────────── */
-  function avisar(msg) { var a = $('#aviso'); a.innerHTML = msg; a.className = 'on'; }
+  function avisar(msg, tibio) {
+    var a = $('#aviso');
+    a.innerHTML = msg;
+    a.className = 'on' + (tibio ? ' tibio' : '');
+  }
 
   function bandera(el, valor) {
     var b = $(el);
@@ -350,10 +385,22 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
      eso, volver a listar despues de conceder el permiso —que es cuando por fin
      hay nombres— borraba la eleccion y dejaba el selector marcando la primera
      entrada mientras el micrófono abierto era otro. El desplegable mentia. */
+  /* La entrada elegida se recuerda entre visitas. Sin esto, el afinador arranca
+     siempre en la PRIMERA de la lista, que en Windows suele ser
+     «Predeterminado - …» (un alias del microfono interno), y uno acaba
+     afinando contra el microfono de la laptop sin enterarse: no llega senal,
+     la aguja no se mueve, y parece que el afinador esta roto. */
+  function recordado() {
+    try { return localStorage.getItem('afinador-entrada') || ''; } catch (e) { return ''; }
+  }
+  function recordar(id) {
+    try { if (id) localStorage.setItem('afinador-entrada', id); } catch (e) {}
+  }
+
   async function listar(preferido) {
     try {
       var sel = $('#disp');
-      var quiero = preferido || sel.value;
+      var quiero = preferido || sel.value || recordado();
       var ds = await navigator.mediaDevices.enumerateDevices();
       sel.innerHTML = '';
       ds.filter(function (x) { return x.kind === 'audioinput'; })
@@ -419,6 +466,7 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
     // Se re-lista con el id REAL de lo que se abrio, no con lo que se pidio:
     // si el navegador entrego otra cosa, el desplegable lo dice.
     await listar(aj.deviceId);
+    recordar(aj.deviceId || $('#disp').value);
     $('#dEntrada').textContent = pista.label || '—';
     bandera('#dEco', aj.echoCancellation);
     bandera('#dRuido', aj.noiseSuppression);
@@ -443,6 +491,8 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
     /* No se conecta a los altavoces a proposito: es un afinador, no un
        monitor, y devolverle el sonido a alguien que toca con ampli es un
        acople. El worklet no produce salida, asi que no hace falta. */
+
+    maxNivel = 0; avisadoMudo = false; tArranque = performance.now();
 
     nodo.port.onmessage = function (ev) {
       var x = ev.data;
