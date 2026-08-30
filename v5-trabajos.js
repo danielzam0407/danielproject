@@ -1,8 +1,8 @@
 /* Los carretes de la seccion de trabajo.
 
-   Cinco trabajos, todos video: las dos piezas nuevas —Ferropalacios y el
-   inventario de Novatek— y los tres carretes que ya vivian en la portada
-   anterior.
+   Cinco trabajos: cuatro de video —Ferropalacios, el inventario de Novatek y
+   dos de los carretes que ya vivian en la portada anterior— y HALCYON, que NO
+   es video sino una pagina viva, y por eso se abre en su propia pestana.
 
    ── Por que esto vive AQUI y no dentro del HTML ────────────────────────────
 
@@ -73,16 +73,6 @@
       grande: true
     },
     {
-      id: 'console',
-      src: 'media/work1.mp4',
-      cartel: 'media/work1.webp',
-      titulo: 'Un tablero que contesta',
-      tituloEn: 'A dashboard that answers',
-      meta: 'console · agente en vivo',
-      metaEn: 'console · live agent',
-      tinte: '#4f7ad0'
-    },
-    {
       id: 'recorrido',
       src: 'media/work2.mp4',
       cartel: 'media/work2.webp',
@@ -101,6 +91,25 @@
       meta: 'menú de comando · cuatro secciones',
       metaEn: 'command menu · four sections',
       tinte: '#5f9ea0'
+    },
+    {
+      /* La unica que no es carrete. `liga` en vez de `src`: es una pagina viva
+         y se abre en su propia pestana. Lo que vale de ella es que el sonido se
+         GENERA mientras la miras, y un video mudo de 16:9 ensena justo lo que
+         no importa. Tampoco paga el precio que obligo a las otras a ser video:
+         no lleva React ni babel, son HTML y Web Audio a secas. */
+      id: 'halcyon',
+      /* Sin `.html` a proposito: Pages sirve la version limpia y REDIRIGE la
+         otra —medido, `/piezas/novatek.html` responde 308 y `/piezas/novatek`
+         responde 200—, asi que escribir la extension cuesta un salto de mas en
+         cada clic. En local con `file://` no resuelve; se prueba servido. */
+      liga: 'piezas/halcyon',
+      cartel: 'media/halcyon.webp',
+      titulo: 'Un sello que suena solo',
+      tituloEn: 'A label that plays itself',
+      meta: 'halcyon · radio generativa',
+      metaEn: 'halcyon · generative radio',
+      tinte: '#2f7fd8'
     }
   ];
 
@@ -251,13 +260,20 @@
      cinco tarjetas al mismo tiempo. */
   function repartir() {
     if (abierta || soloCartel()) return;
-    if (fijado && fijado.isConnected) { correr(fijado.querySelector('.pz-v')); return; }
-    var mejor = null, max = 0.45;
-    vistas.forEach(function (r, art) {
-      if (art.isConnected && r > max) { max = r; mejor = art; }
-    });
-    if (mejor) correr(mejor.querySelector('.pz-v'));
-    else apagar();
+    var elegido = null;
+    if (fijado && fijado.isConnected) {
+      elegido = fijado;
+    } else {
+      var max = 0.45;
+      vistas.forEach(function (r, art) {
+        if (art.isConnected && r > max) { max = r; elegido = art; }
+      });
+    }
+    /* La elegida puede no tener carrete —una pagina viva no es una pelicula— y
+       entonces no hay nada que reproducir: se apaga lo que estuviera corriendo.
+       Sin esto, senalar HALCYON dejaba sonando el video de la tarjeta anterior. */
+    var v = elegido && elegido.querySelector('.pz-v');
+    if (v) correr(v); else apagar();
   }
 
   /* ── abrir / cerrar, con FLIP ────────────────────────────────────────── */
@@ -419,33 +435,47 @@
   }
 
   /* ── montaje ─────────────────────────────────────────────────────────── */
+  /* Una pieza con `liga` es una pagina viva: sale como <a>, no lleva carrete, y
+     no se abre a pantalla completa aqui dentro -- se va a su propia pestana. El
+     resto de la tarjeta es identico, asi que la rejilla no distingue. */
   function tarjeta(p, i) {
-    var art = document.createElement('article');
+    var art = document.createElement(p.liga ? 'a' : 'article');
     art.className = 'pz entra' + (p.grande ? ' pz-grande' : '');
     art.setAttribute('data-pz', p.id);
     art.setAttribute('data-cursor', 'ver trabajo');
-    art.setAttribute('tabindex', '0');
-    art.setAttribute('role', 'button');
     art.setAttribute('aria-label', p.titulo);
     art.dataset.cartel = p.cartel;
     art.style.transitionDelay = (i * 0.09) + 's';
+
+    if (p.liga) {
+      art.href = p.liga;
+      art.target = '_blank';
+      art.rel = 'noopener';
+    } else {
+      // Un <a> ya es foco y ya se activa con Enter: esto es solo para el resto.
+      art.setAttribute('tabindex', '0');
+      art.setAttribute('role', 'button');
+    }
 
     art.innerHTML =
       '<div class="pz-hueco" style="display:none"></div>' +
       /* El tinte va en el MARCO, no en el articulo: al abrirse el marco se muda
          al <body> y alli ya no hereda las fichas de su tarjeta. */
       '<div class="pz-marco" style="--pz-tinte:' + p.tinte + '">' +
-        '<video class="pz-v" muted loop playsinline preload="none" tabindex="-1" ' +
-          'aria-hidden="true" data-src="' + p.src + '"></video>' +
+        (p.liga ? '' :
+          '<video class="pz-v" muted loop playsinline preload="none" tabindex="-1" ' +
+            'aria-hidden="true" data-src="' + p.src + '"></video>') +
         '<span class="pz-abrir">abrir ↗</span>' +
       '</div>' +
       '<div class="pz-pie"><b data-en="' + p.tituloEn + '">' + p.titulo + '</b>' +
       '<i data-en="' + p.metaEn + '">' + p.meta + '</i></div>';
 
-    art.addEventListener('click', function () { abrir(art); });
-    art.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(art); }
-    });
+    if (!p.liga) {
+      art.addEventListener('click', function () { abrir(art); });
+      art.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(art); }
+      });
+    }
     // Senalar una tarjeta manda sobre el centrado: si el raton la eligio, esa
     // es la que corre.
     art.addEventListener('pointerenter', function () { fijado = art; repartir(); });
@@ -555,8 +585,13 @@
      pasada de `auditor-rojo`, no de paso. */
   window.nervTrabajos = {
     abrir: function (clave) {
-      var mapa = { '001': 'console', '002': 'recorrido', '003': 'teclado',
-                   console: 'console', work2: 'recorrido', work3: 'teclado',
+      /* `001`/`console` ya no estan: esa tarjeta se quito. El enum del worker
+         SIGUE siendo de tres, asi que si alguien le pide el 001 al agente, esto
+         devuelve false y el agente se queda sin ensenar nada. Arreglarlo es
+         tocar las herramientas del agente publico -- cambio de seguridad, con
+         su pasada de `auditor-rojo`, no de paso. */
+      var mapa = { '002': 'recorrido', '003': 'teclado',
+                   work2: 'recorrido', work3: 'teclado',
                    ferropalacios: 'ferropalacios', novatek: 'novatek' };
       var id = mapa[String(clave || '').trim().toLowerCase()];
       if (!id) return false;

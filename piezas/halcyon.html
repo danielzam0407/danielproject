@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2f7fd8">
+<title>HALCYON — sound in the blue · independent record label</title>
+<meta name="description" content="Independent record label for ambient and electronic music. Live generative radio, lossless releases, vinyl club.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Jost:ital,wght@0,200;0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f2f8ff; --panel:rgba(255,255,255,.72); --ink:#0c2d5a; --muted:#5b7ba6;
+  --line:rgba(12,45,90,.14); --accent:#2f7fd8; --cyan:#7cc4ff; --ice:#eaf5ff;
+  --deep:#07284f; --warn:#ff5470; --ok:#31d0aa; --glow:0 0 18px rgba(190,225,255,.9),0 0 60px rgba(120,190,255,.5);
+  --sans:'Archivo',sans-serif; --disp:'Jost',sans-serif; --mono:'Space Mono',monospace;
+}
+html[data-theme="night"]{
+  --bg:#050f22; --panel:rgba(10,25,50,.72); --ink:#dcecff; --muted:#7f9cc4;
+  --line:rgba(140,190,255,.16); --accent:#7cc4ff; --deep:#030a18;
+}
+html{scroll-behavior:smooth;scroll-padding-top:7rem}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .5s,color .5s}
+body.lock{overflow:hidden}
+::selection{background:var(--accent);color:#fff}
+::-webkit-scrollbar{width:9px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:99px;border:2px solid var(--bg)}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px dashed var(--accent);outline-offset:3px}
+
+/* grain */
+.grain{position:fixed;inset:-60%;width:220%;height:220%;z-index:1200;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='260' height='260' filter='url(%23n)'/></svg>");
+  animation:grain 7s steps(10) infinite}
+@keyframes grain{0%,100%{transform:translate(0,0)}20%{transform:translate(2%,-3%)}40%{transform:translate(-3%,2%)}60%{transform:translate(3%,3%)}80%{transform:translate(-2%,-3%)}}
+
+/* cursor */
+.cursor,.cursor-dot{display:none}
+@media (hover:hover) and (pointer:fine){
+  body,a,button,label,input,textarea{cursor:none}
+  .cursor{display:block;position:fixed;left:-17px;top:-17px;width:34px;height:34px;border:1px solid rgba(47,127,216,.85);border-radius:50%;z-index:1300;pointer-events:none;transition:width .25s,height .25s,left .25s,top .25s,background .25s,border-color .3s}
+  html[data-theme="night"] .cursor{border-color:rgba(124,196,255,.9)}
+  .cursor::before,.cursor::after{content:"";position:absolute;background:currentColor;color:var(--accent);left:50%;top:50%}
+  .cursor::before{width:9px;height:1px;transform:translate(-50%,-50%)}
+  .cursor::after{width:1px;height:9px;transform:translate(-50%,-50%)}
+  .cursor.big{width:56px;height:56px;left:-28px;top:-28px;background:rgba(47,127,216,.12)}
+  .cursor-dot{display:block;position:fixed;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:var(--ink);z-index:1300;pointer-events:none}
+}
+
+/* loader */
+#loader{position:fixed;inset:0;z-index:1500;background:linear-gradient(180deg,#bfe0f8,#2f7fd8 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;transition:opacity .6s,visibility .6s;cursor:pointer}
+#loader.done{opacity:0;visibility:hidden}
+.logo-sq{display:grid;grid-template-columns:repeat(2,9px);gap:3px;transform:rotate(-8deg);margin-bottom:.4rem}
+.logo-sq span{width:9px;height:9px;background:#fff;border-radius:2px;box-shadow:0 0 14px rgba(255,255,255,.8)}
+#loader h2{font:300 1.4rem var(--disp);letter-spacing:.5em;color:#fff;text-indent:.5em}
+.lbar{width:min(360px,78vw);height:3px;background:rgba(255,255,255,.25);border-radius:99px;overflow:hidden}
+.lbar i{display:block;height:100%;width:0;background:#fff;transition:width .15s}
+#loader .lmeta{display:flex;justify-content:space-between;width:min(360px,78vw);font:.58rem var(--mono);color:rgba(255,255,255,.85);letter-spacing:.15em}
+#lLog{font:.55rem/1.9 var(--mono);color:rgba(255,255,255,.7);letter-spacing:.1em;min-height:3.8em;text-align:center}
+
+/* topbar */
+.topbar{position:fixed;inset:0 0 auto 0;z-index:900;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:.9rem clamp(1.2rem,4vw,3rem);background:var(--panel);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);transition:background .5s}
+.brand{display:flex;align-items:center;gap:.8rem;font:900 .78rem var(--sans);letter-spacing:.34em}
+.brand .logo-sq{margin:0;transform:rotate(-8deg) scale(.8);grid-template-columns:repeat(2,7px)}
+.brand .logo-sq span{background:var(--accent);box-shadow:0 0 10px rgba(47,127,216,.6)}
+.brand em{font:400 .55rem var(--mono);font-style:normal;color:var(--muted);letter-spacing:.2em}
+.topbar nav{display:flex;gap:2rem}
+.topbar nav a{font:700 .6rem var(--sans);letter-spacing:.3em;position:relative;padding:.25rem 0}
+.topbar nav a::after{content:"";position:absolute;left:0;bottom:0;width:100%;height:1px;background:var(--accent);transform:scaleX(0);transform-origin:right;transition:transform .35s}
+.topbar nav a:hover::after{transform:scaleX(1);transform-origin:left}
+.tb-right{display:flex;align-items:center;gap:1.4rem}
+.status{display:flex;align-items:center;gap:.55rem;font:.55rem var(--mono);letter-spacing:.2em;color:var(--muted)}
+.status b{color:var(--ok);font-weight:400}
+.status b.rec{color:var(--warn)}
+.dotp{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(49,208,170,.6);animation:pulse 2s infinite;flex:none}
+.dotp.rec{background:var(--warn);animation:none}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(49,208,170,0)}100%{box-shadow:0 0 0 0 rgba(49,208,170,0)}}
+#clock{font:.6rem var(--mono);letter-spacing:.15em;color:var(--muted)}
+.mode{font:700 .55rem var(--mono);letter-spacing:.25em;border:1px solid var(--line);padding:.5rem .8rem;background:transparent;transition:.3s}
+.mode:hover{border-color:var(--accent);color:var(--accent)}
+/* EQ en la barra: baila solo cuando suena */
+.eq{display:flex;align-items:flex-end;gap:2px;height:14px}
+.eq span{width:3px;background:var(--accent);height:4px;animation:eq .9s ease-in-out infinite alternate;animation-play-state:paused}
+.eq span:nth-child(2){animation-delay:.15s}.eq span:nth-child(3){animation-delay:.3s}.eq span:nth-child(4){animation-delay:.45s}
+body.playing .eq span{animation-play-state:running}
+@keyframes eq{from{height:3px}to{height:14px}}
+.burger{display:none;flex-direction:column;gap:5px;padding:.5rem}
+.burger span{width:22px;height:2px;background:var(--ink)}
+#mmenu{position:fixed;inset:0;z-index:950;background:var(--deep);display:grid;place-items:center;opacity:0;visibility:hidden;transition:.4s}
+#mmenu.open{opacity:1;visibility:visible}
+#mmenu a{display:block;font:300 2.2rem var(--disp);color:#fff;text-align:center;padding:.8rem;letter-spacing:.2em}
+
+/* ticker */
+.ticker{background:var(--deep);color:#dcecff;overflow:hidden;padding:.65rem 0;border-bottom:1px solid rgba(140,190,255,.12)}
+.tk-track{display:flex;width:max-content;animation:mq 46s linear infinite}
+.tk-track span{font:.6rem var(--mono);letter-spacing:.22em;white-space:nowrap;padding-right:1rem}
+.tk-track b{color:#9ad8ff;font-weight:400}
+.tk-track i{font-style:normal;color:rgba(154,216,255,.5);padding:0 .9rem}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* ============ HERO ============ */
+.hero{position:relative;min-height:100svh;overflow:hidden;background:linear-gradient(180deg,#bfe0f8 0%,#6fb1ea 32%,#2f7fd8 72%,#1b5cab 100%)}
+html[data-theme="night"] .hero{background:linear-gradient(180deg,#0a1c3d 0%,#123361 40%,#0d2c58 100%)}
+.sky-img{position:absolute;inset:-2.5%;will-change:transform}
+.sky-img img{width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;opacity:.78}
+html[data-theme="night"] .sky-img img{filter:brightness(.45) saturate(1.3) hue-rotate(-12deg);opacity:.7}
+.scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 4px);mix-blend-mode:overlay;pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,40,79,.42),rgba(7,40,79,0) 26%,rgba(7,40,79,0) 58%,rgba(7,40,79,.55))}
+.shard{position:absolute;background:linear-gradient(135deg,rgba(255,255,255,.8),rgba(255,255,255,.03));mix-blend-mode:screen;filter:blur(.4px);animation:drift 9s ease-in-out infinite alternate;pointer-events:none}
+.shard.s1{width:44vw;height:14vw;left:-6%;top:16%;clip-path:polygon(0 40%,55% 0,100% 65%,40% 100%);animation-duration:11s}
+.shard.s2{width:30vw;height:22vw;right:8%;top:6%;clip-path:polygon(20% 0,100% 25%,70% 100%,0 70%);animation-duration:8s}
+.shard.s3{width:26vw;height:30vw;right:-4%;bottom:8%;clip-path:polygon(0 30%,60% 0,100% 55%,55% 100%,10% 90%);animation-duration:13s}
+.shard.s4{width:18vw;height:10vw;left:28%;bottom:22%;clip-path:polygon(0 50%,50% 0,100% 40%,45% 100%);animation-duration:9.5s}
+.shard.s5{width:14vw;height:26vw;left:8%;bottom:-4%;clip-path:polygon(30% 0,100% 35%,75% 100%,0 80%);animation-duration:12s}
+@keyframes drift{from{transform:translateY(0) rotate(0)}to{transform:translateY(-22px) rotate(2.5deg)}}
+.reticle{position:absolute;left:47%;top:52%;width:130px;height:130px;border:1px solid rgba(255,255,255,.65);border-radius:50%;pointer-events:none}
+.reticle::before,.reticle::after{content:"";position:absolute;background:rgba(255,255,255,.65)}
+.reticle::before{left:50%;top:-16px;bottom:-16px;width:1px;transform:translateX(-50%)}
+.reticle::after{top:50%;left:-16px;right:-16px;height:1px;transform:translateY(-50%)}
+.reticle i{position:absolute;inset:14px;border:1px dashed rgba(255,255,255,.55);border-radius:50%;animation:spin 16s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bars{position:absolute;right:3rem;top:50%;width:80px;height:240px;transform:translateY(-50%);pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.9) 0 6px,transparent 6px 13px,rgba(255,255,255,.45) 13px 15px,transparent 15px 24px)}
+.dotgrid{position:absolute;left:3.2rem;top:16%;width:110px;height:110px;background-image:radial-gradient(rgba(255,255,255,.85) 1px,transparent 1.4px);background-size:14px 14px;opacity:.45;pointer-events:none}
+.hex{position:absolute;color:rgba(255,255,255,.85);pointer-events:none;animation:spin 24s linear infinite;filter:drop-shadow(0 1px 4px rgba(7,40,79,.4))}
+.hex.h1{top:5.4rem;right:2.2rem}
+.hex.h2{top:9rem;right:6rem;animation-direction:reverse;opacity:.6}
+.spark{position:absolute;width:16px;height:16px;pointer-events:none;animation:tw 3.2s ease-in-out infinite}
+.spark::before,.spark::after{content:"";position:absolute;left:50%;top:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 8px #fff}
+.spark::before{width:100%;height:2px}.spark::after{width:2px;height:100%}
+@keyframes tw{0%,100%{opacity:.15;scale:.6}50%{opacity:1;scale:1}}
+.rail{position:absolute;left:1.1rem;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font:.55rem var(--mono);letter-spacing:.35em;color:rgba(255,255,255,.9);pointer-events:none;text-shadow:0 1px 6px rgba(7,40,79,.85)}
+.tf{position:absolute;right:clamp(2rem,9vw,9rem);top:12.5%;z-index:2;pointer-events:none;text-align:left}
+.tfbar{width:min(230px,30vw);height:12px;background:rgba(7,40,79,.35);border-radius:99px;overflow:hidden}
+.tfbar i{display:block;height:100%;width:38%;background:#fff;border-radius:99px;animation:tfill 6s ease-in-out infinite alternate;box-shadow:0 0 10px rgba(255,255,255,.7)}
+@keyframes tfill{to{width:92%}}
+.tf small{display:block;margin-top:.4rem;font:.58rem var(--mono);letter-spacing:.28em;color:#fff;text-shadow:0 1px 6px rgba(7,40,79,.9)}
+@media(max-width:1200px){.tf{top:10.5%}}
+
+.hero-inner{position:relative;z-index:5;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:7rem clamp(1.2rem,6vw,6rem) 8rem}
+.feedtag{display:inline-flex;align-items:center;gap:.7rem;font:.6rem var(--mono);letter-spacing:.3em;color:#fff;background:rgba(7,40,79,.55);backdrop-filter:blur(6px);padding:.55rem 1rem;width:fit-content;margin-bottom:1.6rem}
+.hero h1{font:200 clamp(2.6rem,7vw,6.4rem)/1 var(--disp);color:#fff;letter-spacing:.01em;
+  text-shadow:0 2px 10px rgba(7,40,79,.55),0 0 18px rgba(190,225,255,.9),0 0 60px rgba(120,190,255,.5)}
+.hero h1 b{font-weight:300;font-style:italic}
+.hero-sub{margin-top:1.6rem;max-width:54ch;font:400 .95rem/1.9 var(--sans);color:rgba(255,255,255,.98);border-left:1px solid rgba(255,255,255,.6);padding-left:1.2rem;text-shadow:0 1px 10px rgba(7,40,79,.75)}
+.chips{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.6rem}
+.chips span{font:.55rem var(--mono);letter-spacing:.22em;color:#fff;border:1px solid rgba(255,255,255,.5);padding:.45rem .8rem;background:rgba(7,40,79,.42)}
+.cta-row{display:flex;gap:1rem;margin-top:2.2rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.7rem;font:700 .62rem var(--sans);letter-spacing:.3em;padding:1.05rem 1.8rem;background:#fff;color:#0c4a8f;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);transition:.3s;border:1px solid #fff}
+.btn:hover{background:var(--deep);color:#fff;border-color:var(--deep);transform:translateY(-3px)}
+.btn.ghost{background:rgba(7,40,79,.35);color:#fff;clip-path:none;backdrop-filter:blur(6px)}
+.btn.ghost:hover{background:var(--deep);color:#fff;border-color:#fff}
+.tele{display:flex;flex-wrap:wrap;margin-top:2.8rem;border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(10px);background:rgba(7,40,79,.58);width:fit-content}
+.tele>div{padding:.9rem 1.6rem;border-right:1px solid rgba(255,255,255,.22)}
+.tele>div:last-child{border-right:0}
+.tele small{display:block;font:.52rem var(--mono);letter-spacing:.26em;color:rgba(220,236,255,.85);margin-bottom:.3rem}
+.tele strong{font:300 1.5rem var(--disp);color:#fff;text-shadow:0 0 12px rgba(124,196,255,.65)}
+.tele em{font:400 .7rem var(--mono);font-style:normal;color:rgba(255,255,255,.85);margin-left:.25rem}
+.threat{position:absolute;right:0;bottom:4.6rem;z-index:7;background:#fff;color:#0c2d5a;font:700 .6rem var(--mono);letter-spacing:.3em;padding:.6rem 1.4rem .6rem 1.9rem;clip-path:polygon(12px 0,100% 0,100% 100%,0 100%);display:flex;align-items:center;gap:.6rem}
+.threat::before{content:"";width:8px;height:8px;background:var(--warn);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+.hero-meta{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:space-between;gap:1rem;padding:.85rem clamp(1.2rem,4vw,3rem);border-top:1px solid rgba(255,255,255,.3);font:.58rem var(--mono);letter-spacing:.24em;color:rgba(255,255,255,.95);background:linear-gradient(0deg,rgba(7,40,79,.62),rgba(7,40,79,.28))}
+.scroll-cue{position:absolute;left:50%;transform:translateX(-50%);bottom:3.2rem;z-index:6;display:flex;flex-direction:column;align-items:center;gap:.6rem;font:.52rem var(--mono);letter-spacing:.45em;color:#fff;background:rgba(7,40,79,.5);padding:.85rem 1.3rem;border-radius:99px;backdrop-filter:blur(6px)}
+.line-cue{position:relative;width:1px;height:52px;background:rgba(255,255,255,.3);overflow:hidden}
+.line-cue::after{content:"";position:absolute;left:0;top:-50%;width:100%;height:50%;background:#fff;animation:cue 1.8s ease-in-out infinite}
+@keyframes cue{to{top:110%}}
+
+/* ============ SECTIONS ============ */
+section{padding:clamp(4.5rem,9vw,8rem) clamp(1.2rem,6vw,6rem)}
+.sec-head{display:flex;align-items:center;gap:1.2rem;margin-bottom:clamp(2.5rem,5vw,4.5rem)}
+.sec-head .n{font:.68rem var(--mono);color:var(--accent);letter-spacing:.2em}
+.sec-head h2{font:800 clamp(.85rem,1.4vw,1rem) var(--sans);letter-spacing:.45em}
+.sec-head::after{content:"";flex:1;height:1px;background:var(--line)}
+.sec-head .live{font:.55rem var(--mono);letter-spacing:.2em;color:var(--ok);display:flex;align-items:center;gap:.5rem;margin-left:auto}
+
+/* on air */
+.net-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:1.4rem;margin-bottom:1.4rem}
+.term{background:#071c33;border:1px solid rgba(140,190,255,.25);color:#bfe0ff;display:flex;flex-direction:column;min-height:340px}
+.term-head{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.1rem;border-bottom:1px solid rgba(140,190,255,.2);font:.58rem var(--mono);letter-spacing:.24em;color:#9ad8ff}
+.term-head i{font-style:normal;display:flex;align-items:center;gap:.5rem}
+.term-head i::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+.term-body{flex:1;overflow-y:auto;padding:1rem 1.1rem;font:.62rem/2 var(--mono);letter-spacing:.06em}
+.term-body p{opacity:.85}
+.vizwrap{position:relative;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.25));backdrop-filter:blur(10px);min-height:340px;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden}
+html[data-theme="night"] .vizwrap{background:linear-gradient(180deg,rgba(10,25,50,.7),rgba(10,25,50,.4))}
+.vizwrap canvas{width:100%;height:100%;display:block}
+.viz-top{display:flex;justify-content:space-between;align-items:center;padding:.9rem 1.1rem;font:.56rem var(--mono);letter-spacing:.26em;color:var(--muted)}
+.viz-top b{color:var(--accent);font-weight:400}
+/* vinilo */
+.vinyl-row{display:flex;align-items:center;gap:1.2rem;padding:1rem 1.1rem;border-top:1px solid var(--line)}
+.vinyl{width:74px;height:74px;flex:none;border-radius:50%;position:relative;
+  background:repeating-radial-gradient(circle at 50% 50%,#0a1a30 0 2px,#12233f 2px 4px);
+  box-shadow:0 6px 18px rgba(7,40,79,.45);animation:spin 3.2s linear infinite;animation-play-state:paused}
+body.playing .vinyl{animation-play-state:running}
+.vinyl::after{content:"";position:absolute;inset:27px;border-radius:50%;background:var(--accent);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4)}
+.vinyl::before{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:#f2f8ff;transform:translate(-50%,-50%);z-index:2}
+.vinyl-row .vr-txt{font:.6rem var(--mono);letter-spacing:.18em;color:var(--muted)}
+.vinyl-row .vr-txt b{display:block;font:400 .95rem var(--sans);letter-spacing:.06em;color:var(--ink);margin:.25rem 0}
+
+/* releases */
+.rel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.rel{position:relative;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(12px);padding:0;overflow:hidden;transition:transform .4s,border-color .4s,box-shadow .4s;text-align:left}
+.rel:hover{transform:translateY(-8px);border-color:var(--accent);box-shadow:0 24px 50px -20px rgba(47,127,216,.4)}
+.rel .cover{position:relative;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden}
+.rel .cover::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.5) 1px,transparent 1.4px);background-size:9px 9px;opacity:.35;mix-blend-mode:overlay}
+.rel .cov-shard{position:absolute;background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.05));mix-blend-mode:screen}
+.rel .cov-title{position:relative;font:200 clamp(1.6rem,2.6vw,2.4rem) var(--disp);color:#fff;letter-spacing:.02em;text-shadow:0 0 22px rgba(255,255,255,.75);z-index:2}
+.rel .cov-artist{position:relative;z-index:2;font:.55rem var(--mono);letter-spacing:.34em;color:rgba(255,255,255,.9);margin-top:.4rem;text-shadow:0 1px 6px rgba(7,40,79,.6)}
+.c1{background:linear-gradient(160deg,#9cc8f5,#2f7fd8 55%,#1b5cab)}
+.c2{background:linear-gradient(160deg,#dfeaff,#7cc4ff 50%,#3b6fc4)}
+.c3{background:linear-gradient(160deg,#b3e0f2,#4d9fe0 60%,#235d9e)}
+.c4{background:linear-gradient(200deg,#a9d4f7,#2a6fc0 60%,#0e3f78)}
+.c5{background:linear-gradient(160deg,#cfe6fb,#6fb1ea 55%,#2f6ab0)}
+.c6{background:linear-gradient(200deg,#e6f2ff,#8ec8f2 45%,#3a76bd)}
+.rel .meta{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:1rem 1.1rem}
+.rel .meta b{font:700 .62rem var(--sans);letter-spacing:.28em}
+.rel .meta span{font:.55rem var(--mono);letter-spacing:.18em;color:var(--muted)}
+.rel .play-badge{position:absolute;right:.9rem;bottom:.9rem;z-index:3;width:44px;height:44px;border-radius:50%;background:rgba(7,40,79,.72);color:#fff;display:grid;place-items:center;font-size:.8rem;opacity:0;transform:translateY(8px);transition:.35s;backdrop-filter:blur(4px)}
+.rel:hover .play-badge{opacity:1;transform:none}
+.rel.playing{border-color:var(--accent)}
+.rel.playing .meta b{color:var(--accent)}
+
+/* stats */
+.statsband{background:var(--deep);color:#dcecff;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding-block:clamp(3.5rem,7vw,6rem)}
+.statsband>div{text-align:center;border-right:1px solid rgba(140,190,255,.14)}
+.statsband>div:last-child{border-right:0}
+.statsband .num{font:200 clamp(2.4rem,5.5vw,4.4rem)/1 var(--disp);color:#fff;text-shadow:0 0 24px rgba(124,196,255,.55)}
+.statsband .num em{font-style:normal;font-size:.55em;color:#9ad8ff}
+.statsband p{margin-top:.8rem;font:.55rem var(--mono);letter-spacing:.3em;color:#9ad8ff}
+
+/* membership */
+.bill{display:inline-flex;border:1px solid var(--line);margin-bottom:2.5rem;background:var(--panel)}
+.bill button{font:700 .58rem var(--mono);letter-spacing:.25em;padding:.75rem 1.4rem;background:transparent;border:0;transition:.3s}
+.bill button.on{background:var(--accent);color:#fff}
+.price-note{font:.55rem var(--mono);letter-spacing:.2em;color:var(--accent);margin-left:1rem}
+.tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;align-items:stretch}
+.tier{position:relative;background:var(--panel);backdrop-filter:blur(12px);border:1px solid var(--line);padding:2.4rem 2rem;display:flex;flex-direction:column;transition:transform .4s,border-color .4s}
+.tier:hover{transform:translateY(-6px);border-color:var(--accent)}
+.tier.hot{border:1px solid var(--accent);box-shadow:0 30px 60px -30px rgba(47,127,216,.45)}
+.tier .badge{position:absolute;top:-0.7rem;left:2rem;background:var(--accent);color:#fff;font:700 .52rem var(--mono);letter-spacing:.28em;padding:.35rem .8rem}
+.tier h3{font:800 .68rem var(--sans);letter-spacing:.34em;color:var(--muted)}
+.tier .price{font:200 3.2rem/1 var(--disp);margin:1.2rem 0 .2rem;color:var(--ink)}
+.tier .price em{font:400 .65rem var(--mono);font-style:normal;color:var(--muted)}
+.tier ul{margin:1.6rem 0 2rem;display:grid;gap:.75rem;font:.72rem/1.5 var(--mono);letter-spacing:.06em;color:var(--muted)}
+.tier ul li::before{content:"+";color:var(--accent);margin-right:.7rem;font-weight:700}
+.tier .btn{margin-top:auto;justify-content:center;background:var(--accent);color:#fff;border-color:var(--accent)}
+.tier .btn:hover{background:var(--deep);border-color:var(--deep)}
+.tier.hot .btn{background:#fff;color:#0c4a8f}
+.tier.hot .btn:hover{background:var(--deep);color:#fff}
+
+/* quotes */
+.quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.quotes figure{background:var(--panel);backdrop-filter:blur(12px);border:1px solid var(--line);padding:2.2rem 1.8rem;display:flex;flex-direction:column;gap:1.4rem}
+.quotes blockquote{font:italic 300 1.25rem/1.6 var(--disp);color:var(--ink)}
+.quotes blockquote::before{content:"\201C";display:block;font:200 3rem/0.5 var(--disp);color:var(--accent);margin-bottom:.8rem}
+.quotes figcaption{margin-top:auto;font:.56rem var(--mono);letter-spacing:.24em;color:var(--muted)}
+.quotes figcaption b{color:var(--accent);font-weight:400}
+
+/* tour */
+.tour{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(12px)}
+.tour li{display:grid;grid-template-columns:6.5rem 1fr auto auto;gap:1.6rem;align-items:center;padding:1.4rem 1.4rem;border-bottom:1px solid var(--line);transition:background .3s}
+.tour li:last-child{border-bottom:0}
+.tour li:hover{background:rgba(47,127,216,.07)}
+.tour .d{font:italic 500 1.4rem var(--serif,var(--disp));color:var(--accent)}
+.tour .c b{display:block;font:800 .78rem var(--sans);letter-spacing:.22em}
+.tour .c span{font:.6rem var(--mono);letter-spacing:.18em;color:var(--muted)}
+.tour .cap{font:.55rem var(--mono);letter-spacing:.22em;color:var(--muted)}
+.tour .sold{font:700 .55rem var(--mono);letter-spacing:.25em;color:var(--warn)}
+.tk{font:700 .55rem var(--mono);letter-spacing:.25em;border:1px solid var(--accent);color:var(--accent);padding:.6rem 1rem;transition:.3s;background:transparent}
+.tk:hover{background:var(--accent);color:#fff}
+
+/* contact */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,6vw,5rem);align-items:start}
+.contact-grid h3{font:200 clamp(2.4rem,5vw,4.2rem)/1.1 var(--disp)}
+.contact-grid h3 b{font-weight:300;font-style:italic;color:var(--accent)}
+.c-info{margin-top:2.4rem;display:grid;gap:1.1rem;font:.62rem/1.9 var(--mono);letter-spacing:.18em;color:var(--muted)}
+.c-info b{color:var(--ink);font-weight:400}
+form{display:grid;gap:1.5rem}
+.field label{display:block;font:.55rem var(--mono);letter-spacing:.3em;color:var(--muted);margin-bottom:.5rem}
+.field input,.field textarea{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);padding:.7rem 0;font:400 .95rem var(--sans);color:var(--ink);transition:border-color .3s;resize:vertical}
+.field input:focus,.field textarea:focus{outline:0;border-color:var(--accent)}
+.field.err input{border-color:var(--warn);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+form .btn{width:fit-content;background:var(--accent);color:#fff;border-color:var(--accent)}
+form .btn:hover{background:var(--deep);border-color:var(--deep)}
+
+/* footer */
+footer{background:var(--deep);color:#dcecff;padding:clamp(3.5rem,7vw,6rem) clamp(1.2rem,6vw,6rem) 6.5rem}
+.fin{font:200 clamp(2rem,6vw,4.6rem)/1.05 var(--disp);color:#fff;max-width:16em}
+.fin b{font-weight:300;font-style:italic;color:#9ad8ff}
+.meta-frame{margin-top:3.5rem;border-top:1px solid rgba(140,190,255,.2);border-bottom:1px solid rgba(140,190,255,.2);padding:1.1rem 0;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font:.62rem var(--mono);letter-spacing:.18em;color:#9ad8ff}
+.meta-frame span b{color:#fff;font-weight:400}
+.foot-legal{margin-top:1.6rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font:.55rem var(--mono);letter-spacing:.22em;color:rgba(154,216,255,.55)}
+
+/* player fijo */
+#player{position:fixed;left:0;right:0;bottom:0;z-index:960;display:flex;align-items:center;gap:1.2rem;padding:.7rem clamp(1rem,4vw,3rem);background:rgba(7,40,79,.92);backdrop-filter:blur(14px);border-top:1px solid rgba(140,190,255,.25);color:#dcecff}
+#playBtn{width:46px;height:46px;flex:none;border-radius:50%;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.1);color:#fff;font-size:.85rem;display:grid;place-items:center;transition:.3s}
+#playBtn:hover{background:var(--accent);border-color:var(--accent)}
+.np{display:flex;flex-direction:column;min-width:0}
+.np small{font:.5rem var(--mono);letter-spacing:.3em;color:#9ad8ff}
+.np strong{font:400 .82rem var(--sans);letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-time{font:.6rem var(--mono);letter-spacing:.15em;color:#9ad8ff;flex:none}
+.p-viz{flex:1;height:34px;min-width:60px}
+.p-viz canvas{width:100%;height:100%;display:block}
+.vol{display:flex;align-items:center;gap:.6rem;flex:none}
+.vol span{font:.5rem var(--mono);letter-spacing:.25em;color:#9ad8ff}
+#vol{width:110px;accent-color:#7cc4ff;background:transparent}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:6.2rem;transform:translate(-50%,220%);background:#071c33;color:#dcecff;font:.6rem var(--mono);letter-spacing:.18em;padding:1rem 1.6rem;border:1px solid var(--accent);z-index:1400;transition:transform .5s cubic-bezier(.22,1,.36,1);max-width:min(92vw,540px);text-align:center}
+#toast.show{transform:translate(-50%,0)}
+#toast.warn{border-color:var(--warn)}
+
+/* reveal */
+.js .reveal{opacity:0;transform:translateY(34px);transition:opacity 1s ease var(--d,0s),transform 1s cubic-bezier(.19,1,.22,1) var(--d,0s)}
+.js .reveal.in{opacity:1;transform:none}
+html.safe .reveal{opacity:1!important;transform:none!important}
+
+/* responsive */
+@media(max-width:1050px){
+  .rel-grid{grid-template-columns:repeat(2,1fr)}
+  .tier-grid{grid-template-columns:1fr;max-width:460px}
+  .quotes{grid-template-columns:1fr}
+  .statsband{grid-template-columns:repeat(2,1fr);row-gap:2.5rem}
+  .statsband>div:nth-child(2){border-right:0}
+  .tour li{grid-template-columns:5.5rem 1fr auto}
+  .tour .cap{display:none}
+}
+@media(max-width:900px){
+  .topbar nav,.tb-right .status,#clock,.vol span{display:none}
+  .burger{display:flex}
+  .net-grid,.contact-grid{grid-template-columns:1fr}
+  .rail,.bars,.dotgrid,.hex{display:none}
+  .reticle{left:70%;top:24%}
+  .hero-meta span:nth-child(2){display:none}
+  .threat{bottom:4.4rem}
+  .tele{width:100%}
+  .tele>div{flex:1;padding:.8rem 1rem}
+  .p-viz{display:none}
+}
+@media(max-width:600px){
+  .rel-grid{grid-template-columns:1fr}
+  .tf{display:none}
+  .hero-meta{font-size:.5rem}
+  #player{gap:.8rem}
+  .vol{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html.js .reveal{opacity:1;transform:none}
+}
+</style>
+<noscript><style>#loader{display:none}body{overflow:auto}</style></noscript>
+</head>
+<body class="lock">
+<script>document.documentElement.classList.add('js');</script>
+
+<!-- LOADER -->
+<div id="loader" role="status" aria-label="Loading">
+  <div class="logo-sq"><span></span><span></span><span></span><span></span></div>
+  <h2>HALCYON FM</h2>
+  <div class="lbar"><i id="lFill"></i></div>
+  <div class="lmeta"><span id="lPct">0%</span><span>v1.0 — warming valves</span></div>
+  <p id="lLog"></p>
+</div>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor" aria-hidden="true"></div><div class="cursor-dot" aria-hidden="true"></div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="brand" href="#top">
+    <span class="logo-sq" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+    HALCYON <em>// records</em>
+  </a>
+  <nav>
+    <a class="scr" href="#onair">ON AIR</a>
+    <a class="scr" href="#releases">RELEASES</a>
+    <a class="scr" href="#club">VINYL CLUB</a>
+    <a class="scr" href="#tour">TOUR</a>
+    <a class="scr" href="#contact">DEMOS</a>
+  </nav>
+  <div class="tb-right">
+    <span class="eq" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+    <span class="status"><span class="dotp" id="stDot"></span><b id="stTxt">SIGNAL CLEAR</b></span>
+    <span id="clock">--:--:-- UTC</span>
+    <button class="mode" id="modeBtn" type="button">MODE: DAY</button>
+    <button class="burger" id="burger" type="button" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<div id="mmenu">
+  <div>
+    <a href="#onair">ON AIR</a><a href="#releases">RELEASES</a>
+    <a href="#club">VINYL CLUB</a><a href="#tour">TOUR</a><a href="#contact">DEMOS</a>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="tk-track">
+    <span>NOW ON AIR <b>AERA - CIRRUS</b><i>*</i>UP NEXT <b>KOSMA - BLUE HOUR</b><i>*</i>VINYL CLUB: PRESSING BATCH 12 <b>SHIPS FRIDAY</b><i>*</i>DEMO INBOX <b>OPEN</b><i>*</i>STUDIO B: NEW SESSION BOOKED <b>MOTH &amp; MERIDIAN</b><i>*</i>LOSSLESS 24BIT/96K ALWAYS <i>*</i></span>
+    <span>NOW ON AIR <b>AERA - CIRRUS</b><i>*</i>UP NEXT <b>KOSMA - BLUE HOUR</b><i>*</i>VINYL CLUB: PRESSING BATCH 12 <b>SHIPS FRIDAY</b><i>*</i>DEMO INBOX <b>OPEN</b><i>*</i>STUDIO B: NEW SESSION BOOKED <b>MOTH &amp; MERIDIAN</b><i>*</i>LOSSLESS 24BIT/96K ALWAYS <i>*</i></span>
+  </div>
+</div>
+
+<main>
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="sky-img depth" data-depth="14">
+    <img src="https://images.unsplash.com/photo-1419833173245-f59e1b93f9ee?q=80&w=2400&auto=format&fit=crop" alt="" onerror="this.remove()">
+  </div>
+  <div class="scan" aria-hidden="true"></div>
+
+  <div class="shard s1" aria-hidden="true"></div><div class="shard s2" aria-hidden="true"></div>
+  <div class="shard s3" aria-hidden="true"></div><div class="shard s4" aria-hidden="true"></div>
+  <div class="shard s5" aria-hidden="true"></div>
+  <div class="reticle depth" data-depth="6" aria-hidden="true"><i></i></div>
+  <div class="bars" aria-hidden="true"></div>
+  <div class="dotgrid" aria-hidden="true"></div>
+  <svg class="hex h1" width="46" height="52" viewBox="0 0 46 52" fill="none" aria-hidden="true"><path d="M23 2 44 14v24L23 50 2 38V14Z" stroke="currentColor"/></svg>
+  <svg class="hex h2" width="30" height="34" viewBox="0 0 46 52" fill="none" aria-hidden="true"><path d="M23 2 44 14v24L23 50 2 38V14Z" stroke="currentColor"/></svg>
+  <span class="spark" style="left:14%;top:20%" aria-hidden="true"></span>
+  <span class="spark" style="right:26%;top:14%;animation-delay:1.2s" aria-hidden="true"></span>
+  <span class="spark" style="left:38%;top:64%;animation-delay:2s" aria-hidden="true"></span>
+  <span class="rail">38.7223 N - 9.1393 W :: STUDIO B :: LIVE SIGNAL</span>
+
+  <div class="tf" aria-hidden="true"><div class="tfbar"><i></i></div><small>TF::0044_2026</small></div>
+
+  <div class="hero-inner">
+    <p class="feedtag reveal"><span class="dotp"></span>:// LIVE SIGNAL - <span id="tList">2,847</span> LISTENING NOW</p>
+    <h1 class="reveal" style="--d:.1s">sound <b>in the</b> blue</h1>
+    <p class="hero-sub reveal" style="--d:.2s">HALCYON is an independent label for ambient and electronic music.
+      One radio, always on. Generative sessions, lossless releases,
+      vinyl pressed in small batches - music for everyone who lives above the clouds.</p>
+    <div class="chips reveal" style="--d:.3s">
+      <span>EST. 2018</span><span>LOSSLESS 24/96</span><span>48 RELEASES</span><span>LISBON - KYOTO</span>
+    </div>
+    <div class="cta-row reveal" style="--d:.4s">
+      <button class="btn" type="button" id="heroPlay">START THE RADIO &#9654;</button>
+      <a class="btn ghost" href="#releases">BROWSE RELEASES</a>
+    </div>
+    <div class="tele reveal" style="--d:.5s" aria-label="Live session data">
+      <div><small>ON AIR</small><strong id="tNow" style="font-size:1rem;line-height:1.9">AERA - Cirrus</strong></div>
+      <div><small>BPM</small><strong id="tBpm">68</strong></div>
+      <div><small>KEY</small><strong id="tKey" style="font-size:1rem;line-height:1.9">Fmaj7</strong></div>
+      <div><small>BITRATE</small><strong>1411</strong><em>kbps</em></div>
+      <div><small>ON AIR SINCE</small><strong id="tUp" style="font-size:1rem;line-height:1.9">&mdash;</strong></div>
+    </div>
+  </div>
+
+  <div class="threat" aria-hidden="true">:// EARWORM DETECTED</div>
+
+  <a class="scroll-cue" href="#onair">SCROLL<span class="line-cue"></span></a>
+  <div class="hero-meta">
+    <span>date pressed: 04/26 - cat# HAL-048</span>
+    <span>made with &hearts; and too much reverb</span>
+    <span>mastering: HALCYON ROOM B</span>
+  </div>
+</section>
+
+<!-- ============ ON AIR ============ -->
+<section id="onair">
+  <div class="sec-head"><span class="n">01</span><h2 class="scr">ON AIR</h2><span class="live"><span class="dotp"></span>LIVE SESSION</span></div>
+  <div class="net-grid">
+    <div class="term reveal" aria-live="polite">
+      <div class="term-head"><span>HALCYON//RADIO - session.log</span><i>REC</i></div>
+      <div class="term-body" id="sessBody"></div>
+    </div>
+    <div class="vizwrap reveal" style="--d:.15s">
+      <div class="viz-top"><span>SPECTRUM - <b id="vizTrack">AERA / CIRRUS</b></span><span id="vizState">STANDBY</span></div>
+      <canvas id="viz"></canvas>
+      <div class="vinyl-row">
+        <div class="vinyl" aria-hidden="true"></div>
+        <div class="vr-txt">NOW SPINNING<b id="vrTitle">AERA - Cirrus</b>mastered in room B - 24bit/96k</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RELEASES ============ -->
+<section id="releases">
+  <div class="sec-head"><span class="n">02</span><h2 class="scr">RELEASES</h2><span class="live">CLICK A COVER TO QUEUE IT</span></div>
+  <div class="rel-grid">
+    <button class="rel reveal" data-i="0" type="button">
+      <span class="cover c1"><span class="cov-shard" style="width:60%;height:26%;clip-path:polygon(0 40%,55% 0,100% 65%,40% 100%)"></span><span class="cov-title">Cirrus</span><span class="cov-artist">AERA</span></span>
+      <span class="meta"><b>HAL-048</b><span>EP - 5 TRACKS - 2026</span></span>
+      <span class="play-badge" aria-hidden="true">&#9654;</span>
+    </button>
+    <button class="rel reveal" data-i="1" style="--d:.08s" type="button">
+      <span class="cover c2"><span class="cov-shard" style="width:46%;height:34%;clip-path:polygon(20% 0,100% 25%,70% 100%,0 70%)"></span><span class="cov-title">Blue Hour</span><span class="cov-artist">KOSMA</span></span>
+      <span class="meta"><b>HAL-047</b><span>ALBUM - 9 TRACKS - 2025</span></span>
+      <span class="play-badge" aria-hidden="true">&#9654;</span>
+    </button>
+    <button class="rel reveal" data-i="2" style="--d:.16s" type="button">
+      <span class="cover c3"><span class="cov-shard" style="width:52%;height:40%;clip-path:polygon(0 30%,60% 0,100% 55%,55% 100%,10% 90%)"></span><span class="cov-title">Vapor Trails</span><span class="cov-artist">PALE SUN</span></span>
+      <span class="meta"><b>HAL-045</b><span>SINGLE - 2025</span></span>
+      <span class="play-badge" aria-hidden="true">&#9654;</span>
+    </button>
+    <button class="rel reveal" data-i="3" type="button">
+      <span class="cover c4"><span class="cov-shard" style="width:40%;height:30%;clip-path:polygon(0 50%,50% 0,100% 40%,45% 100%)"></span><span class="cov-title">Halo Depth</span><span class="cov-artist">VELA NOVA</span></span>
+      <span class="meta"><b>HAL-044</b><span>EP - 4 TRACKS - 2024</span></span>
+      <span class="play-badge" aria-hidden="true">&#9654;</span>
+    </button>
+    <button class="rel reveal" data-i="4" style="--d:.08s" type="button">
+      <span class="cover c5"><span class="cov-shard" style="width:56%;height:22%;clip-path:polygon(0 40%,55% 0,100% 65%,40% 100%)"></span><span class="cov-title">Skyline Static</span><span class="cov-artist">MOTH &amp; MERIDIAN</span></span>
+      <span class="meta"><b>HAL-041</b><span>ALBUM - 8 TRACKS - 2024</span></span>
+      <span class="play-badge" aria-hidden="true">&#9654;</span>
+    </button>
+    <button class="rel reveal" data-i="5" style="--d:.16s" type="button">
+      <span class="cover c6"><span class="cov-shard" style="width:44%;height:36%;clip-path:polygon(30% 0,100% 35%,75% 100%,0 80%)"></span><span class="cov-title">Nimbus (Reprise)</span><span class="cov-artist">ILO</span></span>
+      <span class="meta"><b>HAL-039</b><span>SINGLE - 2023</span></span>
+      <span class="play-badge" aria-hidden="true">&#9654;</span>
+    </button>
+  </div>
+</section>
+
+<!-- ============ STATS ============ -->
+<div class="statsband">
+  <div class="reveal"><div class="num"><span data-n="2847">2,847</span></div><p>LISTENING NOW</p></div>
+  <div class="reveal" style="--d:.1s"><div class="num"><span data-n="48">48</span></div><p>RELEASES PRESSED</p></div>
+  <div class="reveal" style="--d:.2s"><div class="num"><span data-n="63">63</span></div><p>CITIES PLAYED</p></div>
+  <div class="reveal" style="--d:.3s"><div class="num"><span data-n="5200">5,200</span><em>+</em></div><p>HOURS OF MUSIC</p></div>
+</div>
+
+<!-- ============ VINYL CLUB ============ -->
+<section id="club">
+  <div class="sec-head"><span class="n">03</span><h2 class="scr">VINYL CLUB</h2></div>
+  <div class="reveal">
+    <div class="bill" role="tablist">
+      <button class="on" data-mode="m" type="button">MONTHLY</button>
+      <button data-mode="y" type="button">YEARLY</button>
+    </div>
+    <span class="price-note" id="billNote">billed monthly - switch to yearly, save 20%</span>
+  </div>
+  <div class="tier-grid">
+    <article class="tier reveal">
+      <h3>LISTENER</h3>
+      <p class="price"><span class="pv" data-m="0" data-y="0">$0</span><em>/mo</em></p>
+      <ul><li>Live radio, always on</li><li>Lossless streaming (24/96)</li><li>Digital booklet downloads</li><li>Release newsletter</li></ul>
+      <button class="btn act" type="button" data-tier="LISTENER">TUNE IN FREE</button>
+    </article>
+    <article class="tier hot reveal" style="--d:.12s">
+      <span class="badge">MOST SUNG</span>
+      <h3>SUPPORTER</h3>
+      <p class="price"><span class="pv" data-m="6" data-y="5">$6</span><em>/mo</em></p>
+      <ul><li>Everything in Listener</li><li>Every release on Bandcamp-day one</li><li>Session stems, twice a year</li><li>Vote on the next pressing</li><li>Cancel anytime</li></ul>
+      <button class="btn act" type="button" data-tier="SUPPORTER">JOIN SUPPORTER</button>
+    </article>
+    <article class="tier reveal" style="--d:.24s">
+      <h3>PATRON</h3>
+      <p class="price"><span class="pv" data-m="15" data-y="12">$15</span><em>/mo</em></p>
+      <ul><li>Everything in Supporter</li><li>Vinyl Club: 4 pressings a year</li><li>Your name in every sleeve</li><li>Studio B livestream access</li><li>Annual gift box</li></ul>
+      <button class="btn act" type="button" data-tier="PATRON">BECOME PATRON</button>
+    </article>
+  </div>
+</section>
+
+<!-- ============ VOICES ============ -->
+<section id="voices" style="padding-top:0">
+  <div class="sec-head"><span class="n">04</span><h2 class="scr">LINER NOTES</h2></div>
+  <div class="quotes">
+    <figure class="reveal">
+      <blockquote>Their radio scored my entire last record. I never once skipped a track.</blockquote>
+      <figcaption>COMPOSER - <b>MYLEN FARMER</b></figcaption>
+    </figure>
+    <figure class="reveal" style="--d:.12s">
+      <blockquote>They pressed my demo in six weeks and flew me to Lisbon. Small label, huge heart.</blockquote>
+      <figcaption>ARTIST - <b>ILO</b></figcaption>
+    </figure>
+    <figure class="reveal" style="--d:.24s">
+      <blockquote>The vinyl club is the only subscription I never cancel. Batch 12 is stunning.</blockquote>
+      <figcaption>COLLECTOR - <b>S. OKAFOR</b></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ TOUR ============ -->
+<section id="tour" style="padding-top:0">
+  <div class="sec-head"><span class="n">05</span><h2 class="scr">LIVE DATES</h2></div>
+  <ul class="tour reveal">
+    <li><span class="d">JUN 12</span><span class="c"><b>LISBON</b><span>CASA DA MUSICA - SMALL HALL</span></span><span class="cap">2,847 INTERESTED</span><button class="tk" type="button" data-city="LISBON">TICKETS</button></li>
+    <li><span class="d">JUN 19</span><span class="c"><b>KYOTO</b><span>METRO - AMBIENT NIGHTS</span></span><span class="cap">1,930 INTERESTED</span><button class="tk" type="button" data-city="KYOTO">TICKETS</button></li>
+    <li><span class="d">JUL 03</span><span class="c"><b>BERLIN</b><span>FUNKHAUS - SAAL 2</span></span><span class="cap">3,411 INTERESTED</span><button class="tk" type="button" data-city="BERLIN">TICKETS</button></li>
+    <li><span class="d">JUL 17</span><span class="c"><b>REYKJAVIK</b><span>ELDJARN - SOLSTICE SET</span></span><span class="sold">SOLD OUT</span><button class="tk" type="button" data-city="REYKJAVIK" disabled style="opacity:.4;pointer-events:none">WAITLIST</button></li>
+  </ul>
+</section>
+
+<!-- ============ DEMOS ============ -->
+<section id="contact" style="padding-top:0">
+  <div class="sec-head"><span class="n">06</span><h2 class="scr">SEND A DEMO</h2></div>
+  <div class="contact-grid">
+    <div class="reveal">
+      <h3>play us <b>your sky.</b></h3>
+      <div class="c-info">
+        <span><b>A&amp;R INBOX</b> - demos@halcyon.fm<br>every demo is listened to. reply within 2 weeks</span>
+        <span><b>STUDIOS</b> - ROOM A / ROOM B, LISBON PT<br>booking opens for patrons each season</span>
+        <span><b>PRESSING</b> - batch 12 ships friday<br><span class="st-ok">IN PRESS</span></span>
+      </div>
+    </div>
+    <form id="dform" class="reveal" style="--d:.15s" novalidate>
+      <div class="field"><label for="fArtist">ARTIST / PROJECT</label><input id="fArtist" type="text" placeholder="Pale Sun"></div>
+      <div class="field"><label for="fLink">LINK TO MUSIC</label><input id="fLink" type="url" placeholder="https://soundcloud.com/..."></div>
+      <div class="field"><label for="fMail">EMAIL</label><input id="fMail" type="email" autocomplete="email" placeholder="you@somewhere.com"></div>
+      <div class="field"><label for="fMsg">NOTE (OPTIONAL)</label><textarea id="fMsg" rows="3" placeholder="Tell us about the record you hear in your head..."></textarea></div>
+      <button class="btn" type="submit">SEND DEMO &#10230;</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer id="fin">
+  <p class="fin reveal">stay for the <b>last echo.</b></p>
+  <div class="meta-frame">
+    <span>date created: <b>11/5/26</b></span>
+    <span>style: <b>metalheart</b></span>
+    <span>label: <b>halcyon records</b></span>
+  </div>
+  <div class="meta-frame" style="margin-top:0;border-top:0">
+    <span>programs used: <b>html + css + web audio</b></span>
+    <span>made with <b>&hearts;</b></span>
+    <span>name: <b>sound in the blue</b></span>
+  </div>
+  <div class="foot-legal">
+    <span>&copy; 2026 HALCYON RECORDS - fictional label, real frequencies</span>
+    <span>SIDE B NEVER ENDS</span>
+    <a href="#top">BACK TO TOP &uarr;</a>
+  </div>
+</footer>
+
+<!-- PLAYER FIJO -->
+<div id="player" role="region" aria-label="HALCYON radio player">
+  <button id="playBtn" type="button" aria-label="Play / pause">&#9654;</button>
+  <div class="np"><small>HALCYON RADIO - ON AIR</small><strong id="npTitle">AERA - Cirrus</strong></div>
+  <span class="p-time" id="pElapsed">00:00</span>
+  <div class="p-viz" aria-hidden="true"><canvas id="miniViz"></canvas></div>
+  <div class="vol"><span>VOL</span><input id="vol" type="range" min="0" max="100" value="55" aria-label="Volume"></div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ============ SCRIPT 1: LOADER (independiente + failsafe) ============ -->
+<script>
+(function(){
+  var html=document.documentElement;
+  var loader=document.getElementById('loader');
+  var ended=false;
+  function end(){
+    if(ended)return;ended=true;
+    if(loader)loader.classList.add('done');
+    document.body.classList.remove('lock');
+    setTimeout(function(){html.classList.add('safe');},3000);
+  }
+  window.onerror=function(){html.classList.add('safe');end();};
+  setTimeout(end,6000);
+  var pct=0,li=0;
+  var lLines=['warming valves ......... OK','tuning oscillators ..... OK','loading stems .......... OK','phono preamp ........... OK','signal acquired','press play - stay in the blue'];
+  var lFill=document.getElementById('lFill'),lPct=document.getElementById('lPct'),lLog=document.getElementById('lLog');
+  var lt=setInterval(function(){
+    pct=Math.min(100,pct+8+Math.random()*10);
+    if(lFill)lFill.style.width=pct+'%';
+    if(lPct)lPct.textContent=Math.floor(pct)+'%';
+    if(lLog&&Math.random()>.55&&li<lLines.length){lLog.textContent=lLines[li];li++;}
+    if(pct>=100){clearInterval(lt);setTimeout(end,350);}
+  },100);
+  if(loader)loader.addEventListener('click',function(){clearInterval(lt);end();});
+})();
+</script>
+
+<!-- ============ SCRIPT 2: APP + GENERATIVE AUDIO ENGINE ============ -->
+<script>
+(function(){
+'use strict';
+var $=function(s,c){return (c||document).querySelector(s)};
+var $$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))};
+var fine=matchMedia('(hover:hover) and (pointer:fine)').matches;
+var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var p2=function(n){return String(n).padStart(2,'0')};
+var rnd=function(n){return Math.floor(Math.random()*n)};
+
+/* ---------- cursor ---------- */
+if(fine){
+  var ring=$('.cursor'),dot=$('.cursor-dot');
+  var mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;
+  addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;if(dot)dot.style.transform='translate('+mx+'px,'+my+'px)';});
+  (function raf(){rx+=(mx-rx)*.16;ry+=(my-ry)*.16;if(ring)ring.style.transform='translate('+rx+'px,'+ry+'px)';requestAnimationFrame(raf)})();
+  $$('a,button,input,textarea,.rel,tr').forEach(function(el){
+    el.addEventListener('mouseenter',function(){ring.classList.add('big')});
+    el.addEventListener('mouseleave',function(){ring.classList.remove('big')});
+  });
+}
+
+/* ---------- scramble ---------- */
+var glyphs='#/<>_*[]+';
+ $$('.scr').forEach(function(el){
+  var orig=el.textContent;
+  el.addEventListener('mouseenter',function(){
+    if(el._t)clearInterval(el._t);var i=0;
+    el._t=setInterval(function(){
+      el.textContent=orig.split('').map(function(c,j){return j<i?c:(c===' '?' ':glyphs[rnd(glyphs.length)])}).join('');
+      if(i++>orig.length){clearInterval(el._t);el.textContent=orig;}
+    },26);
+  });
+});
+
+/* ---------- clock ---------- */
+var clock=$('#clock');
+function tickClock(){var d=new Date();if(clock)clock.textContent=p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+':'+p2(d.getUTCSeconds())+' UTC';}
+tickClock();setInterval(tickClock,1000);
+
+/* ---------- catalogo (escala MIDI) ---------- */
+function f(m){return 440*Math.pow(2,(m-69)/12)}
+var TRACKS=[
+  {t:'Cirrus',a:'AERA',bpm:68,key:'Fmaj7',ch:[[53,57,60,64],[55,59,62,65],[50,53,57,60],[52,55,59,62]]},
+  {t:'Blue Hour',a:'KOSMA',bpm:74,key:'Am9',ch:[[45,52,55,59,64],[43,50,55,59,62],[48,52,55,59],[41,48,52,55]]},
+  {t:'Vapor Trails',a:'PALE SUN',bpm:60,key:'Dmaj9',ch:[[50,57,61,64,69],[48,55,59,62,67],[45,52,57,61,64],[43,50,55,59,62]]},
+  {t:'Halo Depth',a:'VELA NOVA',bpm:72,key:'Gsus2',ch:[[44,55,57,62],[41,52,55,60],[46,53,57,62],[39,50,53,58]]},
+  {t:'Skyline Static',a:'MOTH & MERIDIAN',bpm:80,key:'Em7',ch:[[40,52,55,59,62],[45,52,57,59,64],[38,50,53,57,60],[43,50,55,59,62]]},
+  {t:'Nimbus (Reprise)',a:'ILO',bpm:56,key:'Cmaj7',ch:[[48,55,59,64,71],[50,57,60,64,69],[45,52,57,62,67],[43,50,55,62,67]]}
+];
+var cur=0;
+
+/* ---------- motor de audio generativo ---------- */
+var AC=window.AudioContext||window.webkitAudioContext;
+var actx=null,master=null,analyser=null,fdata=null,chordGain=null,delaySend=null;
+var playing=false,chordTimer=null,melTimer=null,elapsed=0,step=0;
+var padEls=[],noiseGain=null;
+
+function ensureAudio(){
+  if(actx||!AC)return true;
+  try{
+    actx=new AC();
+    master=actx.createGain();master.gain.value=0.55;
+    analyser=actx.createAnalyser();analyser.fftSize=256;analyser.smoothingTimeConstant=.85;
+    fdata=new Uint8Array(analyser.frequencyBinCount);
+    master.connect(analyser);analyser.connect(actx.destination);
+    /* delay espacial */
+    var delay=actx.createDelay(1.5);delay.delayTime.value=.48;
+    var fb=actx.createGain();fb.gain.value=.34;
+    var dlp=actx.createBiquadFilter();dlp.type='lowpass';dlp.frequency.value=1600;
+    delay.connect(dlp);dlp.connect(fb);fb.connect(delay);delay.connect(master);
+    delaySend=actx.createGain();delaySend.gain.value=.5;delaySend.connect(delay);
+    /* colchon de ruido (viento) */
+    var len=actx.sampleRate*2,buf=actx.createBuffer(1,len,actx.sampleRate),ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++)ch[i]=Math.random()*2-1;
+    var noise=actx.createBufferSource();noise.buffer=buf;noise.loop=true;
+    var nlp=actx.createBiquadFilter();nlp.type='lowpass';nlp.frequency.value=340;
+    noiseGain=actx.createGain();noiseGain.gain.value=0.015;
+    noise.connect(nlp);nlp.connect(noiseGain);noiseGain.connect(master);noise.start();
+    /* bus de acordes */
+    chordGain=actx.createGain();chordGain.gain.value=1;chordGain.connect(master);chordGain.connect(delaySend);
+    return true;
+  }catch(e){return false}
+}
+function playChord(midis){
+  if(!actx)return;
+  var t=actx.currentTime;
+  var rel=chordTimer?2.8:0.1;
+  padEls.forEach(function(p){
+    try{p.g.gain.cancelScheduledValues(t);p.g.gain.setValueAtTime(p.g.gain.value,t);p.g.gain.linearRampToValueAtTime(0,t+rel);p.o.stop(t+rel+.1);p.o2.stop(t+rel+.1);}catch(e){}
+  });
+  padEls=[];
+  midis.forEach(function(m,idx){
+    var g=actx.createGain();
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.055/(1+idx*0.35),t+2.6);
+    var o=actx.createOscillator();o.type='sine';o.frequency.value=f(m);
+    var o2=actx.createOscillator();o2.type='triangle';o2.frequency.value=f(m)*1.002;
+    var g2=actx.createGain();g2.gain.value=.35;
+    o.connect(g);o2.connect(g2);g2.connect(g);
+    g.connect(chordGain);
+    o.start(t);o2.start(t);
+    padEls.push({o:o,o2:o2,g:g});
+  });
+}
+function pluck(){
+  if(!actx||!playing)return;
+  var tr=TRACKS[cur],ch=tr.ch[step%tr.ch.length];
+  var m=ch[rnd(ch.length)]+(rnd(2)?12:24);
+  var t=actx.currentTime;
+  var o=actx.createOscillator();o.type='triangle';o.frequency.value=f(m);
+  var g=actx.createGain();
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(0.05,t+.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+1.8);
+  o.connect(g);g.connect(chordGain);g.connect(delaySend);
+  o.start(t);o.stop(t+2);
+  melTimer=setTimeout(pluck,1800+rnd(2600));
+}
+function startProg(){
+  stopProg();
+  playChord(TRACKS[cur].ch[0]);step=1;
+  chordTimer=setInterval(function(){
+    var tr=TRACKS[cur];
+    playChord(tr.ch[step%tr.ch.length]);step++;
+  },(60/TRACKS[cur].bpm)*8*1000);
+  melTimer=setTimeout(pluck,1200);
+}
+function stopProg(){
+  if(chordTimer){clearInterval(chordTimer);chordTimer=null;}
+  if(melTimer){clearTimeout(melTimer);melTimer=null;}
+}
+
+/* ---------- player ---------- */
+var playBtn=$('#playBtn'),npTitle=$('#npTitle'),pElapsed=$('#pElapsed'),volEl=$('#vol'),vrTitle=$('#vrTitle'),tNow=$('#tNow'),tBpm=$('#tBpm'),tKey=$('#tKey'),vizTrack=$('#vizTrack'),vizState=$('#vizState');
+function fmt(s){return p2(Math.floor(s/60))+':'+p2(s%60)}
+function applyTrack(i){
+  cur=i;var tr=TRACKS[i];
+  if(npTitle)npTitle.textContent=tr.a+' - '+tr.t;
+  if(vrTitle)vrTitle.textContent=tr.a+' - '+tr.t;
+  if(tNow)tNow.textContent=tr.a+' - '+tr.t;
+  if(tBpm)tBpm.textContent=tr.bpm;
+  if(tKey)tKey.textContent=tr.key;
+  if(vizTrack)vizTrack.textContent=tr.a+' / '+tr.t.toUpperCase();
+  elapsed=0;if(pElapsed)pElapsed.textContent='00:00';
+  $$('.rel').forEach(function(r){r.classList.toggle('playing',+r.dataset.i===i)});
+  if(playing&&actx)startProg();
+  logSession('cue loaded: '+tr.t.toLowerCase().replace(/[^a-z0-9]+/g,'_')+' - deck A');
+}
+function setPlaying(on){
+  playing=on;
+  document.body.classList.toggle('playing',on);
+  if(playBtn)playBtn.innerHTML=on?'&#10074;&#10074;':'&#9654;';
+  if(vizState)vizState.textContent=on?'LIVE':'STANDBY';
+  if(on){
+    if(!ensureAudio()){showToast('AUDIO ENGINE UNAVAILABLE IN THIS BROWSER',true);playing=false;document.body.classList.remove('playing');return;}
+    if(actx.state==='suspended')actx.resume();
+    startProg();
+    logSession('radio started - listeners tuning in');
+  }else{
+    stopProg();
+    if(actx)actx.suspend();
+    logSession('radio paused - signal held');
+  }
+}
+if(playBtn)playBtn.addEventListener('click',function(){setPlaying(!playing)});
+var heroPlay=$('#heroPlay');
+if(heroPlay)heroPlay.addEventListener('click',function(){
+  if(playing){showToast('ALREADY ON AIR - scroll down or pause below');return;}
+  setPlaying(true);showToast('ON AIR - you are listening to HALCYON radio');
+  $('#onair').scrollIntoView({behavior:'smooth'});
+});
+if(volEl)volEl.addEventListener('input',function(){if(master)master.gain.value=(volEl.value/100)*0.9});
+ $$('.rel').forEach(function(r){r.addEventListener('click',function(){
+  applyTrack(+r.dataset.i);
+  if(!playing)setPlaying(true);
+  showToast('QUEUED: '+TRACKS[+r.dataset.i].a+' - '+TRACKS[+r.dataset.i].t);
+})});
+
+/* elapsed */
+setInterval(function(){
+  if(!playing)return;
+  elapsed++;if(pElapsed)pElapsed.textContent=fmt(elapsed);
+},1000);
+
+/* oyentes fluctuando */
+var base=2847,tList=$('#tList');
+setInterval(function(){
+  base=Math.max(1800,Math.min(4200,base+Math.round((Math.random()-.48)*60)));
+  if(tList)tList.textContent=base.toLocaleString('en-US');
+},2400);
+
+/* ---------- visualizer ---------- */
+var viz=$('#viz'),mini=$('#miniViz');
+function drawViz(cv,ctx,W,H,mode){
+  ctx.clearRect(0,0,W,H);
+  var n=48,bw=W/n;
+  if(mode==='accent'){ctx.fillStyle='rgba(255,255,255,.85)';}else{ctx.fillStyle='#2f7fd8';}
+  for(var i=0;i<n;i++){
+    var v;
+    if(playing&&analyser&&mode==='accent'){
+      v=fdata[i*2]/255;
+    }else{
+      v=.12+.1*Math.abs(Math.sin(Date.now()/900+i*.6))+(mode==='mini'?0:.06*Math.sin(i*.9));
+    }
+    var h=Math.max(2,v*(H-6));
+    if(mode==='mini'){ctx.fillRect(i*bw+1,H-h,bw-2,h);}
+    else{
+      var y=(H-h)/2;
+      ctx.fillRect(i*bw+1,y,bw-2,h);
+    }
+  }
+}
+function setupCv(cv){var dpr=window.devicePixelRatio||1;var w=cv.clientWidth,h=cv.clientHeight;cv.width=w*dpr;cv.height=h*dpr;var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return {ctx:c,w:w,h:h};}
+var v1=null,v2=null;
+function sizeAll(){if(viz)v1=setupCv(viz);if(mini)v2=setupCv(mini);}
+sizeAll();addEventListener('resize',sizeAll);
+(function loop(){
+  if(analyser&&playing)analyser.getByteFrequencyData(fdata);
+  if(v1)drawViz(null,v1.ctx,v1.w,v1.h,'accent');
+  if(v2)drawViz(null,v2.ctx,v2.w,v2.h,'mini');
+  requestAnimationFrame(loop);
+})();
+
+/* ---------- session log ---------- */
+var sessBody=$('#sessBody');
+function nowStr(){var d=new Date();return p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+':'+p2(d.getUTCSeconds())}
+function logSession(msg){
+  if(!sessBody)return;
+  var el=document.createElement('p');
+  el.textContent='['+nowStr()+'] '+msg;
+  sessBody.appendChild(el);
+  while(sessBody.children.length>12)sessBody.firstChild.remove();
+  sessBody.scrollTop=sessBody.scrollHeight;
+}
+var pool=[
+  'stem loaded: pad_ch2 - 24bit/96k',
+  'listeners +' + (5+rnd(40)) + ' - total ' + base,
+  'reverb: hall_b - 2.8s decay',
+  'loudness -14 LUFS - target met',
+  'vinyl pressing queue: ' + (1+rnd(4)) + ' jobs',
+  'cassette dub: batch 07 - 40 copies',
+  'incoming demo flagged for A&R review',
+  'archive sync: 2.1k session files indexed',
+  'microtune drift 0.3 cents - nominal'
+];
+for(var i0=0;i0<8;i0++)logSession(pool[rnd(pool.length)]);
+if(!reduced)setInterval(function(){
+  var m=pool[rnd(pool.length)].replace('total '+base,'total '+base);
+  logSession(m);
+},1700);
+
+/* ---------- uptime (desde fundacion 2018) ---------- */
+var tUp=$('#tUp'),epoch=new Date('2018-06-01T00:00:00Z');
+setInterval(function(){
+  if(!tUp)return;
+  var d=new Date(),tot=Math.floor((d-epoch)/1000);
+  var days=Math.floor(tot/86400),yrs=Math.floor(days/365.25),remD=days-Math.floor(yrs*365.25);
+  tUp.textContent='T+'+p2(yrs)+'Y '+String(remD).padStart(3,'0')+'D '+p2(Math.floor(tot%86400/3600))+':'+p2(Math.floor(tot%3600/60))+':'+p2(tot%60);
+},1000);
+
+/* ---------- toasts ---------- */
+var toast=$('#toast'),toastT;
+function showToast(msg,warn){
+  if(!toast)return;
+  toast.textContent=msg;toast.classList.toggle('warn',!!warn);toast.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){toast.classList.remove('show')},3400);
+}
+var ambient=[
+  ['new listener joined from Porto - wave back',false],
+  ['batch 12 test pressing passed QC',false],
+  ['studio B session confirmed: Moth & Meridian',false],
+  ['Cirrus just passed 1M streams on the radio',false],
+  ['demo inbox: 3 new submissions tonight',false]
+];
+if(!reduced)setInterval(function(){showToast(ambient[rnd(ambient.length)][0]);},16000);
+
+/* ---------- reveal + counters ---------- */
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(!e.isIntersecting)return;
+      e.target.classList.add('in');io.unobserve(e.target);
+      $$('[data-n]',e.target).forEach(function(el){
+        var target=parseFloat(el.dataset.n),t0=performance.now();
+        (function tick(t){
+          var k=Math.min(1,(t-t0)/1500),ease=1-Math.pow(1-k,3);
+          el.textContent=Math.round(target*ease).toLocaleString('en-US');
+          if(k<1)requestAnimationFrame(tick);
+        })(t0);
+      });
+    });
+  },{threshold:.2});
+  $$('.reveal').forEach(function(el){io.observe(el)});
+}else{
+  $$('.reveal').forEach(function(el){el.classList.add('in')});
+}
+
+/* ---------- pricing ---------- */
+ $$('.bill button').forEach(function(b){
+  b.addEventListener('click',function(){
+    $$('.bill button').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    var y=b.dataset.mode==='y';
+    var note=$('#billNote');
+    if(note)note.textContent=y?'billed yearly - 20% off, two months free':'billed monthly - switch to yearly, save 20%';
+    $$('.pv').forEach(function(p){p.textContent='$'+(y?p.dataset.y:p.dataset.m)});
+  });
+});
+ $$('.act').forEach(function(b){
+  b.addEventListener('click',function(){
+    showToast('WELCOME TO THE CLUB - '+b.dataset.tier+' tier confirmed');
+  });
+});
+
+/* ---------- tickets ---------- */
+ $$('.tk').forEach(function(b){
+  if(b.disabled)return;
+  b.addEventListener('click',function(){
+    showToast('HOLDING 2 SEATS - '+b.dataset.city+' - check your inbox');
+  });
+});
+
+/* ---------- demo form ---------- */
+var dform=$('#dform');
+if(dform)dform.addEventListener('submit',function(e){
+  e.preventDefault();
+  var a=$('#fArtist'),l=$('#fLink'),m=$('#fMail'),ok=true;
+  [[a,a.value.trim().length>1],[l,/^https?:\/\/\S+/.test(l.value.trim())],[m,/^\S+@\S+\.\S+$/.test(m.value)]].forEach(function(pair){
+    pair[0].closest('.field').classList.toggle('err',!pair[1]);
+    if(!pair[1])ok=false;
+  });
+  if(!ok)return showToast('TRANSMISSION INCOMPLETE - check artist, link & email',true);
+  showToast('DEMO RECEIVED - A&R will listen within 2 weeks');
+  e.target.reset();
+});
+
+/* ---------- mode toggle ---------- */
+var modeBtn=$('#modeBtn');
+if(modeBtn)modeBtn.addEventListener('click',function(){
+  var night=document.documentElement.dataset.theme==='night';
+  document.documentElement.dataset.theme=night?'day':'night';
+  modeBtn.textContent=night?'MODE: DAY':'MODE: NIGHT';
+  showToast(night?'DAYLIGHT RESTORED':'NIGHT FILTER ENGAGED - blue hour mode');
+});
+
+/* ---------- mobile menu ---------- */
+var burger=$('#burger'),mmenu=$('#mmenu');
+if(burger&&mmenu){
+  burger.addEventListener('click',function(){mmenu.classList.toggle('open')});
+  $$('#mmenu a').forEach(function(a){a.addEventListener('click',function(){mmenu.classList.remove('open')})});
+  addEventListener('keydown',function(e){if(e.key==='Escape')mmenu.classList.remove('open')});
+}
+
+/* ---------- parallax ---------- */
+if(fine&&!reduced){
+  var layers=$$('.depth'),tx=0,ty=0,pxx=0,pyy=0;
+  addEventListener('mousemove',function(e){tx=e.clientX/innerWidth*2-1;ty=e.clientY/innerHeight*2-1;});
+  (function raf(){pxx+=(tx-pxx)*.05;pyy+=(ty-pyy)*.05;
+    layers.forEach(function(l){var d=parseFloat(l.dataset.depth);l.style.transform='translate3d('+(-pxx*d).toFixed(2)+'px,'+(-pyy*d).toFixed(2)+'px,0)'});
+    requestAnimationFrame(raf)})();
+}
+
+/* estado inicial */
+applyTrack(0);
+})();
+</script>
+</body>
+</html>
