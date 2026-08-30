@@ -180,6 +180,11 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
       señales de muchos armónicos. Y si el nivel se queda en cero, la entrada
       elegida no es la interfaz — o Reaper la tiene tomada en exclusiva por
       ASIO, y entonces el navegador se queda sin señal sin decir nada.
+      <br><br>
+      <b>La ganancia se ajusta con el «máx»:</b> rasguea fuerte y sube la
+      perilla de GAIN hasta que el máx quede entre <b>−20 y −6 dBFS</b>. Si
+      aparece <b>¡RECORTA!</b>, bájala un poco. El «c1» o «c2» dice de cuál
+      canal de la interfaz está saliendo la lectura.
     </p>
   </section>
 </main>
@@ -196,7 +201,7 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
      cubre la guitarra entera con margen y no gasta en frecuencias que no
      existen aqui. El tramo que se compara son 1024 muestras: 1024+720 = 1744,
      y cabe en la ventana. */
-  var N = 2048, TAU_MAX = 720, W = 1024, UMBRAL = 0.12;
+  var N = 2048, TAU_MAX = 720, W = 1024, UMBRAL = 0.12, TECHO = 0.35;
   /* Umbral de silencio, en RMS. 0.0025 son ~-52 dBFS: unos diez decibeles
      por encima del piso de ruido MEDIDO de su interfaz en reposo (-63 dBFS
      el 2026-08-30). Estaba en 0.004 (~-48) y era demasiado justo: con la
@@ -217,18 +222,27 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
      Lo que SI se gana con el worklet es una cadencia fija: 23 lecturas por
      segundo pase lo que pase, sin depender del bucle de cuadros, que se frena
      en cuanto la pestana pasa a segundo plano. */
+  /* Acarrea LOS DOS canales por separado, nunca mezclados. La mezcla a mono
+     era la trampa: si la interfaz duplica la entrada con la fase invertida
+     —cosa de chips baratos— (izq+der)/2 se cancela a si misma: las notas
+     graves desaparecen y solo se cuelan los transitorios agudos. Y si la
+     guitarra esta en la entrada 2, la mezcla la diluia con el ruido de la 1. */
   var FUENTE_WORKLET = [
     'class Acarreo extends AudioWorkletProcessor {',
     '  constructor(o){ super();',
     '    this.N = o.processorOptions.N;',
-    '    this.buf = new Float32Array(this.N); this.i = 0; }',
+    '    this.a = new Float32Array(this.N);',
+    '    this.b = new Float32Array(this.N);',
+    '    this.i = 0; }',
     '  process(entradas){',
-    '    const c = entradas[0] && entradas[0][0];',
-    '    if (!c) return true;',
-    '    for (let k = 0; k < c.length; k++){',
-    '      this.buf[this.i++] = c[k];',
-    '      if (this.i >= this.N){',
-    '        this.port.postMessage(this.buf.slice(0));',
+    '    const cs = entradas[0];',
+    '    if (!cs || !cs[0]) return true;',
+    '    const c0 = cs[0], c1 = cs[1] || cs[0];',
+    '    for (let k = 0; k < c0.length; k++){',
+    '      this.a[this.i] = c0[k];',
+    '      this.b[this.i] = c1[k];',
+    '      if (++this.i >= this.N){',
+    '        this.port.postMessage({ a: this.a.slice(0), b: this.b.slice(0) });',
     '        this.i = 0;',
     '      }',
     '    }',
@@ -258,6 +272,19 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
         t = j; break;
       }
     }
+    /* Respaldo: el ataque de una cuerda real es ruidoso y su minimo puede
+       quedarse arriba del umbral sin que la nota sea dudosa. Se toma el minimo
+       global si es decente, prefiriendo un minimo local ANTERIOR comparable:
+       el global suele caer en el doble del periodo, una octava abajo. */
+    if (t < 0) {
+      var min = 1, mi = -1;
+      for (j = 2; j < TAU_MAX; j++) if (d[j] < min) { min = d[j]; mi = j; }
+      if (min > TECHO) return 0;
+      for (j = 3; j < mi; j++) {
+        if (d[j] < d[j - 1] && d[j] <= d[j + 1] && d[j] < min * 1.3) { mi = j; break; }
+      }
+      t = mi;
+    }
     if (t < 1) return 0;
     // Interpolacion parabolica: sin esto la resolucion se topa en el tamano de
     // una muestra, que en la primera cuerda son ~17 cents.
@@ -268,6 +295,41 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
       if (den !== 0) mejor = t + (c - a) / den;
     }
     return mejor > 0 ? sr / mejor : 0;
+  }
+
+  /* Segundo paso: la FASE del fundamental. Una cuerda real trae los parciales
+     estirados (inarmonicidad) y arrastran el periodo de YIN — medido:
+     +11 a +14 cents en el Mi grave duro, aun con el pasabajos del grafo.
+
+     Dos intentos que NO funcionaron, para que nadie los repita: re-correr YIN
+     sobre la ventana filtrada (el transitorio del filtro en las orillas sesga
+     la autocorrelacion: -30 cents), y fase con ventana Hann (sus lobulos
+     dejan pasar la imagen de frecuencia negativa, que a 82 Hz esta a solo 5
+     anchos de banda: -2.3 cents). La combinacion que si: fase SIN filtro, con
+     ventana Blackman — sus lobulos de -58 dB entierran la imagen y los
+     armonicos sin meter ningun transitorio.
+
+     Se mide la fase del fundamental en dos ventanas corridas 512 muestras; el
+     avance de fase entre ellas ES la frecuencia. Si el ajuste sale
+     disparatado —octava equivocada, nota cortada a media ventana— manda la
+     primera lectura. */
+  function refinar(x, sr, f) {
+    var wf = 2 * Math.PI * f / sr, M = 1536, SALTO = 512;
+    function fasor(desde) {
+      var re = 0, im = 0, k, u, ang;
+      for (k = 0; k < M; k++) {
+        u = x[desde + k] * (0.42 - 0.5 * Math.cos(2 * Math.PI * k / M) +
+                            0.08 * Math.cos(4 * Math.PI * k / M));
+        ang = wf * k;
+        re += u * Math.cos(ang); im -= u * Math.sin(ang);
+      }
+      return Math.atan2(im, re);
+    }
+    var df = fasor(SALTO) - fasor(0) - wf * SALTO;
+    while (df > Math.PI) df -= 2 * Math.PI;
+    while (df < -Math.PI) df += 2 * Math.PI;
+    var f2 = f + df * sr / (2 * Math.PI * SALTO);
+    return (f2 > 60 && f2 < 1400 && Math.abs(1200 * Math.log2(f2 / f)) < 60) ? f2 : f;
   }
 
   function rms(x) {
@@ -283,6 +345,8 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
   var estables = 0;           // cuantas lecturas seguidas dentro de ±5 cents
   var maxNivel = 0;           // el pico mas alto visto desde que arranco
   var tArranque = 0, avisadoMudo = false;
+  var recorta = false;        // el ultimo cuadro toco el techo del convertidor
+  var canalLeido = 0;         // 1 o 2: de cual canal salio la lectura
 
   var elNota = $('#nota'), elOct = $('#octava'), elCents = $('#cents'), elHz = $('#hz');
   var elVer = $('#veredicto'), elPluma = $('#pluma'), elBarra = $('#barra');
@@ -296,19 +360,26 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
     return el;
   });
 
-  function pintar(f, nivel) {
+  function pintar(f, nivel, suena) {
     elBarra.style.width = Math.min(100, nivel * 900) + '%';
     if (nivel > maxNivel) maxNivel = nivel;
     // El MAXIMO es lo que de verdad contesta "¿esta llegando algo?". El nivel
     // instantaneo entre nota y nota siempre es bajo y no dice nada.
     $('#dNivel').textContent =
       (nivel > 0 ? (20 * Math.log10(nivel)).toFixed(1) : '−∞') + ' dBFS' +
-      (maxNivel > 0 ? '  ·  máx ' + (20 * Math.log10(maxNivel)).toFixed(1) : '');
+      (maxNivel > 0 ? '  ·  máx ' + (20 * Math.log10(maxNivel)).toFixed(1) : '') +
+      (canalLeido ? '  ·  c' + canalLeido : '') +
+      (recorta ? '  ·  ¡RECORTA!' : '');
+    $('#dNivel').className = recorta ? 'mal' : '';
 
     if (!f) {
       elNota.firstChild.nodeValue = '—'; elOct.textContent = '';
       elCents.textContent = '—'; elHz.textContent = '—';
-      elVer.textContent = 'en silencio'; elVer.className = '';
+      // «Se oye» sin altura clara vale oro como diagnostico: la senal SI
+      // llega, pero lo que sono no fue una nota limpia (acorde, trasteo,
+      // golpe). Antes decia «en silencio» y parecia que no llegaba nada.
+      elVer.textContent = suena ? 'se oye · sin altura clara' : 'en silencio';
+      elVer.className = '';
       elPluma.className = 'muda'; elPluma.style.left = '50%';
       celdas.forEach(function (c) { c.className = 'cuerda'; });
       estables = 0;
@@ -450,8 +521,11 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
           deviceId: id ? { exact: id } : undefined,
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: false,
-          channelCount: 1
+          autoGainControl: false
+          /* SIN channelCount: 1. Pedir mono obliga a Chrome a mezclar los dos
+             canales de la interfaz antes de entregarlos, y esa mezcla es la
+             que cancela o diluye la guitarra. El estereo se parte en el
+             worklet y se analiza canal por canal. */
         }
       });
     } catch (e) {
@@ -487,7 +561,18 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
     } finally { URL.revokeObjectURL(url); }
 
     nodo = new AudioWorkletNode(ctx, 'acarreo', { processorOptions: { N: N } });
-    ctx.createMediaStreamSource(flujo).connect(nodo);
+    /* La banda util. El pasabajos en 500 Hz no es adorno: una cuerda pulsada
+       fuerte es inarmonica —sus parciales altos van estirados— y MEDIDO, sin
+       filtro el Mi grave brillante se leia en 83.71 Hz: +27 cents de error
+       arrastrados por esos parciales. Con los fundamentales de la guitarra en
+       82-330 Hz, cortar en 500 les quita el volante a los armonicos sin tocar
+       la nota. El pasaaltos en 55 saca el retumbe por debajo del Mi grave. */
+    var altos = ctx.createBiquadFilter();
+    altos.type = 'highpass'; altos.frequency.value = 55; altos.Q.value = 0.707;
+    var bajos = ctx.createBiquadFilter();
+    bajos.type = 'lowpass'; bajos.frequency.value = 500; bajos.Q.value = 0.707;
+    var origen = ctx.createMediaStreamSource(flujo);
+    origen.connect(altos); altos.connect(bajos); bajos.connect(nodo);
     /* No se conecta a los altavoces a proposito: es un afinador, no un
        monitor, y devolverle el sonido a alguien que toca con ampli es un
        acople. El worklet no produce salida, asi que no hace falta. */
@@ -495,18 +580,34 @@ main{flex:1;display:grid;grid-template-rows:auto auto auto 1fr;gap:0}
     maxNivel = 0; avisadoMudo = false; tArranque = performance.now();
 
     nodo.port.onmessage = function (ev) {
-      var x = ev.data;
+      var ca = ev.data.a, cb = ev.data.b;
       lecturas++;
-      var nivel = rms(x);
-      if (nivel < RUIDO) { ultimas.length = 0; return pintar(0, nivel); }
+      var ra = rms(ca), rb = rms(cb);
+      // El canal con mas energia es el de la guitarra; el otro es respaldo.
+      var x = ra >= rb ? ca : cb;
+      var nivel = Math.max(ra, rb);
+      canalLeido = ra >= rb ? 1 : 2;
+      var pico = 0;
+      for (var i = 0; i < x.length; i++) { var v = Math.abs(x[i]); if (v > pico) pico = v; }
+      recorta = pico > 0.95;
+      if (nivel < RUIDO) { ultimas.length = 0; return pintar(0, nivel, false); }
 
+      var gano = x;
       var f = yin(x, ctx.sampleRate);
-      if (!f || f < 60 || f > 1400) { return pintar(0, nivel); }
+      if (!f || f < 60 || f > 1400) {
+        // El canal flojo, por si la guitarra esta ahi y el fuerte es ruido.
+        var y = ra >= rb ? cb : ca;
+        f = Math.min(ra, rb) >= RUIDO ? yin(y, ctx.sampleRate) : 0;
+        if (f >= 60 && f <= 1400) { canalLeido = canalLeido === 1 ? 2 : 1; gano = y; }
+        else f = 0;
+      }
+      if (!f) { return pintar(0, nivel, true); }
+      f = refinar(gano, ctx.sampleRate, f);
 
       ultimas.push(f);
       if (ultimas.length > 5) ultimas.shift();
       var orden = ultimas.slice().sort(function (a, b) { return a - b; });
-      pintar(orden[orden.length >> 1], nivel);
+      pintar(orden[orden.length >> 1], nivel, true);
     };
 
     $('#arrancar').textContent = 'Reiniciar';
