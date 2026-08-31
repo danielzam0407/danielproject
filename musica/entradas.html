@@ -122,7 +122,9 @@ tr.mirando td{background:#fffbe8}
 
 <div class="pie" id="pie"></div>
 
-<script>
+<script type="module">
+import { pedirEntrada } from './oido.js';
+
 (function () {
   'use strict';
   var $ = function (s) { return document.querySelector(s); };
@@ -142,12 +144,9 @@ tr.mirando td{background:#fffbe8}
   async function medir(disp) {
     var flujo = null, ctx = null;
     try {
-      flujo = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: { exact: disp.deviceId },
-          echoCancellation: false, noiseSuppression: false, autoGainControl: false
-        }
-      });
+      // La puerta UNICA del microfono vive en oido.js: los tres interruptores
+      // apagados y sin mezcla a mono. Dos copias de esas restricciones divergen.
+      flujo = await pedirEntrada(disp.deviceId);
     } catch (e) {
       return { error: (e && e.name ? e.name : 'error') + (e && e.message ? ': ' + e.message : '') };
     }

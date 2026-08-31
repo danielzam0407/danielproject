@@ -1,91 +1,91 @@
-# El catálogo
+# El profesor de guitarra
 
-43 ejercicios con prerrequisitos. **Es el producto.** El modelo no inventa
-ejercicios: escoge de aquí y les ajusta el tamaño.
+Vive en `nervcenter.online/musica/` — la sesión es la portada. Todo con
+`noindex`: es herramienta suya, no obra publicada.
 
-## Por qué existe
+    index.html       LA SESIÓN: plan del día, calibración, ejercicios, jam, bitácora
+    afinador.html    el afinador (nivel 1); también /musica/afinador
+    entradas.html    diagnóstico de entradas y salidas de audio
+    oido.js          EL OÍDO compartido: YIN + refinado por fase + ataques + worklet
+    plan.js          EL CEREBRO: elige del catálogo, escalera de tempo, bitácora
+    catalogo.json    43 ejercicios con prerrequisitos. ES el producto.
+    prueba-yin.mjs   prueba del oído (importa oido.js: probar el módulo ES probar las páginas)
+    prueba-plan.mjs  prueba del plan contra el catálogo real
+
+## Por qué el catálogo es el producto
 
 Si el modelo improvisa el plan de estudio cada sesión, da cosas que suenan bien
 y no construyen una sobre otra — y en tres semanas estás igual que con los
-videos de YouTube. El catálogo se escribe una vez; el trabajo del modelo es
-**escoger el siguiente nodo y ajustarle el tempo**, leyendo la bitácora.
+videos de YouTube. El catálogo se escribe una vez; `plan.js` sólo **escoge el
+siguiente nodo y le ajusta el tamaño**, leyendo la bitácora. El día que el
+agente (DeepSeek) entre, entra REEMPLAZANDO a `elegirSesion` con el mismo
+contrato — todo lo demás queda igual.
 
-Es la misma disciplina de fichas del agente del sitio, aplicada a la enseñanza:
-el modelo mueve parámetros, nunca escribe el contenido.
+## Las reglas que todo esto da por hechas
 
-## Las reglas que el catálogo da por hechas
+1. **Cero notación.** Ningún `dice` menciona pentagrama, tablatura ni figuras.
+   Patrones como `A a A a` (abajo/arriba), acordes por nombre.
+2. **Nunca "¿qué quieres practicar hoy?"** El plan propone; el botón «proponme
+   otro bloque» deja pedir otra cosa. Esa pregunta es la que lo dejaba tocando
+   acordes al azar.
+3. **La sesión tiene final.** ~12 min: calentamiento (3) + UN bloque del día
+   (6) + libre (3). Tres bloques distintos en seis minutos es turismo.
+4. **El cierre no se mide.** `lib-jam` hereda la tonalidad del día y es el
+   premio.
+5. **Todo termina en un número que sube.** La escalera de tempo: aprobado DOS
+   días distintos seguidos → +4 bpm (techo +28). Dos veces el mismo día no
+   cuenta — sería premiar la racha corta.
 
-1. **Cero notación.** Ningún `dice` menciona un pentagrama, una tablatura ni una
-   figura rítmica. Los patrones van como `A a A a` (abajo/arriba) y los acordes
-   por nombre. Si la pantalla llega a pedir leer, se rompió.
-2. **Nunca "¿qué quieres practicar hoy?"** El agente propone; Daniel acepta o
-   pide otra cosa. Esa pregunta es justo la que lo dejó tocando acordes al azar.
-3. **La sesión tiene final.** 12 minutos: 3 de calentamiento, 6 del bloque del
-   día, 3 libres. **El bloque del día es UNO**; tres bloques distintos en seis
-   minutos es turismo, no práctica.
-4. **El cierre no se mide.** `lib-jam` existe para que tocar por tocar deje de
-   ser el problema y pase a ser el premio.
-5. **Todo termina en un número que sube.** Es lo único que convierte "no sé si
-   estoy mejorando" en evidencia.
+## Cómo se corre
 
-## El esquema
+- **La sesión completa:** `/musica/`. Propone, calibra si hace falta, corre los
+  ejercicios, escribe la bitácora.
+- **Un ejercicio suelto:** `/musica/?ej=<id>` — para repetir el que quedó para
+  mañana sin esperar a mañana.
+- **Las pruebas:** `node prueba-yin.mjs` y `node prueba-plan.mjs`.
 
-```jsonc
-{
-  "id": "cam-em-am",           // único; el prefijo es el bloque
-  "bloque": "cambios",
-  "nombre": "…",               // lo que ve en pantalla
-  "dice": "…",                 // la instrucción, una línea, sin notación
-  "requiere": ["ac-em", …],    // ids que deben estar aprobados antes
-  "mide": "cambios_por_minuto",// una clave de `medidas`
-  "aprobar": 30,               // umbral; el sentido lo da `medidas[…].sentido`
-  "duracion_s": 60,
-  "ficha": { … }               // lo que el motor necesita para tocarlo y dibujarlo
-}
-```
+## La calibración no es opcional
 
-`medidas` define cada medición, si **sube o baja** para aprobar, cómo se calcula
-y qué necesita del micrófono. Se lee de ahí, no se adivina del nombre.
+Toda medida de ritmo incluye la ida y vuelta del sistema (entrada, buffers,
+salida). La calibración —10 golpes contra el clic, mediana, se tira lo
+inestable— mide ese desfase para restarlo. Sin ella los ejercicios de ritmo
+miden a la máquina, no a él. Caduca a los 7 días o al cambiar de interfaz.
 
-## Dos cosas que hay que hacer antes de confiar en un número
+## Lo que el motor SÍ mide hoy
 
-**1 · Calibrar el desfase. Obligatorio.** Toda medida en `desviacion_ms` incluye
-la ida y vuelta del navegador y de la interfaz. Sin restar ese desfase constante
-—tocar contra el clic, medir la media, guardarla— los ejercicios de ritmo miden
-el sistema y no a él. Se calibra al inicio de cada sesión, no una vez y ya: la
-cifra cambia si cambia el buffer o el dispositivo.
+`desviacion_ms` (ataques contra el clic, calibrados), `cents`, `tiempo_ms`,
+`acierto_pct` (preguntas con teclado), `ninguna` (el jam). Con eso corren los
+bloques **calentamiento, púa, ritmo y oído** completos.
 
-**2 · Los tres interruptores de Chrome.** `echoCancellation`, `noiseSuppression`
-y `autoGainControl` van en `false` explícitamente al pedir el micrófono. Vienen
-en `true` por omisión, son para videollamadas y destrozan la medición: el AGC
-mueve la amplitud —adiós al ataque— y la supresión de ruido se come los
-armónicos que YIN necesita.
+## Huecos declarados, no tapados
 
-Y practicar **limpio**: YIN se equivoca de octava con señales de muchos
-armónicos, o sea con distorsión.
+- **`cambios_por_minuto`, `cuerdas_limpias` y `notas_correctas_pct` no tienen
+  motor**: piden oído de acordes/secuencias (nivel 3). Los bloques acordes,
+  cambios, power y escala esperan. El plan los enseña como «aún sin motor» con
+  el botón **«ya lo sé»** — marca `manual: true`, distinto de medido, y
+  desbloquea lo que depende (ritmo entero pide conocer Mi menor).
+- **La bitácora vive en localStorage**, por navegador. Pasarla a D1 exige un
+  endpoint público nuevo en el worker → cambio de seguridad (regla 7 de la
+  casa), con security-review y auditor. Se hará como paso propio, no de paso.
+- **El agente LLM no está conectado**: no hay llave de DeepSeek local, y el
+  seleccionador determinista cumple el contrato mientras tanto.
+- **Los umbrales de `aprobar` son valores de arranque.** Se recalibran en la
+  semana 3 con datos reales. Ése es el trabajo, no un pendiente.
+- **El catálogo se detiene antes de la cejilla.** A propósito.
 
-## Lo que NO está resuelto
+## Trampas ya pagadas (ver memoria `audio-en-el-navegador`)
 
-- **Los umbrales de `aprobar` son valores de arranque, no verdad.** Están puestos
-  para que el primer día no frustre y el décimo no aburra. Se recalibran en la
-  semana 3 con sus datos reales — ése es el trabajo, no un pendiente.
-- **`cuerdas_limpias` es la medición menos fiable de la lista.** Detectar si las
-  seis cuerdas de un acorde suenan es análisis polifónico, que es otra liga que
-  YIN monofónico. Si en la semana 2 no da algo estable, los ejercicios de
-  `acordes` pasan a evaluarse por la nota más grave y la limpieza general, y el
-  umbral se ajusta. Está marcado como hueco, no tapado.
-- **El catálogo se detiene antes de la cejilla.** Es a propósito: es donde más
-  gente abandona, y no vale la pena diseñarlo hasta ver cómo le va con los
-  cambios abiertos.
-- **No soy su maestro de guitarra.** Los ejercicios son de los establecidos y
-  medibles —cambios en un minuto, araña cromática, permutaciones, pentatónica—,
-  no inventados. Si él tiene un método que le cae bien, se cambian por ésos.
-
-## Verificar
-
-```bash
-node validar.mjs
-```
-
-Comprueba que no haya prerrequisitos colgando, ni ciclos, ni medidas
-inexistentes, y que todo ejercicio sea alcanzable desde alguna raíz.
+- `getUserMedia` sólo con https/localhost; con `file://` niega siempre.
+- Los tres interruptores de Chrome (eco/ruido/AGC) en `false` explícito, y
+  **verificar** que quedaron aplicados — el panel lo enseña.
+- **Nunca pedir mono** (`channelCount: 1`): Chrome mezcla y la mezcla cancela
+  la guitarra en interfaces que duplican con fase invertida (la TEYUN). Se
+  analiza canal por canal.
+- El refinado de altura es **fase con ventana Blackman, sin filtro** — YIN re-
+  corrido sobre ventana filtrada y la fase con Hann ya fallaron y está escrito
+  por qué en `oido.js`.
+- Para pruebas punta a punta: Edge headless con
+  `--use-fake-device-for-media-stream --use-fake-ui-for-media-stream
+  --use-file-for-fake-audio-capture=<wav>` — el WAV puede ser estéreo, y la
+  ruta va estilo Windows (`C:/...`): con ruta POSIX de Git Bash falla EN
+  SILENCIO y todo lee ceros.
