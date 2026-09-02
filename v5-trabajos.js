@@ -49,6 +49,26 @@
 
   var TRABAJOS = [
     {
+      /* El caso de estudio de Valterra. Como HALCYON, es una pagina viva y
+         abre en su pestana; a diferencia de las demas, no es la pieza sino su
+         expediente: cuatro superficies, base, cobro y agente, contados en la
+         voz de la casa. Va primera y a todo lo ancho —`ancha`— porque es la
+         prueba del servicio, y con seis tarjetas la rejilla de 3+3 / 2+2+2 no
+         tenia donde meter una mas sin dejar un hueco. */
+      id: 'valterra',
+      liga: 'piezas/valterra',
+      cartel: 'media/valterra.webp',
+      titulo: 'Un fraccionamiento que ya no cabe en un cuaderno',
+      tituloEn: 'A community that no longer fits in a notebook',
+      meta: 'valterra · acceso, cobro y agente · expediente 004',
+      metaEn: 'valterra · access, billing and agent · file 004',
+      /* El ambar de la app, oscurecido a texto: el de marca (#F3A431) da 2.07
+         sobre blanco y aqui pinta la chapa y el filo. Es el mismo #C97D14 que
+         el panel de Valterra usa para sus barras, medido alli. */
+      tinte: '#c97d14',
+      ancha: true
+    },
+    {
       id: 'ferropalacios',
       src: 'media/ferropalacios.mp4',
       cartel: 'media/ferropalacios.webp',
@@ -136,6 +156,10 @@
       '.pz{display:block;position:relative;text-decoration:none;color:inherit;',
       '  grid-column:span 6;cursor:pointer}',
       '@media(min-width:900px){.pz{grid-column:span 2}.pz-grande{grid-column:span 3}}',
+      /* La tarjeta ancha ocupa la fila entera y su marco es mas apaisado, para
+         que un cartel de 16:9 no se vuelva un muro de 675 px de alto. */
+      '.pz-ancha{grid-column:1 / -1}',
+      '@media(min-width:900px){.pz-ancha .pz-marco{aspect-ratio:21/9}}',
 
       /* El marco. `contain:paint` lo saca del calculo de diseno del resto de la
          pagina: es una caja de tamano fijo y lo de dentro no se sale. */
@@ -440,7 +464,7 @@
      resto de la tarjeta es identico, asi que la rejilla no distingue. */
   function tarjeta(p, i) {
     var art = document.createElement(p.liga ? 'a' : 'article');
-    art.className = 'pz entra' + (p.grande ? ' pz-grande' : '');
+    art.className = 'pz entra' + (p.grande ? ' pz-grande' : '') + (p.ancha ? ' pz-ancha' : '');
     art.setAttribute('data-pz', p.id);
     art.setAttribute('data-cursor', 'ver trabajo');
     art.setAttribute('aria-label', p.titulo);

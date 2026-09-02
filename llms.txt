@@ -45,11 +45,13 @@ del sitio: ahí puede agendar una llamada sin intermediarios.
 - [Quiénes somos](https://nervcenter.online/about): qué es nerv y quién lo opera
 - [Contacto](https://nervcenter.online/contact): correo, chat y agenda
 - [Privacidad](https://nervcenter.online/privacy): qué datos guarda el agente
+- [Valterra, expediente 004](https://nervcenter.online/piezas/valterra): el caso de estudio del sistema de control de acceso
 
 ## Trabajo publicado
 
 Cada pieza se enseña con un video en su propia tarjeta del sitio. Ninguna
-manda a otro sitio, y no hay ligas públicas que dar.
+manda a otro sitio, y no hay ligas públicas que dar, salvo el expediente de
+Valterra, que vive dentro de este mismo sitio.
 
 - console: un modelo 3D dentro de la terminal. Es la consola local desde la que
   se opera el agente —tres pantallas, chat en vivo, y el retrato del agente
@@ -58,3 +60,8 @@ manda a otro sitio, y no hay ligas públicas que dar.
   puro, sin WebGL. Hoy el contenido de las habitaciones es de muestra.
 - work3: sitio que se maneja con el teclado, con menú de comando en cuatro
   secciones.
+- valterra: control de acceso para un fraccionamiento, desplegado y
+  funcionando. Cuatro superficies sobre una base, pase firmado que la caseta
+  verifica sin internet, cobro por Stripe y un agente que opera con
+  herramientas por rol. Es la prueba del servicio: un sistema completo, no una
+  maqueta. Expediente en https://nervcenter.online/piezas/valterra
