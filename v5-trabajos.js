@@ -62,10 +62,11 @@
       tituloEn: 'A community that no longer fits in a notebook',
       meta: 'valterra · acceso, cobro y agente · expediente 004',
       metaEn: 'valterra · access, billing and agent · file 004',
-      /* El ambar de la app, oscurecido a texto: el de marca (#F3A431) da 2.07
-         sobre blanco y aqui pinta la chapa y el filo. Es el mismo #C97D14 que
-         el panel de Valterra usa para sus barras, medido alli. */
-      tinte: '#c97d14',
+      /* El ambar de la app, oscurecido hasta que el blanco de la chapa «abrir»
+         lo lea: el de marca (#F3A431) da 2.07 sobre blanco y el de las barras
+         del panel (#C97D14) 3.27; este da 4.6, medido por el critico. Es la
+         tarjeta que mas se ve. */
+      tinte: '#a8650f',
       ancha: true
     },
     {

@@ -185,7 +185,7 @@ p { margin: .8em 0; max-width: 62ch; }
 /* El pase: el objeto crema y ambar, tal cual lo dibuja la app, dentro de un
    marco de lineas duras. Tipografia del objeto: Plus Jakarta Sans, la de la
    app, cargada arriba; no la de nerv. */
-.marco-obj { padding: 18px; border: 1px solid var(--linea); background: var(--papel-suave); }
+.marco-obj { padding: 18px; border: 1px solid var(--linea); background: var(--vl-crema); }
 .pase { background: var(--vl-carta); color: var(--vl-tinta); border-radius: 22px; overflow: hidden; max-width: 360px; margin: 0 auto;
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif; box-shadow: 0 1px 2px rgba(25,21,18,.05), 0 14px 30px -18px rgba(25,21,18,.28); }
 .pase .franja { background: var(--vl-ambar); color: #1a1512; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -277,6 +277,11 @@ footer { border-top: 1px solid var(--linea); padding: 26px clamp(18px, 4vw, 48px
 footer a { color: var(--tinta); }
 footer .marca { font-family: 'Space Grotesk', sans-serif; text-transform: none; letter-spacing: -.3px; font-size: 16px; }
 footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; font-size: 11px; }
+/* El chip de modo que monta piel.js va fijo abajo a la izquierda (72x34 mas
+   14 de margen). A 375px se encimaba con la marca del pie: se le deja sitio
+   aqui, del lado de la pagina, en vez de mover el chip y subir la version de
+   piel.js en cinco paginas. */
+@media (max-width: 480px) { footer { padding-bottom: 140px; } }
 
 /* Dedo, no raton: en pantalla tactil nada que se toque baja de 44px. Medido en
    375px: el interruptor de idioma daba 39x34 y las ligas de la barra y del pie,
@@ -327,7 +332,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
       <p class="lead" data-en="Valterra is access control, fee collection and an agent that operates, built for a gated community. Four surfaces on one database: everything on screen comes out of it and everything you touch writes to it. The data is seeded — forty test houses — and the system is the same one at three hundred and thirty-two.">Valterra es control de acceso, cobranza y un agente que opera, hecho para un fraccionamiento privado. Cuatro superficies sobre una sola base de datos: todo lo que se ve sale de ahí y todo lo que se toca la modifica. Los datos son sembrados —cuarenta casas de prueba— y el sistema es el mismo con trescientas treinta y dos.</p>
 
       <div class="ficha corner-brackets aug-card terminal-log" data-augmented-ui="tl-clip br-clip border" style="margin-top:30px">
-        <div>unit: valterra</div>
+        <div data-en="unit: valterra">unidad: valterra</div>
         <div data-en="status: deployed">estado: desplegado</div>
         <div data-en="scope: 40 test houses · the system does not change at 332">alcance: 40 casas de prueba · el sistema no cambia con 332</div>
         <div data-en="built: 28 aug → 1 sep 2026">construido: 28 ago → 1 sep 2026</div>
@@ -376,7 +381,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
 <section id="problema">
   <div class="cabeza">
     <span class="num" data-en="[ 01 / the problem ]">[ 01 / el problema ]</span>
-    <h2 data-en="Today, in most gated communities.">Hoy, en la mayoría de los fraccionamientos.</h2>
+    <h2 data-en="Today, in many gated communities.">Hoy, en muchos fraccionamientos.</h2>
   </div>
   <div class="linea"></div>
   <div class="tres">
@@ -545,7 +550,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
     <div class="cifra corner-brackets aug-card" data-augmented-ui="tl-clip br-clip border"><span class="r" data-en="steps for money">pasos para el dinero</span><span class="n">2</span><span class="m" data-en="draft in the database, confirmation in a separate request">borrador en la base, confirmación en otra petición</span></div>
     <div class="cifra corner-brackets aug-card" data-augmented-ui="tl-clip br-clip border"><span class="r" data-en="attack batteries">baterías de ataque</span><span class="n">8</span><span class="m" data-en="from 28 August to 1 September; each time it gave way, the fix was code">del 28 de agosto al 1 de septiembre; cada vez que cedió, se cerró en código</span></div>
   </div>
-  <p class="dim" style="font-size:14px;margin-top:18px" data-en="The four batteries with a count: 33, 34, 45 and 37 attempts. The fixes were never more instructions: a seal on the conversation history, drafts stored in the database, and two lists of words that count as an order.">Las cuatro baterías con cifra: 33, 34, 45 y 37 intentos. Los arreglos nunca fueron más instrucciones: un sello en el historial de la conversación, borradores guardados en la base, y dos listas de palabras que cuentan como orden.</p>
+  <p class="dim" style="font-size:14px;margin-top:18px" data-en="The four batteries with a count: 33, 34, 45 and 37 attempts. The fixes were never just more instructions: a seal on the conversation history, drafts stored in the database, and two lists of words that count as an order.">Las cuatro baterías con cifra: 33, 34, 45 y 37 intentos. Los arreglos nunca fueron sólo más instrucciones: un sello en el historial de la conversación, borradores guardados en la base, y dos listas de palabras que cuentan como orden.</p>
 </section>
 
 <!-- ══ 05 · el dinero ═══════════════════════════════════════════════════ -->
@@ -564,7 +569,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
     <div class="plancha corner-brackets aug-card" data-augmented-ui="tl-clip br-clip border">
       <div class="idx">stripe</div>
       <h3 data-en="One line per fee, and one state change.">Un renglón por cuota, y un solo cambio de estado.</h3>
-      <p data-en="Payment is a Stripe Checkout with one line per overdue fee. The webhook marks every fee in that payment as paid and is idempotent: Stripe delivered the same event three times in one second, and there was a single state change.">El pago es un Checkout de Stripe con un renglón por cuota vencida. El webhook marca pagadas todas las del pago y es idempotente: Stripe entregó el mismo evento tres veces en un segundo, y hubo un solo cambio de estado.</p>
+      <p data-en="Payment is a Stripe Checkout with one line per outstanding fee. The webhook marks every fee in that payment as paid and is idempotent: Stripe delivered the same event three times in one second, and there was a single state change.">El pago es un Checkout de Stripe con un renglón por cuota pendiente. El webhook marca pagadas todas las del pago y es idempotente: Stripe entregó el mismo evento tres veces en un segundo, y hubo un solo cambio de estado.</p>
     </div>
     <div class="plancha corner-brackets aug-card" data-augmented-ui="tl-clip br-clip border">
       <div class="idx">sql</div>
@@ -690,6 +695,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
     });
     try { localStorage.setItem('dp-lang', l); } catch (e) {}
     pintarEstado();   // los textos vivos del simulador
+    if (token) mostrarFirma();
   }
   document.querySelectorAll('.lang-sw button').forEach(function (b) {
     b.addEventListener('click', function () { pintarIdioma(b.getAttribute('data-l')); });
@@ -725,6 +731,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
       altT: 'pase alterado', altP: 'se cambió un carácter de la firma. escanea para ver qué dice la caseta.',
       bPasa: 'escaneo · pasa · firma válida', bUsado: 'escaneo · ya se usó · rechazado', bMal: 'escaneo · no pasa · firma inválida',
       bAlt: 'un carácter de la firma cambiado', bNuevo: 'pase nuevo firmado', bRedOn: 'red encendida', bRedOff: 'red apagada',
+      firma: 'firma ECDSA P-256 · ',
       sinCrypto: 'este navegador no trae WebCrypto: la simulación corre sin firma real.'
     },
     en: {
@@ -740,6 +747,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
       altT: 'tampered pass', altP: 'one character of the signature was changed. scan to see what the gate says.',
       bPasa: 'scan · pass · valid signature', bUsado: 'scan · already used · rejected', bMal: 'scan · no pass · invalid signature',
       bAlt: 'one signature character changed', bNuevo: 'new pass signed', bRedOn: 'network on', bRedOff: 'network off',
+      firma: 'ECDSA P-256 signature · ',
       sinCrypto: 'this browser has no WebCrypto: the simulation runs without a real signature.'
     }
   };
@@ -781,7 +789,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
   function mostrarFirma() {
     var partes = token.split('.'), f = partes[2] || '';
     var corta = f.slice(0, 10) + '…' + f.slice(-6);
-    firma.textContent = 'firma ECDSA P-256 · ';
+    firma.textContent = T[lang].firma;
     if (alterado) {
       // el primer caracter es el que se cambio: se resalta
       var em = document.createElement('em'); em.textContent = corta.slice(0, 1); firma.appendChild(em);
