@@ -25,8 +25,11 @@ en la raíz, sin build.
 3. **Nada invisible esperando animación.** Todo revelado necesita una salida al
    estado final que no dependa del frame loop.
 4. **`piel.js` va versionado** (`piel.js?v=N`). Al tocarlo, subir la versión en
-   las CUATRO páginas que lo cargan. La piel es opcional, el chat no: toda
-   llamada a piel/bloques va en try con respaldo.
+   las CINCO páginas que lo cargan: `index.html`, `about.html`, `contact.html`,
+   `404.html` y `piezas/valterra.html` (`grep -rn "piel.js?v=" --include=*.html`
+   lo confirma; `v4.html` y `lab/` también lo cargan pero no son sitio). La
+   piel es opcional, el chat no: toda llamada a piel/bloques va en try con
+   respaldo.
 5. **El agente cambia fichas, no marcado.** Nunca HTML/CSS libre hacia el DOM.
    Nivel 4 (HTML libre) sólo dentro de iframe con sandbox + CSP.
 6. **Las pieles viven en la sesión de quien las pidió.** No se persisten al
@@ -69,6 +72,44 @@ en la raíz, sin build.
     (tarjetas `#fff`, topbar, about `#e9eff8`). Medir con ponerModo da 69 y
     parece que el modo oscuro está roto. El `false` evita ensuciar
     sessionStorage.
+
+## El expediente de Valterra (`piezas/valterra.html` → `/piezas/valterra`)
+
+El primer caso de estudio del sitio, publicado el 2026-09-01. Lo que la
+página siguiente tiene que saber:
+
+- **Es HTML plano, sin componente de Claude Design**: no carga `support.js`,
+  así que la regla 1b no aplica adentro, pero sigue aplicando en `v5.html` y
+  `index.html`, que son quienes la enlazan. Carga `/piel.js?v=5` (es la quinta
+  página de la regla 4), Space Grotesk + IBM Plex Mono y `augmented-ui` de
+  unpkg, como la portada.
+- **Se enlaza desde `/v5`**, no desde `index.html`: es la primera tarjeta de
+  `v5-trabajos.js`, con `liga` (abre en su pestaña, como HALCYON) y la clase
+  `ancha` (fila entera, marco 21:9). El cierre de la página vuelve a
+  `/v5#contacto`, que es el chat del agente en esa cara. Daniel lo pidió así el
+  2026-09-01.
+- **El marco es de nerv y el objeto es de Valterra.** Las fichas `--vl-*`
+  (crema, ámbar, tinta de la app) NO siguen al modo ni al color del agente, a
+  propósito. Las capturas son reales, tomadas con Edge headless en claro
+  (`prefers-color-scheme: light` emulado; la caseta es oscura por diseño). El
+  guion vive en la sesión, no en el repo; las credenciales de la demo se usan
+  ahí y **nunca en la página** — un grep de los tres códigos sobre lo
+  desplegado tiene que dar cero.
+- **El simulador firma de verdad**: ECDSA P-256 con WebCrypto, llave generada
+  en el navegador para esa página. `alterar` cambia un carácter de la firma y
+  es `crypto.subtle.verify` quien dice que no pasa. Etiquetado como simulación.
+- **Idioma**: nace en español, `data-en` por nodo (el mecanismo de v5) y la
+  elección en `localStorage['dp-lang']` (la llave de `index.html`).
+- **Línea base de contraste, medida el 2026-09-01 con `contraste.js`** en los
+  seis estados de piel: `181 medidos · 2 bajo 4.5:1 · 0 de lectura`, idéntico
+  en claro, oscuro y las cuatro pieles derivadas. Los 2 son el «004» fantasma
+  (sólo contorno, decorativo) y el microtexto de 8px. **Si `lectura` sube de
+  0, es hallazgo.** El botón sobre `senal` usa `--sobre-senal`: blanco en
+  claro y el papel oscuro en oscuro, porque blanco sobre el `senal` aclarado
+  da 3.06:1.
+- Lo que NO se dice ahí, a propósito: reconocimiento facial ni identificación
+  de personas por cámara (se sacó del proyecto por la LFPDPPP), y ninguna cifra
+  que no esté en el `LEEME.md` de `valterra-app` o en su código.
 
 ## Desplegar
 
