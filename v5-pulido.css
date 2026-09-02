@@ -63,19 +63,16 @@
 }
 #inicio h1 > span[style*="weave"] { animation-name: nerv-weave !important }
 
-/* Efecto secundario que hay que atender EN EL MISMO CAMBIO: hoy el subrayado
-   azul de la palabra que rota cae por debajo del recorte, así que nadie lo ha
-   visto nunca. Al abrir el clip aparecería — cruzando las descendentes, o sea
-   un bug NUEVO donde antes no había nada. Se cambia por un subrayado de texto
-   real, que sabe abrirse alrededor de la p y la g. */
+/* Efecto secundario que hay que atender EN EL MISMO CAMBIO: el componente le
+   pone a la palabra que rota un border-bottom azul que caía por debajo del
+   recorte, así que nadie lo había visto nunca. Al abrir el clip aparecería
+   cruzando las descendentes. Primero se cambió por un subrayado de texto;
+   el 2026-09-01 Daniel pidió que no hubiera subrayado ninguno: la palabra va
+   limpia, en el color de acento, y el cursor que parpadea ya la señala. */
 #inicio h1 span[style*="border-bottom"] {
   border-bottom: 0 !important;
   padding-bottom: 0 !important;
-  text-decoration: underline !important;
-  text-decoration-color: var(--accent) !important;
-  text-decoration-thickness: .06em !important;
-  text-underline-offset: .14em !important;
-  text-decoration-skip-ink: auto !important;
+  text-decoration: none !important;
 }
 
 
