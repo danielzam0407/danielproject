@@ -303,8 +303,8 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
 <body>
 
 <header class="topbar">
-  <a class="marca" href="/v5">nerv<span>.</span></a>
-  <span class="miga"><a href="/v5#trabajo" data-en="work">trabajo</a> / piezas / valterra</span>
+  <a class="marca" href="/">nerv<span>.</span></a>
+  <span class="miga"><a href="/#trabajo" data-en="work">trabajo</a> / piezas / valterra</span>
   <div class="derecha">
     <span class="kagi" data-en="file 004">expediente 004</span>
     <div class="lang-sw" role="group" aria-label="Idioma / Language">
@@ -631,7 +631,7 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
     <h2 data-en="A system like this for your community?">¿Un sistema así para tu fraccionamiento?</h2>
   </div>
   <div class="linea"></div>
-  <a class="cta" href="/v5#contacto" data-augmented-ui="tl-clip br-clip"><span class="punto" aria-hidden="true"></span><span data-en="ask here →">pídelo aquí →</span></a>
+  <a class="cta" href="/#contacto" data-augmented-ui="tl-clip br-clip"><span class="punto" aria-hidden="true"></span><span data-en="ask here →">pídelo aquí →</span></a>
   <p class="despues" data-en="It takes you to the chat with nerv's agent, on the home page: tell it what community you have and it passes the message on. If you prefer email:">Te lleva al chat con el agente de nerv, en la portada: dile qué fraccionamiento tienes y él pasa el recado. Si prefieres correo:</p>
   <p class="despues" style="margin-top:0"><a href="mailto:dani@nervcenter.online">dani@nervcenter.online</a></p>
   <div class="demo">
@@ -645,9 +645,9 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
 </main>
 
 <footer>
-  <a class="marca" href="/v5">nerv<span style="color:var(--senal)">.</span></a>
+  <a class="marca" href="/">nerv<span style="color:var(--senal)">.</span></a>
   <span data-en="file 004 · valterra · 2026">expediente 004 · valterra · 2026</span>
-  <a href="/v5#trabajo" data-en="← work">← trabajo</a>
+  <a href="/#trabajo" data-en="← work">← trabajo</a>
   <a href="/about" data-en="about">quiénes somos</a>
   <a href="/contact" data-en="contact">contacto</a>
   <a href="/privacy" data-en="privacy">privacidad</a>
@@ -659,9 +659,9 @@ footer .fuente { flex-basis: 100%; text-transform: none; letter-spacing: .5px; f
   'use strict';
 
   /* ══ Idioma ═══════════════════════════════════════════════════════════
-     El mismo mecanismo que /v5: cada nodo lleva su ingles en `data-en` y el
+     El mismo mecanismo que la portada: cada nodo lleva su ingles en `data-en` y el
      espanol se guarda en `data-es` la primera vez. La eleccion vive en
-     localStorage bajo `dp-lang`, la llave de `index.html`; `/v5` no persiste
+     localStorage bajo `dp-lang`, la llave de la cara anterior (v3.html); la portada de hoy no persiste
      su idioma, asi que quien llega de alli entra por el del navegador. */
   var META = {
     es: { t: 'Valterra — expediente 004 · nerv',

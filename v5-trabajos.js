@@ -610,33 +610,28 @@
      pasada de `auditor-rojo`, no de paso. */
   window.nervTrabajos = {
     abrir: function (clave) {
-      /* `001`/`console` ya no estan AQUI: esa tarjeta se quito de esta cara.
-         El enum del worker sigue ofreciendola, y eso NO es un descuido -- se
-         queda a proposito. Medido el 2026-08-30:
-
-           - `index.html`, que es la portada de verdad y se lleva todo el
-             trafico, SIGUE montando `001` con `media/work1.mp4`. Para esa cara
-             el enum es correcto.
-           - `/v5` no esta en el sitemap ni enlazado desde la portada, y lleva
-             `noindex`: a esta cara no se llega solo.
-           - El worker solo ve el `origin`, nunca la ruta, asi que no puede
-             saber en cual de las dos caras esta hablando.
-
-         O sea que quitar `console` del enum romperia la pagina que sí recibe
-         visitas para arreglar una a la que nadie llega. El precio de dejarlo es
-         barato y esta contemplado: si el agente pide `console` aqui, esto
-         devuelve false y v5.html cae a bajar a la seccion de trabajo, que es la
-         degradacion honesta que ya estaba escrita.
-
-         El dia que v5 se promueva a portada, el enum cambia CON esa mudanza --
-         es un solo cambio de seguridad, con su `auditor-rojo`, no dos. */
+      /* Desde el 2026-09-02 esta cara ES la portada y el enum del worker trae
+         estos seis ids (mas work2/work3 por si el modelo recuerda los nombres
+         de la cara anterior). Lo que llega del modelo se valida OTRA VEZ
+         contra las tarjetas montadas: nunca elige un nodo del DOM sin pasar
+         por esta lista. Las piezas con pagina propia (valterra, halcyon) no
+         tienen carrete: se traen a la vista y se les da el foco, que es lo
+         que "ensenar" puede ser sin abrir una pestana que el navegador
+         bloquearia. */
       var mapa = { '002': 'recorrido', '003': 'teclado',
                    work2: 'recorrido', work3: 'teclado',
-                   ferropalacios: 'ferropalacios', novatek: 'novatek' };
+                   ferropalacios: 'ferropalacios', novatek: 'novatek',
+                   recorrido: 'recorrido', teclado: 'teclado',
+                   halcyon: 'halcyon', valterra: 'valterra' };
       var id = mapa[String(clave || '').trim().toLowerCase()];
       if (!id) return false;
       var art = document.querySelector('.pz[data-pz="' + id + '"]');
       if (!art) return false;
+      if (!art.querySelector('.pz-v')) {
+        art.scrollIntoView({ block: 'center', behavior: 'instant' });
+        try { art.focus({ preventScroll: true }); } catch (e) {}
+        return true;
+      }
       /* `instant` a proposito: la pagina lleva `scroll-behavior:smooth`, y con
          un desplazamiento suave el rectangulo de partida del FLIP se mide
          mientras la pagina todavia se mueve y la pieza sale de un sitio que ya

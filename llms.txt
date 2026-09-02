@@ -41,7 +41,7 @@ del sitio: ahí puede agendar una llamada sin intermediarios.
 
 ## Páginas
 
-- [Inicio](https://nervcenter.online/): trabajo, proceso y el agente en vivo
+- [Inicio](https://nervcenter.online/): qué hace, cómo es trabajar con él, el trabajo, preguntas frecuentes y el agente en vivo
 - [Quiénes somos](https://nervcenter.online/about): qué es nerv y quién lo opera
 - [Contacto](https://nervcenter.online/contact): correo, chat y agenda
 - [Privacidad](https://nervcenter.online/privacy): qué datos guarda el agente
@@ -49,17 +49,18 @@ del sitio: ahí puede agendar una llamada sin intermediarios.
 
 ## Trabajo publicado
 
-Cada pieza se enseña con un video en su propia tarjeta del sitio. Ninguna
-manda a otro sitio, y no hay ligas públicas que dar, salvo el expediente de
-Valterra, que vive dentro de este mismo sitio.
+Cada pieza se enseña con un video en su propia tarjeta de la portada. Dos
+tienen además su propia página dentro de este sitio: HALCYON y el expediente
+de Valterra. No hay otras ligas públicas que dar.
 
-- console: un modelo 3D dentro de la terminal. Es la consola local desde la que
-  se opera el agente —tres pantallas, chat en vivo, y el retrato del agente
-  renderizado ahí mismo. Herramienta interna, no un producto.
-- work2: portafolio que se navega como menú de videojuego. Pasillo 3D en CSS
-  puro, sin WebGL. Hoy el contenido de las habitaciones es de muestra.
-- work3: sitio que se maneja con el teclado, con menú de comando en cuatro
+- ferropalacios: una ferretería que vende de noche; catálogo y carrito.
+- novatek: un inventario que lo lleva un agente; tablero y agente.
+- recorrido: un portafolio que se camina, pasillo 3D en CSS puro, cinco
+  cuartos.
+- teclado: un sitio que se maneja con el teclado, menú de comando en cuatro
   secciones.
+- halcyon: un sello discográfico que suena solo, radio generativa. Página:
+  https://nervcenter.online/piezas/halcyon
 - valterra: control de acceso para un fraccionamiento, desplegado y
   funcionando. Cuatro superficies sobre una base, pase firmado que la caseta
   verifica sin internet, cobro por Stripe y un agente que opera con

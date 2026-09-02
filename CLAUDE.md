@@ -4,6 +4,12 @@ Portfolio en `index.html` (Cloudflare Pages → https://nervcenter.online) y el
 agente del chat en `agente/` (Cloudflare Worker `daniel-agente`). Todo estático
 en la raíz, sin build.
 
+**Desde el 2026-09-02 la portada es la cara v5** («sitios que contestan»):
+`index.html` con sus anexos `v5-pulido.css`, `v5-color.js` y `v5-trabajos.js`.
+La cara NERV anterior (neo-Y2K, con `piel.js` y `bloques.js`) sigue viva en
+`v3.html` con `noindex`. Las reglas de abajo que hablan de la portada y del
+componente valen para las dos: ambas son exports de Claude Design.
+
 ## Reglas de la casa (no negociables)
 
 1. **Todo lo nuestro va FUERA del bloque `<x-dc>`.** Una sincronización desde
@@ -24,12 +30,15 @@ en la raíz, sin build.
    (nunca de una sección: muere con ella).
 3. **Nada invisible esperando animación.** Todo revelado necesita una salida al
    estado final que no dependa del frame loop.
-4. **`piel.js` va versionado** (`piel.js?v=N`). Al tocarlo, subir la versión en
-   las CINCO páginas que lo cargan: `index.html`, `about.html`, `contact.html`,
-   `404.html` y `piezas/valterra.html` (`grep -rn "piel.js?v=" --include=*.html`
-   lo confirma; `v4.html` y `lab/` también lo cargan pero no son sitio). La
-   piel es opcional, el chat no: toda llamada a piel/bloques va en try con
-   respaldo.
+4. **Todo `.js`/`.css` anexo va versionado** (`piel.js?v=N`, `v5-trabajos.js?v=N`,
+   `v5-pulido.css?v=N`). Al tocar uno, subir el número en TODAS las páginas que
+   lo cargan, en el mismo commit: los anexos llevan `max-age` de horas y un
+   navegador con caché sigue sirviendo el viejo (el 2026-09-01 la tarjeta nueva
+   de trabajo no se veía por eso). `piel.js` lo cargan cinco páginas: `v3.html`,
+   `about.html`, `contact.html`, `404.html` y `piezas/valterra.html`
+   (`grep -rn "piel.js?v=" --include=*.html` lo confirma); la portada no lo
+   carga. La piel es opcional, el chat no: toda llamada a piel/bloques va en
+   try con respaldo.
 5. **El agente cambia fichas, no marcado.** Nunca HTML/CSS libre hacia el DOM.
    Nivel 4 (HTML libre) sólo dentro de iframe con sandbox + CSP.
 6. **Las pieles viven en la sesión de quien las pidió.** No se persisten al
@@ -46,7 +55,10 @@ en la raíz, sin build.
    corren, y `getComputedStyle` devuelve el valor de salida durante una
    transición. Para medir colores: matar las transiciones a la fuerza primero.
 10. **Contraste con línea base medida** (`.claude/guardias/contraste.js`, en la
-    consola del navegador → `nervContrasteEstados()`):
+    consola del navegador → `nervContrasteEstados()`). Los números de abajo son
+    de la cara NERV, hoy en `v3.html`; la portada v5 no tiene motor de piel y
+    se mide con `nervContraste()` en sus dos temas (línea base al final de este
+    archivo, en la entrada de la portada):
 
         claro original ....... 41 bajo 4.5:1   (6 de lectura)
         modo oscuro .......... 34              (6)
@@ -83,11 +95,11 @@ página siguiente tiene que saber:
   `index.html`, que son quienes la enlazan. Carga `/piel.js?v=5` (es la quinta
   página de la regla 4), Space Grotesk + IBM Plex Mono y `augmented-ui` de
   unpkg, como la portada.
-- **Se enlaza desde `/v5`**, no desde `index.html`: es la primera tarjeta de
-  `v5-trabajos.js`, con `liga` (abre en su pestaña, como HALCYON) y la clase
-  `ancha` (fila entera, marco 21:9). El cierre de la página vuelve a
-  `/v5#contacto`, que es el chat del agente en esa cara. Daniel lo pidió así el
-  2026-09-01.
+- **Se enlaza desde la portada** (la cara v5, hoy `index.html`): es la primera
+  tarjeta de `v5-trabajos.js`, con `liga` (abre en su pestaña, como HALCYON) y
+  la clase `ancha` (fila entera, marco 21:9). El cierre de la página vuelve a
+  `/#contacto`, que es el chat del agente. Daniel pidió el 2026-09-01 que
+  viviera en v5 y no en la cara NERV.
 - **El marco es de nerv y el objeto es de Valterra.** Las fichas `--vl-*`
   (crema, ámbar, tinta de la app) NO siguen al modo ni al color del agente, a
   propósito. Las capturas son reales, tomadas con Edge headless en claro
@@ -110,6 +122,26 @@ página siguiente tiene que saber:
 - Lo que NO se dice ahí, a propósito: reconocimiento facial ni identificación
   de personas por cámara (se sacó del proyecto por la LFPDPPP), y ninguna cifra
   que no esté en el `LEEME.md` de `valterra-app` o en su código.
+
+## La portada v5: línea base y dos trampas (2026-09-02)
+
+Medida en local con la regla de `contraste.js` (`nervContraste()`, sin motor de
+piel):
+
+    claro ....... 146 medidos · 34 bajo 4.5:1 · 0 de lectura
+    oscuro ...... 135 medidos ·  4 bajo 4.5:1 · 0 de lectura
+
+- **En oscuro hay que medir un tick DESPUÉS de poner el tema.** `v5-color.js`
+  aclara `--accent` desde un MutationObserver; si se pone `data-tema="oscuro"`
+  y se mide en el mismo script salen **9 fallas de lectura falsas** (el azul
+  #1c3bf0 sin aclarar sobre negro). Con el observador corrido el acento es
+  #6076f5 y `data-acento-aclarado` está puesto. Ya engañó dos mediciones.
+- **Los dos workers comparten la cuenta de Cloudflare, y D1 gratis da 5 M de
+  filas leídas por día entre todos.** El 2026-09-02 Valterra las agotó y el
+  agente de nerv cayó con ella (`error 1101`, `D1_ERROR` en `historial`). El
+  síntoma en `reatacar.py` es «CAYERON 6» con HTTP 500 en todos: eso no es
+  una abertura, es la base seca, y no cuenta ni como verde ni como rojo.
+  `.claude/guardias/cuando-vuelva-d1.sh` es lo que se dejó esperando ese día.
 
 ## Desplegar
 

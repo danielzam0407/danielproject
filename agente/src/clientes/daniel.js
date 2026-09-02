@@ -44,20 +44,35 @@ enseña con un video en su propia tarjeta, dentro del sitio, y para eso tienes
 mostrar_trabajo: en vez de describir la pieza, se la pones a correr. Quien
 quiera verla de cerca, eso lo contesta Daniel — pásale el contacto.
 
-- console — un modelo 3D dentro de la terminal. Es la consola local desde la
-  que Daniel opera su propio agente: tres pantallas, chat en vivo, y el
-  retrato del agente renderizado ahí mismo. Es una herramienta interna suya,
-  no un producto que venda; dilo así si preguntan.
+- valterra — control de acceso para un fraccionamiento privado, desplegado y
+  funcionando: la app del residente, la caseta con cámara, el panel de la
+  administración y el lector de la pluma, sobre una sola base de datos. El
+  pase de visita va firmado y la caseta lo verifica sin internet; es de un
+  solo uso. Cobra por Stripe y trae un agente, Vale, que opera con
+  herramientas por rol. Es la pieza que más dice de lo que Daniel construye,
+  y la única con expediente propio que sí se puede ligar:
+  https://nervcenter.online/piezas/valterra . La demo se enseña, no se
+  regala: si piden credenciales para entrar, no las tienes ni las inventas;
+  se piden a Daniel, pásale el contacto.
 
-- work2 — un portafolio que se navega como menú de videojuego: un pasillo 3D
-  hecho con CSS puro, sin WebGL, con una habitación detrás de cada opción. Se
-  mueve con clic o con las teclas 1-5.
-  Ojo: hoy el contenido de las habitaciones es de muestra. Si preguntan, dilo
-  sin adornos — es una pieza de interacción, no su portafolio terminado.
+- ferropalacios — una ferretería que vende de noche: catálogo y carrito,
+  contados como una película corta de la pieza.
 
-- work3 — otro sitio personal, de los que se manejan con el teclado: un menú
-  de comando con cuatro secciones, se mueve con las flechas, se entra con
-  Enter y se sale con Escape.
+- novatek — un inventario que lo lleva un agente: un tablero y el agente que
+  lo opera, en video.
+
+- recorrido — un portafolio que se navega como menú de videojuego: un pasillo
+  3D hecho con CSS puro, sin WebGL, con un cuarto detrás de cada opción.
+  Ojo: el contenido de los cuartos es de muestra. Si preguntan, dilo sin
+  adornos — es una pieza de interacción, no su portafolio terminado.
+
+- teclado — un sitio que se maneja con el teclado: un menú de comando con
+  cuatro secciones, se mueve con las flechas, se entra con Enter y se sale
+  con Escape.
+
+- halcyon — un sello discográfico que suena solo: radio generativa, el sonido
+  se produce mientras la miras. Abre en su propia página:
+  https://nervcenter.online/piezas/halcyon
 
 Dónde vive: no se dice. Ni la ciudad, ni el país, ni "por el norte". Si preguntan
 —y preguntan seguido, casi siempre por la zona horaria o por si trabaja a
@@ -313,10 +328,11 @@ const USO_WEB = `Tus seis herramientas, en dos grupos.
 Tres son para ENSEÑAR, y son lo que te separa de un formulario. No esperes a que
 te las pidan: se disparan solas en cuanto la conversación las roza, y ninguna
 cuesta nada ni rompe nada.
-- mostrar_trabajo — pone a correr el video de una pieza en su pantalla. Es la
-  única forma que hay de ver el trabajo: no existen ligas públicas. En cuanto
-  alguien pregunte qué ha hecho, pida ejemplos o nombre un proyecto, se lo
-  pones. Enseñar la pieza vale más que cualquier párrafo describiéndola.
+- mostrar_trabajo — pone la pieza en su pantalla: el video en grande, o la
+  tarjeta a la vista si la pieza abre en su propia página (valterra, halcyon).
+  Fuera de esas dos páginas no existen ligas públicas. En cuanto alguien
+  pregunte qué ha hecho, pida ejemplos o nombre un proyecto, se lo pones.
+  Enseñar la pieza vale más que cualquier párrafo describiéndola.
 - cambiar_piel — repinta el sitio entero en vivo. Apenas alguien mencione un
   color, un ánimo o los colores de su marca, se lo enseñas en lugar de
   contárselo.
@@ -457,26 +473,29 @@ const HERRAMIENTAS = [
   {
     name: 'mostrar_trabajo',
     description:
-      'Pone a correr el video de una pieza en la pantalla de quien te '+
-      'escribe, en grande y sin que salga de la pagina. USALA APENAS la '+
-      'conversacion roce el trabajo: "que ha hecho?", "tienes ejemplos?", '+
-      '"ensename algo", "como es el 3D?", "que es work2?", o cuando alguien '+
-      'dude de si sabe hacer interaccion o 3D. Este video es la UNICA forma '+
-      'de ver la pieza —no hay ligas publicas— asi que jamas ofrezcas un '+
-      'enlace en su lugar. Ensenarla convence mucho mas que describirla y no '+
-      'cuesta nada. Despues di en UNA frase corta que se lo pusiste y sigue '+
-      'la conversacion: no le narres el video, ya lo esta viendo.',
+      'Pone una pieza en la pantalla de quien te escribe: el video en grande '+
+      'sin salir de la pagina, o la tarjeta a la vista si la pieza abre en su '+
+      'propia pagina (valterra, halcyon). USALA APENAS la conversacion roce el '+
+      'trabajo: "que ha hecho?", "tienes ejemplos?", "ensename algo", "como es '+
+      'el 3D?", "que es valterra?", o cuando alguien dude de si sabe hacer '+
+      'sistemas, agentes, interaccion o 3D. Salvo valterra y halcyon no hay '+
+      'ligas publicas: no ofrezcas enlaces en lugar de ensenar. Ensenarla '+
+      'convence mucho mas que describirla y no cuesta nada. Despues di en UNA '+
+      'frase corta que se lo pusiste y sigue la conversacion: no le narres la '+
+      'pieza, ya la esta viendo.',
     input_schema: {
       type: 'object',
       properties: {
         proyecto: {
           type: 'string',
-          enum: ['console', 'work2', 'work3'],
+          enum: ['valterra', 'ferropalacios', 'novatek', 'recorrido', 'teclado', 'halcyon'],
           description:
-            'console = el modelo 3D dentro de la terminal, la consola local '+
-            'desde la que Daniel opera su agente; work2 = el pasillo 3D que '+
-            'se camina como menu de videojuego; work3 = el sitio personal que '+
-            'se maneja con el teclado.',
+            'valterra = el control de acceso del fraccionamiento (app, caseta, '+
+            'panel, pluma y el agente Vale); ferropalacios = la ferreteria con '+
+            'catalogo y carrito; novatek = el inventario que lleva un agente; '+
+            'recorrido = el pasillo 3D que se camina como menu de videojuego; '+
+            'teclado = el sitio que se maneja con el teclado; halcyon = el '+
+            'sello que suena solo, radio generativa.',
         },
       },
       required: ['proyecto'],
@@ -694,21 +713,26 @@ function ejecutar(nombre, entrada, ajustes) {
     /* El modelo manda un nombre; aqui se vuelve el id de la tarjeta. El
        navegador lo valida OTRA VEZ contra los carretes que de verdad monto
        antes de abrir nada — mismo trato que la piel y los bloques. */
-    const TARJETAS = { console: '001', work2: '002', work3: '003' };
+    const TARJETAS = {
+      valterra: 'valterra', ferropalacios: 'ferropalacios', novatek: 'novatek',
+      recorrido: 'recorrido', teclado: 'teclado', halcyon: 'halcyon',
+      // los nombres de la cara anterior, por si el modelo los recuerda
+      work2: 'recorrido', work3: 'teclado',
+    };
     const id = TARJETAS[String(entrada.proyecto || '').trim().toLowerCase()];
     if (!id) {
       return {
         resultado:
-          'Ese proyecto no existe. Los que hay son console, work2 y work3. ' +
-          'Vuelve a llamar con uno de esos.',
+          'Ese proyecto no existe. Los que hay son valterra, ferropalacios, ' +
+          'novatek, recorrido, teclado y halcyon. Vuelve a llamar con uno de esos.',
         accion: null,
         aviso: null,
       };
     }
     return {
       resultado:
-        'Listo: el video se abrio en grande en su pantalla. Dilo en una frase ' +
-        'corta y sigue — no lo describas, ya lo esta viendo.',
+        'Listo: la pieza esta en su pantalla. Dilo en una frase corta y ' +
+        'sigue — no la describas, ya la esta viendo.',
       accion: { tipo: 'carrete', proyecto: id },
       aviso: null,
     };

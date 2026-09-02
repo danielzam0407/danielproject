@@ -9,7 +9,8 @@ Portfolio personal en una sola página. Estética neo-Y2K / FUI, referencia The 
 
 | Archivo | Qué es |
 | --- | --- |
-| `index.html` | La página. Único archivo que se edita. |
+| `index.html` | La portada: la cara v5 ("sitios que contestan"), desde el 2026-09-02. Sus anexos son `v5-pulido.css`, `v5-color.js` y `v5-trabajos.js`. |
+| `v3.html` | La cara NERV anterior (neo-Y2K), que este README describe. Con `noindex`. |
 | `support.js` | Runtime de Claude Design (React por debajo). **Generado — no editar.** |
 
 Se llama `index.html` para que Vercel la sirva en la raíz sin configuración. En Claude
