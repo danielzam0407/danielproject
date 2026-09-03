@@ -428,8 +428,66 @@ que puedas. Lo que no haces es avisar dos turnos seguidos sin que haya pasado
 algo nuevo en medio.
 `;
 
+const NO_SE_TEL = `Cuando no sepas algo — esto es lo más importante que haces:
+Nunca cierres con "no lo sé" y ahí lo dejes. Eso apaga la llamada y pierde a la
+persona. En su lugar: di en media frase que eso lo contesta él mejor, y
+**dispara avisar_a_daniel con la pregunta ya escrita dentro del resumen**, para
+que le llegue tal cual y la conteste él. Que alguien pregunte algo que no está
+en tu perfil es justo la razón para conectarlo, no para despedirlo.
+
+  Mal:  "De eso no tengo el dato."
+  Bien: "Eso se lo contesta él mejor — ya se lo pasé y le escribe."
+
+`;
+
+const USO_TEL = `Estás EN UNA LLAMADA TELEFÓNICA, y esto manda sobre todo lo de arriba que
+hable de pantalla, de chat o de escribir:
+Lo que escribas se convierte en voz al instante y la persona no ve nada. No hay
+botones, ni video, ni secciones, ni ligas que tocar. Nunca digas "te dejo el
+botón", "mira cómo cambia" ni "te lo puse en pantalla". Una liga no se dicta
+letra por letra: se manda por mensaje de texto con mandar_enlace, y si la piden
+en voz, se dice como se dice — "nervcenter punto online".
+
+Cómo hablas al teléfono:
+- Frases cortas, una o dos por turno. Lo que no quepa en dos frases se contesta
+  en dos turnos, no en un párrafo.
+- Español de México, de usted, salvo que la persona te tutee primero.
+- Los números se dicen con palabras: "las once de la noche", "tres piezas".
+  Nada de listas, viñetas, asteriscos, emojis ni símbolos: se oirían.
+- Si te interrumpen, dejas lo que decías y atiendes lo nuevo.
+- Si la persona está ocupada o no le interesa, agradeces y te despides en una
+  frase. No insistes: al teléfono insistir es lo único que sí quema.
+- Si piden que no se les vuelva a llamar, lo aceptas de inmediato, dices que
+  queda registrado y te despides. Eso se anota solo; no lo discutes.
+- Al "¿eres un bot?": igual que arriba, nunca lo niegas y nunca lo dejas en un
+  "sí" pelón — y aquí el remate es que lo que está oyendo es el producto: el
+  mismo agente contesta en su sitio, en WhatsApp y por teléfono.
+
+Tus tres herramientas. Se disparan en cuanto tengan sentido, incluso en el
+primer turno si ahí ya hay una intención clara; contra un "bueno" suelto,
+primero pregunta qué busca.
+- avisar_a_daniel — tu herramienta por defecto. Para todo lo que no puedas
+  contestar y para todo el que traiga un encargo. El resumen es lo que Daniel
+  va a leer: quién es, de qué es su negocio, qué quiere, y la pregunta concreta
+  si la hubo, en primera persona de quien te habla. Después díselo en una
+  frase, sin prometer cuándo contesta. No avises dos turnos seguidos sin que
+  haya pasado algo nuevo en medio.
+- mandar_enlace — le manda por mensaje de texto, al número desde el que habla,
+  la propuesta que ya le hicimos si existe, y si no, el sitio. Es el paso
+  concreto de la llamada de venta: "ya está hecha, se la mando ahora mismo".
+  Dile que le llega en un momento.
+- agendar_llamada — cuando quiera hablar con Daniel. Le manda por mensaje la
+  página de reservas con sus horas libres de verdad. Tú no prometes hora ni
+  día: los escoge ahí.
+
+Los pasos concretos con los que cierras aquí son esos tres: mandarle el
+enlace, avisarle a Daniel, o apartar la llamada. "Pasar a WhatsApp" no existe
+desde una llamada; no lo ofrezcas.
+`;
+
 const SISTEMA = CABEZA + NO_SE_WEB + GUARDAS + USO_WEB;
 const SISTEMA_WHATSAPP = CABEZA + NO_SE_WA + GUARDAS + USO_WA;
+const SISTEMA_TELEFONO = CABEZA + NO_SE_TEL + GUARDAS + USO_TEL;
 
 // ─── HERRAMIENTAS ──────────────────────────────────────────────────────────
 const HERRAMIENTAS = [
@@ -662,6 +720,58 @@ const HERRAMIENTAS_WHATSAPP = [
       'Te devuelve la liga de la página de reservas de Daniel, con sus horas ' +
       'libres de verdad, para que se la mandes. Úsala sólo cuando ya ' +
       'entendiste de qué se trata el asunto y la persona quiera hablar.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        motivo: {
+          type: 'string',
+          description: 'De qué quiere hablar, en una frase. Se le manda a Daniel.',
+        },
+      },
+      required: ['motivo'],
+    },
+  },
+];
+
+/* El teléfono. Las mismas dos de WhatsApp más mandar_enlace, porque en una
+   llamada una liga no se puede tocar: se manda por mensaje de texto al número
+   desde el que habla la persona. Ninguna pide datos: el número ya lo tiene. */
+const HERRAMIENTAS_TELEFONO = [
+  {
+    name: 'avisar_a_daniel',
+    description:
+      'Le hace llegar a Daniel, al instante, lo que esta persona quiere. ' +
+      'Úsala para todo lo que no puedas contestar y para todo el que traiga ' +
+      'un encargo: es lo único que impide que la llamada se quede en el aire. ' +
+      'No le pide nada a la persona.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        resumen: {
+          type: 'string',
+          description:
+            'El mensaje completo que Daniel va a leer, escrito en primera ' +
+            'persona de quien te habla. Máximo unas 60 palabras.',
+        },
+      },
+      required: ['resumen'],
+    },
+  },
+  {
+    name: 'mandar_enlace',
+    description:
+      'Le manda por mensaje de texto, al número desde el que habla, la ' +
+      'propuesta que ya le hicimos si existe, y si no, el sitio de nerv. ' +
+      'No pide ningún dato. Úsala cuando quiera verla, cuando pida que se la ' +
+      'mandes, o cuando el paso natural sea que la tenga en la mano.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'agendar_llamada',
+    description:
+      'Le manda por mensaje de texto la página de reservas de Daniel, con sus ' +
+      'horas libres de verdad. Úsala sólo cuando ya entendiste de qué se trata ' +
+      'el asunto y la persona quiera hablar con él.',
     input_schema: {
       type: 'object',
       properties: {
@@ -909,6 +1019,82 @@ function ejecutarWhatsapp(nombre, entrada, ajustes) {
   return { resultado: `Herramienta desconocida: ${nombre}`, aviso: null };
 }
 
+/* Igual que ejecutarWhatsapp, con un campo más en la respuesta: `sms`, el
+   texto que el canal manda al número de la persona. Los `ajustes` traen lo que
+   la ficha resuelve del env más lo que el teléfono sabe de esa llamada:
+   `direccion`, `numero` (E.164 de la persona), `propuestaUrl` y `sitio`. */
+function ejecutarTelefono(nombre, entrada, ajustes) {
+  const de = ajustes.direccion === 'saliente' ? 'llamada saliente' : 'te llamaron';
+
+  if (nombre === 'avisar_a_daniel') {
+    const texto = String(entrada.resumen || '').trim().slice(0, 600);
+    if (!texto) {
+      return {
+        resultado:
+          'El resumen vino vacío y así no le sirve de nada. Vuelve a llamarla ' +
+          'escribiendo quién es la persona y qué quiere.',
+        aviso: null,
+      };
+    }
+    return {
+      resultado:
+        'Listo: Daniel ya tiene el mensaje. Díselo en una frase, sin prometer ' +
+        'cuándo contesta, y sigue contestando lo que puedas.',
+      aviso: { titulo: de, cuerpo: texto },
+    };
+  }
+
+  if (nombre === 'mandar_enlace') {
+    const liga = ajustes.propuestaUrl || ajustes.sitio;
+    if (!ajustes.numero || !liga) {
+      return {
+        resultado:
+          'No tengo el número de esta persona, así que no puedo mandarle nada. ' +
+          'Dile la dirección en voz, "nervcenter punto online", y avísale a Daniel.',
+        aviso: null,
+      };
+    }
+    return {
+      resultado:
+        'Le va por mensaje de texto ahora mismo. Dile que le llega en un momento' +
+        (ajustes.propuestaUrl ? ' y que ahí está su propuesta, ya terminada.' : '.'),
+      sms:
+        `Hola, habla Kiyo, de nerv. Aquí está ${ajustes.propuestaUrl ? 'su propuesta, ya en línea' : 'nuestro sitio'}: ${liga}`,
+      aviso: { titulo: `${de}: se le mandó el enlace`, cuerpo: liga },
+    };
+  }
+
+  if (nombre === 'agendar_llamada') {
+    const url = ajustes.calUrl;
+    const motivo = String(entrada.motivo || '').slice(0, 160);
+    if (!url) {
+      return {
+        resultado:
+          'La página de reservas no está configurada. No inventes una: dile ' +
+          'que Daniel le llama y usa avisar_a_daniel con el motivo.',
+        aviso: null,
+      };
+    }
+    if (!ajustes.numero) {
+      return {
+        resultado:
+          'No tengo su número para mandarle la liga. Dile que Daniel le escribe ' +
+          'para apartar la hora; el motivo ya le llegó.',
+        aviso: { titulo: `${de}: quiere agendar`, cuerpo: motivo },
+      };
+    }
+    return {
+      resultado:
+        'Le va por mensaje de texto la página para apartar la llamada. Dile que ' +
+        'ahí escoge día y hora; tú no prometas ninguna.',
+      sms: `Hola, habla Kiyo, de nerv. Aquí aparta su llamada con Daniel: ${url}`,
+      aviso: { titulo: `${de}: quiere agendar`, cuerpo: motivo },
+    };
+  }
+
+  return { resultado: `Herramienta desconocida: ${nombre}`, aviso: null };
+}
+
 // ─── LO QUE EL AGENTE VE DE LA PANTALLA ────────────────────────────────────
 /* El agente cambia el sitio en vivo pero nunca supo como habia quedado: se lo
    inventaba o preguntaba. Esto le da los ojos — el navegador reporta como esta
@@ -994,6 +1180,15 @@ export default {
     sistema: SISTEMA_WHATSAPP,
     herramientas: HERRAMIENTAS_WHATSAPP,
     ejecutar: ejecutarWhatsapp,
+  },
+
+  /* El teléfono (src/telefono.js). Misma cabeza y mismas guardas que los otros
+     dos canales; lo que cambia es cómo se habla y qué se puede prometer. La
+     ficha que trae este bloque es la que atiende el número de Twilio. */
+  telefono: {
+    sistema: SISTEMA_TELEFONO,
+    herramientas: HERRAMIENTAS_TELEFONO,
+    ejecutar: ejecutarTelefono,
   },
 
   // Opcional: si una ficha no la trae, su agente sigue trabajando a ciegas

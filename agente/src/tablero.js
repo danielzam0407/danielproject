@@ -392,9 +392,10 @@ function pintarTelefono(dg, ll) {
       (c.alertas || []).map(function (a) { return '<tr><td></td><td colspan="4" class="grave">error ' + esc(a.codigo) + ': ' + esc(a.texto) + '</td></tr>'; }).join('');
   }).join('') + '</table>' : '<p class="nada">Twilio no tiene ninguna llamada: lo que marcaste nunca llegó a Twilio (operadora, prefijo, o número).</p>');
   var nu = (ll && ll.llamadas) || [];
-  dentro += '<h3>Lo que habló Vale</h3>' + (nu.length ? nu.slice(0, 5).map(function (c) {
-    return '<p class="d">' + esc(haceCuanto(c.inicio)) + ' · ' + esc(c.direccion) + ' · ' + esc(c.a || c.de) + '</p><ul>' +
-      (c.turnos || []).slice(-8).map(function (t) { return '<li>' + esc(t.rol === 'vale' ? 'Vale: ' : 'Persona: ') + esc(t.texto) + '</li>'; }).join('') + '</ul>';
+  dentro += '<h3>Lo que habló Kiyo</h3>' + (nu.length ? nu.slice(0, 5).map(function (c) {
+    return '<p class="d">' + esc(haceCuanto(c.inicio)) + ' · ' + esc(c.direccion) + ' · ' + esc(c.a || c.de) +
+      (c.resultado ? ' · <b>' + esc(c.resultado) + '</b>' : '') + '</p><ul>' +
+      (c.turnos || []).slice(-8).map(function (t) { return '<li>' + esc(t.rol === 'vale' ? 'Kiyo: ' : 'Persona: ') + esc(t.texto) + '</li>'; }).join('') + '</ul>';
   }).join('') : '<p class="nada">Ninguna llamada ha llegado al worker todavía.</p>');
   return seccion('Teléfono', dentro);
 }

@@ -1,5 +1,5 @@
-/* El telefono de nerv: un numero que contesta y que llama, con Vale al otro
-   lado. Arrancado la noche del 2026-09-02 (proyecto 2 del plan maestro).
+/* El telefono de nerv: un numero que contesta y que llama, con Kiyo (el
+   agente de la ficha) al otro lado. Arrancado la noche del 2026-09-02 (proyecto 2 del plan maestro).
 
    Como esta partido:
      · Twilio pone la telefonia, la transcripcion en vivo y la voz. Se usa
@@ -10,6 +10,12 @@
        semanas; esto son tres mensajes JSON.
      · El cerebro es DeepSeek flash en streaming y sin razonamiento oculto: en
        una llamada, dos segundos de silencio y la persona cuelga.
+     · Quien habla es el agente de la ficha del cliente (clientes/daniel.js,
+       bloque `telefono`): la misma cabeza, el mismo perfil de nerv y las
+       mismas guardas que el chat del sitio y WhatsApp, mas un bloque de
+       "estas en una llamada". Sus herramientas hacen cosas: avisar a Daniel
+       por Telegram, mandar el enlace por SMS al numero que llama, apartar
+       llamada. Aqui no vive ni una linea de persona.
      · La voz: Twilio solo integra Google, Amazon y ElevenLabs. Si estan los
        secretos FISH_API_KEY y FISH_VOZ, la voz la pone Fish Audio: generamos
        un mp3 por frase y se lo mandamos a Twilio como `play` (una URL de este
@@ -29,6 +35,11 @@
    Lo que NO hace todavia: marcar en frio a listas. La frontera legal (REPEP
    de PROFECO) se resuelve antes de eso, no despues. */
 
+import Anthropic from '@anthropic-ai/sdk';
+import { BASE, MAX_VUELTAS_HERRAMIENTA } from './motor.js';
+import * as avisos from './avisos.js';
+import { todas } from './clientes/index.js';
+
 const MODELO_VOZ = 'deepseek-v4-flash';
 const MAX_TURNOS = 40;
 // 220 cortaba respuestas a media frase (33, 96 y 265 letras, medido el
@@ -36,30 +47,39 @@ const MAX_TURNOS = 40;
 // aunque se le pida esfuerzo `none`. Lo corto lo pone la persona, no el tope.
 const MAX_TOKENS_TURNO = 600;
 
-// ── Persona al telefono ─────────────────────────────────────────────────
-// Corta a proposito: al telefono se habla en frases de una linea. Nada de
-// listas, ni simbolos, ni cifras con signo: se dicen con palabras.
-function sistema({ direccion, nombre, apodo, saludo }) {
+// ── Quien atiende, y que sabe de esta llamada ───────────────────────────
+// La ficha que trae bloque `telefono` es la que atiende este numero. Hoy es
+// nerv; cuando haya mas numeros se elige por el numero marcado.
+const fichaTelefono = () => todas().find((f) => f.telefono) || null;
+
+// Lo que cambia por llamada, pegado al final de la persona de la ficha. El
+// numero de la persona NO se le pasa al modelo: lo usan las herramientas.
+function contextoLlamada({ direccion, nombre, apodo, saludo }) {
   const quien = nombre ? `Le hablas a ${nombre}.` : 'No sabes con quien hablas todavia: preguntalo con buen modo.';
   const propuesta = apodo
-    ? `Ya le hicimos una propuesta de sitio web, terminada y en linea, en nervcenter punto online, diagonal p, diagonal ${apodo}. No es un boceto: se puede abrir ahora mismo. Se la puedes mandar por WhatsApp o correo si te da el dato.`
-    : 'No hay una propuesta preparada para esta persona; si le interesa un sitio, toma sus datos y ofrece que Daniel le llame.';
+    ? `Ya le hicimos una propuesta de sitio web, terminada y en linea, en nervcenter punto online, diagonal p, diagonal ${apodo}. No es un boceto: se puede abrir ahora mismo. Se la mandas con mandar_enlace.`
+    : 'No hay una propuesta preparada para esta persona: no la inventes. Si le interesa un sitio, averigua de que es su negocio y avisale a Daniel.';
   return (
-    'Eres Vale, la asistente de nerv, un estudio de Monterrey que hace sitios web a la medida con un ' +
-    'agente que contesta a los clientes, integrado. Estas EN UNA LLAMADA TELEFONICA: lo que escribas ' +
-    'se convierte en voz al instante.\n\n' +
-    `Direccion de la llamada: ${direccion === 'saliente' ? 'tu llamaste' : 'te llamaron'}. ${quien} ${propuesta}\n\n` +
-    'Como hablas:\n' +
-    '- Frases cortas, una o dos por turno. Espanol de Mexico, de usted, natural, sin sonar a grabacion.\n' +
-    '- Nunca listas, ni asteriscos, ni simbolos: los numeros se dicen con palabras ("dos mil pesos").\n' +
-    '- Si te interrumpen, dejas lo que decias y atiendes lo nuevo.\n' +
-    '- Si la persona esta ocupada o no le interesa, agradeces y te despides en una frase. No insistes.\n' +
-    '- Si piden que no se les llame, lo aceptas de inmediato, dices que queda registrado y te despides.\n' +
-    '- No inventas precios, plazos ni nombres. Precios y alcance los da Daniel en una cita; tu ofreces ' +
-    'agendar esa cita o mandar el enlace.\n' +
-    '- No prometes nada que no este en este texto. Amable no es complaciente.\n' +
-    (saludo ? `\nYa saludaste con: "${saludo}". No repitas el saludo.\n` : '')
+    'ESTA LLAMADA\n' +
+    `- ${direccion === 'saliente' ? 'Tu llamaste.' : 'Te llamaron.'} ${quien}\n` +
+    `- ${propuesta}\n` +
+    '- El numero desde el que habla ya quedo registrado: no se lo pidas. Los mensajes de texto le llegan ahi.\n' +
+    (saludo ? `- Ya saludaste con: "${saludo}". No repitas el saludo.\n` : '')
   );
+}
+const sistema = (ficha, llamada) => ficha.telefono.sistema + '\n\n' + contextoLlamada(llamada);
+
+// El SMS con el que las herramientas cumplen lo que prometen.
+async function mandarSms(env, a, texto) {
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM || !a) return false;
+  const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`, {
+    method: 'POST',
+    headers: { authorization: 'Basic ' + btoa(env.TWILIO_ACCOUNT_SID + ':' + env.TWILIO_AUTH_TOKEN), 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ To: a, From: env.TWILIO_FROM, Body: texto.slice(0, 320) }),
+  });
+  if (!r.ok) console.warn('telefono: sms', r.status, (await r.text().catch(() => '')).slice(0, 160));
+  else console.log('telefono: sms enviado');
+  return r.ok;
 }
 
 // ── Twilio: la firma del webhook ────────────────────────────────────────
@@ -170,62 +190,61 @@ async function audio(env, ruta) {
 function saludoDe(env, direccion, nombre) {
   if (env.TEL_SALUDO_SALIENTE && direccion === 'saliente') return env.TEL_SALUDO_SALIENTE;
   return direccion === 'saliente'
-    ? `Hola, buenas. Habla Vale, de nerv, en Monterrey. ${nombre ? 'Le llamo por ' + nombre + '. ' : ''}Le hicimos una propuesta de pagina de internet, ya terminada; le quito un minuto nada mas. ¿Se puede?`
-    : 'Hola, habla Vale, de nerv. ¿En que le puedo ayudar?';
+    ? `Hola, buenas. Habla Kiyo, de nerv. ${nombre ? 'Le llamo por ' + nombre + '. ' : ''}Le hicimos una propuesta de pagina de internet, ya terminada; le quito un minuto nada mas. ¿Se puede?`
+    : 'Hola, habla Kiyo, de nerv. ¿En que le puedo ayudar?';
 }
 
 const soloDigitos = (n) => String(n || '').replace(/[^\d+]/g, '');
 
-// ── El cerebro, en streaming ────────────────────────────────────────────
-// Se manda cada pedazo en cuanto llega: ConversationRelay empieza a hablar
-// con el primero. `senal` corta la generacion si la persona interrumpe.
-async function pensarEnVivo(env, sistemaTexto, mensajes, alTexto, senal) {
-  const r = await fetch('https://api.deepseek.com/anthropic/v1/messages', {
-    method: 'POST',
-    signal: senal,
-    headers: { 'x-api-key': env.DEEPSEEK_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: env.MODELO_VOZ || MODELO_VOZ, max_tokens: MAX_TOKENS_TURNO, stream: true,
+// ── El cerebro, en streaming y con herramientas ─────────────────────────
+// Cada pedazo de texto sale en cuanto llega: ConversationRelay empieza a
+// hablar con el primero. Cuando el modelo llama una herramienta, se ejecuta
+// con la ficha y se le devuelve el resultado en la misma vuelta; lo que dijo
+// antes de llamarla ya se oyo. `senal` corta todo si la persona interrumpe.
+async function pensarEnVivo(env, ficha, llamada, mensajes, alTexto, alEfecto, senal) {
+  const cliente = new Anthropic({ apiKey: env.DEEPSEEK_API_KEY, baseURL: BASE });
+  const ajustes = {
+    ...ficha.ajustes(env),
+    direccion: llamada.direccion,
+    numero: llamada.direccion === 'saliente' ? llamada.a : llamada.de,
+    propuestaUrl: llamada.apodo ? `https://nervcenter.online/p/${llamada.apodo}` : '',
+    sitio: 'https://nervcenter.online',
+  };
+  const hilo = mensajes.slice();
+  let texto = '', pensados = 0, fin = 'sin stop_reason';
+  const t0 = Date.now();
+  for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTA; vuelta++) {
+    const flujo = cliente.messages.stream({
+      model: env.MODELO_VOZ || MODELO_VOZ, max_tokens: MAX_TOKENS_TURNO,
+      system: sistema(ficha, llamada), tools: ficha.telefono.herramientas, messages: hilo,
       // DeepSeek V4 piensa por defecto con esfuerzo high; al telefono no hay tiempo.
       // `reasoning.effort = none` es lo que documenta DeepSeek para su endpoint
       // Anthropic, pero medido el 2026-09-03 seguia pensando 600-1000 letras por
-      // turno (1 a 2 s de silencio). Se manda ademas el `thinking` de Anthropic.
+      // turno (1 a 2 s de silencio). Lo que lo apaga es el `thinking` de Anthropic.
       reasoning: { effort: 'none' },
       thinking: { type: 'disabled' },
-      system: sistemaTexto, messages: mensajes,
-    }),
-  });
-  if (!r.ok || !r.body) {
-    const detalle = await r.text().catch(() => '');
-    console.error('telefono: deepseek', r.status, detalle.slice(0, 200));
-    throw new Error('modelo ' + r.status);
-  }
-  const lector = r.body.getReader();
-  const dec = new TextDecoder();
-  let resto = '', texto = '', fin = 'sin message_stop', pensados = 0;
-  const t0 = Date.now();
-  for (;;) {
-    const { value, done } = await lector.read();
-    if (done) break;
-    resto += dec.decode(value, { stream: true });
-    const lineas = resto.split('\n'); resto = lineas.pop();
-    for (const l of lineas) {
-      if (!l.startsWith('data:')) continue;
-      let ev; try { ev = JSON.parse(l.slice(5).trim()); } catch { continue; }
-      if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta' && ev.delta.text) {
-        texto += ev.delta.text;
-        alTexto(ev.delta.text);
-      } else if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'thinking_delta') {
-        pensados += String(ev.delta.thinking || '').length;
-      } else if (ev.type === 'message_delta' && ev.delta && ev.delta.stop_reason) {
-        fin = ev.delta.stop_reason;
-      } else if (ev.type === 'message_stop' && fin === 'sin message_stop') {
-        fin = 'message_stop sin stop_reason';
-      }
+    }, { signal: senal });
+    flujo.on('text', (delta) => { texto += delta; alTexto(delta); });
+    flujo.on('thinking', (delta) => { pensados += String(delta || '').length; });
+    const mensaje = await flujo.finalMessage();
+    fin = mensaje.stop_reason || fin;
+    const usos = mensaje.content.filter((b) => b.type === 'tool_use');
+    if (fin === 'end_turn' || !usos.length) break;
+
+    hilo.push({ role: 'assistant', content: mensaje.content });
+    const resultados = [];
+    for (const uso of usos) {
+      const { resultado, aviso, sms } = ficha.telefono.ejecutar(uso.name, uso.input, ajustes);
+      console.log('telefono: herramienta', uso.name, aviso ? 'con aviso' : '', sms ? 'con sms' : '');
+      if (aviso || sms) alEfecto({ aviso, sms, numero: ajustes.numero });
+      resultados.push({ type: 'tool_result', tool_use_id: uso.id, content: resultado });
     }
+    hilo.push({ role: 'user', content: resultados });
+    // Lo de antes de la herramienta y lo de despues se oyen seguidos: que no se peguen.
+    if (texto && !/\s$/.test(texto)) { texto += ' '; alTexto(' '); }
   }
   // Rastro de como termino, para distinguir modelo (stop_reason) de conexion
-  // (sin message_stop) y ver si penso aunque se le pidio que no.
+  // y ver si penso aunque se le pidio que no.
   const cortada = texto.trim() && !/[.!?\u2026\u00bb")]\s*$/.test(texto.trim());
   if (cortada || fin !== 'end_turn' || pensados) console.warn('telefono: respuesta', cortada ? 'CORTADA' : 'completa', 'fin=' + fin, 'penso=' + pensados, texto.length, 'letras en', Date.now() - t0, 'ms:', JSON.stringify(texto.slice(-50)));
   return texto;
@@ -237,19 +256,21 @@ function relay(peticion, env, url, contexto) {
   if (!env.TEL_RELAY_TOKEN || !igual(url.searchParams.get('t') || '', env.TEL_RELAY_TOKEN)) { console.warn('telefono: relay con token malo'); return new Response('no', { status: 403 }); }
   console.log('telefono: relay conectado');
   if (!env.DEEPSEEK_API_KEY) return new Response('sin cerebro', { status: 503 });
+  const ficha = fichaTelefono();
+  if (!ficha) { console.error('telefono: ninguna ficha trae bloque telefono'); return new Response('sin agente', { status: 503 }); }
 
   const par = new WebSocketPair();
   const [cliente, servidor] = [par[0], par[1]];
   servidor.accept();
 
-  const llamada = { sid: null, direccion: 'entrante', de: '', a: '', apodo: '', nombre: '', saludo: '', inicio: new Date().toISOString(), turnos: [] };
+  const llamada = { sid: null, direccion: 'entrante', de: '', a: '', apodo: '', nombre: '', saludo: '', inicio: new Date().toISOString(), turnos: [], resultado: '' };
   let generando = null;   // AbortController del turno en curso
   let ocupado = false;
   let cerrada = false;
 
   const enviar = (m) => { try { servidor.send(JSON.stringify(m)); } catch {} };
 
-  // Como habla Vale. Con Fish: cada frase se pide en cuanto esta completa y se
+  // Como habla el agente. Con Fish: cada frase se pide en cuanto esta completa y se
   // manda como `play` EN ORDEN (la cola), aunque las generaciones corran en
   // paralelo. Si Fish falla o tarda mas de 8 s, esa frase la dice la voz de
   // Twilio: una frase con otra voz es mejor que un hueco. Sin Fish: `text`.
@@ -291,11 +312,23 @@ function relay(peticion, env, url, contexto) {
     try {
       await asegurarTablas(env.DB);
       await env.DB.prepare(
-        'INSERT INTO llamadas (sid, direccion, de, a, apodo, nombre, inicio, fin, turnos) VALUES (?,?,?,?,?,?,?,?,?) ' +
-        'ON CONFLICT(sid) DO UPDATE SET fin = excluded.fin, turnos = excluded.turnos'
+        'INSERT INTO llamadas (sid, direccion, de, a, apodo, nombre, inicio, fin, turnos, resultado) VALUES (?,?,?,?,?,?,?,?,?,?) ' +
+        'ON CONFLICT(sid) DO UPDATE SET fin = excluded.fin, turnos = excluded.turnos, resultado = excluded.resultado'
       ).bind(llamada.sid, llamada.direccion, llamada.de, llamada.a, llamada.apodo, llamada.nombre, llamada.inicio,
-             fin ? new Date().toISOString() : null, JSON.stringify(llamada.turnos).slice(0, 60000)).run();
+             fin ? new Date().toISOString() : null, JSON.stringify(llamada.turnos).slice(0, 60000), llamada.resultado || null).run();
     } catch (e) { console.error('telefono: guardar', e && e.message); }
+  };
+
+  // Lo que las herramientas producen: el aviso a Daniel se registra en la
+  // llamada (columna `resultado`, que es el registro) y se entrega por
+  // Telegram; el SMS sale al numero de la persona. Ninguno detiene la voz.
+  const alEfecto = ({ aviso, sms, numero }) => {
+    if (aviso) {
+      llamada.resultado = (llamada.resultado ? llamada.resultado + ' | ' : '') + aviso.titulo + ': ' + aviso.cuerpo;
+      const hilo = llamada.turnos.filter((t) => t.rol !== 'tecla').map((t) => ({ role: t.rol === 'persona' ? 'user' : 'assistant', content: t.texto }));
+      contexto.waitUntil(guardar(false).then(() => avisos.porTelegram(env, aviso, hilo)).catch((e) => console.error('telefono: aviso', e && e.message)));
+    }
+    if (sms) contexto.waitUntil(mandarSms(env, numero, sms).catch((e) => console.error('telefono: sms', e && e.message)));
   };
 
   async function responder(dicho) {
@@ -308,12 +341,12 @@ function relay(peticion, env, url, contexto) {
     try {
       const boca = partidor(control);
       const alTexto = (pedazo) => { if (!control.signal.aborted) boca.empujar(pedazo); };
-      dicho_ = await pensarEnVivo(env, sistema(llamada), mensajes, alTexto, control.signal);
+      dicho_ = await pensarEnVivo(env, ficha, llamada, mensajes, alTexto, alEfecto, control.signal);
       // El modelo devuelve vacio de vez en cuando (medido: 1 de 3 turnos en la
       // primera prueba). Al telefono un silencio es peor que repetir: se
       // reintenta una vez y, si sigue vacio, una frase que mantiene la llamada.
       if (!dicho_.trim() && !control.signal.aborted) {
-        dicho_ = await pensarEnVivo(env, sistema(llamada), mensajes, alTexto, control.signal);
+        dicho_ = await pensarEnVivo(env, ficha, llamada, mensajes, alTexto, alEfecto, control.signal);
       }
       if (!dicho_.trim() && !control.signal.aborted) {
         dicho_ = 'Perdon, no le escuche bien. ¿Me lo repite?';
@@ -478,7 +511,7 @@ async function noLlamar(peticion, env, autorizado) {
 async function ultimas(peticion, env, autorizado) {
   if (!autorizado(peticion, env)) return new Response('no', { status: 403 });
   await asegurarTablas(env.DB);
-  const r = await env.DB.prepare('SELECT sid, direccion, de, a, apodo, nombre, inicio, fin, turnos FROM llamadas ORDER BY inicio DESC LIMIT 30').all();
+  const r = await env.DB.prepare('SELECT sid, direccion, de, a, apodo, nombre, inicio, fin, turnos, resultado FROM llamadas ORDER BY inicio DESC LIMIT 30').all();
   return json({ llamadas: r.results.map((l) => ({ ...l, turnos: JSON.parse(l.turnos || '[]') })) });
 }
 
