@@ -25,6 +25,7 @@ import * as bandeja from './bandeja.js';
 import * as tablero from './tablero.js';
 import * as whatsapp from './whatsapp.js';
 import * as propuestas from './propuestas.js';
+import * as telefono from './telefono.js';
 import {
   BASE,
   MODELO,
@@ -76,6 +77,11 @@ export default {
        propia puerta —firma HMAC del cuerpo— y es la única que tiene. */
     const deWhatsapp = await whatsapp.atender(peticion, env, ruta, contexto);
     if (deWhatsapp) return deWhatsapp;
+
+    // El telefono tambien va antes del portero: Twilio no manda Origin. Trae
+    // sus tres puertas (firma del webhook, token del relay, token de bandeja).
+    const deTelefono = await telefono.atender(peticion, env, ruta, contexto, bandeja.autorizado);
+    if (deTelefono) return deTelefono;
 
     // El origen decide de quién es esta petición. Si no es de nadie, 403 sin
     // llegar a la API — el navegador no decide esto, lo decide el servidor.

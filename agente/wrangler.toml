@@ -69,3 +69,12 @@ crons = ["0 9 * * *"]
 # Los dos de Telegram son opcionales: sin ellos el agente funciona igual, y el
 # aviso queda escrito en la base con entregado = 0 para que lo veas en la
 # bandeja. El BANDEJA_TOKEN no es opcional si quieres leer las conversaciones.
+
+# El telefono (agente/src/telefono.js). La voz la pone Twilio: Amazon Mia
+# generativa es mujer, mexicana y natural. Los secretos van aparte:
+#   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM (el numero, +1... o +52...)
+#   TEL_RELAY_TOKEN (aleatorio; viaja solo dentro del TwiML firmado)
+[vars]
+TEL_TTS = "Amazon"
+TEL_VOZ = "Mia-Generative"
+MODELO_VOZ = "deepseek-v4-flash"
