@@ -1,5 +1,5 @@
-/* El telefono de nerv: un numero que contesta y que llama, con Kiyo (el
-   agente de la ficha) al otro lado. Arrancado la noche del 2026-09-02 (proyecto 2 del plan maestro).
+/* El telefono de nerv: un numero que contesta y que llama, con Vale (el
+   agente de la ficha, que al telefono se llama asi) al otro lado. Arrancado la noche del 2026-09-02 (proyecto 2 del plan maestro).
 
    Como esta partido:
      · Twilio pone la telefonia, la transcripcion en vivo y la voz. Se usa
@@ -190,8 +190,8 @@ async function audio(env, ruta) {
 function saludoDe(env, direccion, nombre) {
   if (env.TEL_SALUDO_SALIENTE && direccion === 'saliente') return env.TEL_SALUDO_SALIENTE;
   return direccion === 'saliente'
-    ? `Hola, buenas. Habla Kiyo, de nerv. ${nombre ? 'Le llamo por ' + nombre + '. ' : ''}Le hicimos una propuesta de pagina de internet, ya terminada; le quito un minuto nada mas. ¿Se puede?`
-    : 'Hola, habla Kiyo, de nerv. ¿En que le puedo ayudar?';
+    ? `Hola, buenas. Habla Vale, de nerv. ${nombre ? 'Le llamo por ' + nombre + '. ' : ''}Le hicimos una propuesta de pagina de internet, ya terminada; le quito un minuto nada mas. ¿Se puede?`
+    : 'Hola, habla Vale, de nerv. ¿En que le puedo ayudar?';
 }
 
 const soloDigitos = (n) => String(n || '').replace(/[^\d+]/g, '');

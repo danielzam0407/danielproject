@@ -97,11 +97,15 @@ preguntan cuándo puede, ahí los mandas con agendar_llamada.
    cuando era un solo texto: sale byte por byte igual. Eso es a propósito —
    agregar un canal no puede cambiar en silencio al agente que ya pasó por el
    auditor (regla 7 de la casa). */
-const CABEZA = `Eres **Kiyo**, la mano derecha de Daniel Zambrano en el estudio nerv.
+/* El nombre es lo unico que cambia por canal: en el sitio y en WhatsApp es
+   Kiyo; al telefono es Vale (Daniel, 2026-09-03: "que se llame Vale"). La
+   cabeza es la misma funcion para los tres, asi que SISTEMA sale byte por
+   byte igual que antes de que existiera el telefono. */
+const cabezaDe = (nombre) => `Eres **${nombre}**, la mano derecha de Daniel Zambrano en el estudio nerv.
 Atiendes a quien llega al portfolio: contestas lo que puedas y, cuando la
 conversación vale la pena, la conviertes en un contacto real.
 
-Que tengas nombre no te da licencia para nada. Eres Kiyo en el trato — presente,
+Que tengas nombre no te da licencia para nada. Eres ${nombre} en el trato — presente,
 con criterio, que se acuerda de lo que ya te dijeron en esta conversación y no
 lo vuelve a preguntar. No eres Daniel ni hablas por él: cuando algo es decisión
 suya, se la pasas.
@@ -253,6 +257,7 @@ Cómo hablas:
 - Sin emojis. Sin listas con viñetas salvo que te pidan comparar cosas.
 
 `;
+const CABEZA = cabezaDe('Kiyo');
 
 const NO_SE_WEB = `Cuando no sepas algo — esto es lo más importante que haces:
 Nunca cierres con "no lo sé" y ahí lo dejes. Eso apaga la conversación y pierde
@@ -487,7 +492,7 @@ desde una llamada; no lo ofrezcas.
 
 const SISTEMA = CABEZA + NO_SE_WEB + GUARDAS + USO_WEB;
 const SISTEMA_WHATSAPP = CABEZA + NO_SE_WA + GUARDAS + USO_WA;
-const SISTEMA_TELEFONO = CABEZA + NO_SE_TEL + GUARDAS + USO_TEL;
+const SISTEMA_TELEFONO = cabezaDe('Vale') + NO_SE_TEL + GUARDAS + USO_TEL;
 
 // ─── HERRAMIENTAS ──────────────────────────────────────────────────────────
 const HERRAMIENTAS = [
@@ -1059,7 +1064,7 @@ function ejecutarTelefono(nombre, entrada, ajustes) {
         'Le va por mensaje de texto ahora mismo. Dile que le llega en un momento' +
         (ajustes.propuestaUrl ? ' y que ahí está su propuesta, ya terminada.' : '.'),
       sms:
-        `Hola, habla Kiyo, de nerv. Aquí está ${ajustes.propuestaUrl ? 'su propuesta, ya en línea' : 'nuestro sitio'}: ${liga}`,
+        `Hola, habla Vale, de nerv. Aquí está ${ajustes.propuestaUrl ? 'su propuesta, ya en línea' : 'nuestro sitio'}: ${liga}`,
       aviso: { titulo: `${de}: se le mandó el enlace`, cuerpo: liga },
     };
   }
@@ -1087,7 +1092,7 @@ function ejecutarTelefono(nombre, entrada, ajustes) {
       resultado:
         'Le va por mensaje de texto la página para apartar la llamada. Dile que ' +
         'ahí escoge día y hora; tú no prometas ninguna.',
-      sms: `Hola, habla Kiyo, de nerv. Aquí aparta su llamada con Daniel: ${url}`,
+      sms: `Hola, habla Vale, de nerv. Aquí aparta su llamada con Daniel: ${url}`,
       aviso: { titulo: `${de}: quiere agendar`, cuerpo: motivo },
     };
   }

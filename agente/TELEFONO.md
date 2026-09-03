@@ -6,11 +6,11 @@ Valterra quedo cerrada para su junta. Daniel eligio esto entre tres opciones:
 
 ## Que es
 
-Un numero de telefono con **Kiyo** del otro lado: el mismo agente del chat del
-sitio y de WhatsApp, con la misma ficha (`src/clientes/daniel.js`). Se llamo
-"Vale" las primeras horas, por costumbre de Valterra; desde el 2026-09-03 es
-Kiyo, porque un prospecto que recibe la llamada y luego entra al sitio tiene
-que encontrar a la misma persona. Sirve a tres cosas a la vez:
+Un numero de telefono con **Vale** del otro lado: el mismo agente del chat del
+sitio y de WhatsApp, con la misma ficha (`src/clientes/daniel.js`), que en
+esos dos canales se llama Kiyo. El nombre por canal lo decide la ficha
+(`cabezaDe(nombre)`); Daniel pidio el 2026-09-03 que al telefono fuera Vale.
+Sirve a tres cosas a la vez:
 
 1. **La llamada de venta del plan**: "ya le hicimos su pagina, esta terminada,
    se la mando ahora mismo". El gancho es que existe, no que se promete.
