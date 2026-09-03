@@ -368,13 +368,64 @@ function pintarPropuestas(p) {
   return seccion('Propuestas', dentro);
 }
 
+/* El telefono: se pide aparte porque consulta a Twilio y tarda; el resto del
+   tablero no espera por el. */
+function pintarTelefono(dg, ll) {
+  if (dg && dg.error) return seccion('Teléfono', '<p class="nada">' + esc(dg.error) + '</p>');
+  var num = (dg.numeros || [])[0] || {};
+  var bien = !!(num.voiceUrl && num.voiceUrl.indexOf('/telefono/entrante') >= 0);
+  var dentro = '<div class="cifras">' +
+    cifra(dg.desde || '—', 'número', 'bien') +
+    cifra(dg.cuenta && dg.cuenta.tipo === 'Trial' ? 'prueba' : (dg.cuenta && dg.cuenta.tipo) || '?', 'cuenta', dg.cuenta && dg.cuenta.tipo === 'Trial' ? '' : 'bien') +
+    cifra(bien ? 'sí' : 'NO', 'webhook apuntando al worker', bien ? 'bien' : 'mal') +
+    '</div>';
+  if (!bien) dentro += '<p class="nada">El número no apunta a /telefono/entrante. Voice URL actual: ' + esc(num.voiceUrl || '(vacío)') + '</p>';
+  dentro += '<p class="d">Números verificados en Twilio (a los que la cuenta de prueba puede llamar): ' +
+    esc((dg.verificados || []).join(', ') || 'ninguno') + '</p>';
+  dentro += '<p><input id="telA" placeholder="+52..." value="' + esc((dg.verificados || [])[0] || '') + '" style="width:14em"> ' +
+    '<button id="telLlamar">Que Twilio me llame</button> <span id="telAviso" class="d"></span></p>';
+  var tw = dg.llamadas || [];
+  dentro += '<h3>Lo que Twilio registró</h3>' + (tw.length ? '<table>' + tw.map(function (c) {
+    return '<tr><td>' + esc(haceCuanto(c.inicio)) + '</td><td>' + esc(c.direccion) + '</td><td>' + esc(c.de) + ' → ' + esc(c.a) +
+      '</td><td>' + esc(c.estado) + '</td><td>' + esc(c.duracion || 0) + ' s</td></tr>';
+  }).join('') + '</table>' : '<p class="nada">Twilio no tiene ninguna llamada: lo que marcaste nunca llegó a Twilio (operadora, prefijo, o número).</p>');
+  var nu = (ll && ll.llamadas) || [];
+  dentro += '<h3>Lo que habló Vale</h3>' + (nu.length ? nu.slice(0, 5).map(function (c) {
+    return '<p class="d">' + esc(haceCuanto(c.inicio)) + ' · ' + esc(c.direccion) + ' · ' + esc(c.a || c.de) + '</p><ul>' +
+      (c.turnos || []).slice(-8).map(function (t) { return '<li>' + esc(t.rol === 'vale' ? 'Vale: ' : 'Persona: ') + esc(t.texto) + '</li>'; }).join('') + '</ul>';
+  }).join('') : '<p class="nada">Ninguna llamada ha llegado al worker todavía.</p>');
+  return seccion('Teléfono', dentro);
+}
+
+function cargarTelefono() {
+  var caja = document.getElementById('telefono');
+  if (!caja) return;
+  Promise.all([api('/telefono/diagnostico').then(function (r) { return r.json(); }), api('/telefono/llamadas').then(function (r) { return r.json(); })])
+    .then(function (rs) {
+      caja.outerHTML = pintarTelefono(rs[0], rs[1]);
+      var b = document.getElementById('telLlamar');
+      if (!b) return;
+      b.onclick = function () {
+        var a = document.getElementById('telA').value.trim(), av = document.getElementById('telAviso');
+        b.disabled = true; av.textContent = 'Marcando…';
+        api('/telefono/llamar', { method: 'POST', body: JSON.stringify({ a: a, nombre: 'Daniel', segundos: 240 }) })
+          .then(function (r) { return r.json().then(function (j) { av.textContent = r.ok ? ('Twilio está llamando (' + (j.estado || j.sid) + '). Contesta y habla con Vale.') : ('No se pudo: ' + (j.error || r.status)); }); })
+          .catch(function (e) { av.textContent = 'Error: ' + e; })
+          .then(function () { b.disabled = false; setTimeout(cargarTelefono, 25000); });
+      };
+    })
+    .catch(function (e) { caja.innerHTML = '<div><p class="nada">Teléfono: ' + esc(e) + '</p></div>'; });
+}
+
 function pintar(d) {
   document.getElementById('sello').textContent = 'leído ' + haceCuanto(d.cuando);
   var html = pintarVigilancia(d.vigilancia);
   (d.clientes || []).forEach(function (c) { html += pintarCliente(c); });
   html += pintarPropuestas(d.propuestas);
   html += pintarCorreo(d.correo);
+  html += '<section id="telefono"><h2>Teléfono</h2><div><p class="d">Preguntándole a Twilio…</p></div></section>';
   document.getElementById('cuerpo').innerHTML = html;
+  cargarTelefono();
 }
 
 function cargar() {

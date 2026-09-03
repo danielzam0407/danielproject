@@ -313,6 +313,26 @@ async function ultimas(peticion, env, autorizado) {
   return json({ llamadas: r.results.map((l) => ({ ...l, turnos: JSON.parse(l.turnos || '[]') })) });
 }
 
+// Diagnostico: lo que Twilio sabe del numero y de las ultimas llamadas, para
+// no adivinar cuando "solo marca y cuelga". Con el token de la bandeja.
+async function diagnostico(peticion, env, autorizado) {
+  if (!autorizado(peticion, env)) return new Response('no', { status: 403 });
+  if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) return json({ error: 'sin credenciales de Twilio' }, 503);
+  const auth = { authorization: 'Basic ' + btoa(env.TWILIO_ACCOUNT_SID + ':' + env.TWILIO_AUTH_TOKEN) };
+  const base = `https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}`;
+  const pedir = async (ruta) => { const r = await fetch(base + ruta, { headers: auth }); return { estado: r.status, datos: await r.json().catch(() => ({})) }; };
+  const [cuenta, numeros, verificados, llamadas] = await Promise.all([
+    pedir('.json'), pedir('/IncomingPhoneNumbers.json?PageSize=5'), pedir('/OutgoingCallerIds.json?PageSize=5'), pedir('/Calls.json?PageSize=8'),
+  ]);
+  return json({
+    cuenta: { estado: cuenta.estado, tipo: cuenta.datos.type, status: cuenta.datos.status },
+    numeros: (numeros.datos.incoming_phone_numbers || []).map((n) => ({ numero: n.phone_number, voz: n.capabilities && n.capabilities.voice, voiceUrl: n.voice_url, metodo: n.voice_method, estado: n.status })),
+    verificados: (verificados.datos.outgoing_caller_ids || []).map((v) => v.phone_number),
+    llamadas: (llamadas.datos.calls || []).map((c) => ({ sid: c.sid, de: c.from, a: c.to, direccion: c.direction, estado: c.status, inicio: c.start_time, duracion: c.duration, precio: c.price })),
+    desde: env.TWILIO_FROM,
+  });
+}
+
 function json(cuerpo, estado = 200) {
   return new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 }
@@ -326,5 +346,6 @@ export async function atender(peticion, env, ruta, contexto, autorizado) {
   if (ruta === '/telefono/llamar' && peticion.method === 'POST') return llamar(peticion, env, url, autorizado);
   if (ruta === '/telefono/no-llamar' && peticion.method === 'POST') return noLlamar(peticion, env, autorizado);
   if (ruta === '/telefono/llamadas' && peticion.method === 'GET') return ultimas(peticion, env, autorizado);
+  if (ruta === '/telefono/diagnostico' && peticion.method === 'GET') return diagnostico(peticion, env, autorizado);
   return new Response('no existe', { status: 404 });
 }
