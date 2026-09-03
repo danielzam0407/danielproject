@@ -70,6 +70,13 @@ Sirve a tres cosas a la vez:
     esta hecha, se la mando ahora mismo".
   - `agendar_llamada(motivo)`: manda por SMS la pagina de reservas
     (`CAL_URL`) y avisa a Daniel. No promete hora.
+  **Como se presenta**: "la agente de nerv, la asistente de Daniel". No abre
+  diciendo que es un sistema ni lo repite sin que venga al caso (Daniel,
+  2026-09-03: la gente cuelga o se siente timada). Si le preguntan directo si
+  es una persona o una grabacion, lo contesta en media frase, sin la palabra
+  "robot" y sin discurso, y sigue con lo suyo. No lo niega ni se hace la
+  ambigua: eso es engañar a quien pregunta, y en una llamada de venta es
+  justo lo que PROFECO y las politicas de Twilio persiguen.
   Ninguna pide datos: el numero lo trae la llamada. En la cuenta de prueba
   de Twilio el SMS solo llega a numeros verificados; el aviso a Daniel sale
   igual, asi que la promesa se cumple por una via o por la otra.
