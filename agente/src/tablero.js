@@ -378,6 +378,7 @@ function pintarTelefono(dg, ll) {
     cifra(dg.desde || '—', 'número', 'bien') +
     cifra(dg.cuenta && dg.cuenta.tipo === 'Trial' ? 'prueba' : (dg.cuenta && dg.cuenta.tipo) || '?', 'cuenta', dg.cuenta && dg.cuenta.tipo === 'Trial' ? '' : 'bien') +
     cifra(bien ? 'sí' : 'NO', 'webhook apuntando al worker', bien ? 'bien' : 'mal') +
+    cifra(dg.voz ? dg.voz.motor : '?', 'voz' + (dg.voz && dg.voz.voz ? ' · ' + dg.voz.voz : ''), dg.voz && dg.voz.motor === 'Fish Audio' ? 'bien' : '') +
     '</div>';
   if (!bien) dentro += '<p class="nada">El número no apunta a /telefono/entrante. Voice URL actual: ' + esc(num.voiceUrl || '(vacío)') + '</p>';
   dentro += '<p class="d">Números verificados en Twilio (a los que la cuenta de prueba puede llamar): ' +
@@ -387,7 +388,8 @@ function pintarTelefono(dg, ll) {
   var tw = dg.llamadas || [];
   dentro += '<h3>Lo que Twilio registró</h3>' + (tw.length ? '<table>' + tw.map(function (c) {
     return '<tr><td>' + esc(haceCuanto(c.inicio)) + '</td><td>' + esc(c.direccion) + '</td><td>' + esc(c.de) + ' → ' + esc(c.a) +
-      '</td><td>' + esc(c.estado) + '</td><td>' + esc(c.duracion || 0) + ' s</td></tr>';
+      '</td><td>' + esc(c.estado) + '</td><td>' + esc(c.duracion || 0) + ' s</td></tr>' +
+      (c.alertas || []).map(function (a) { return '<tr><td></td><td colspan="4" class="grave">error ' + esc(a.codigo) + ': ' + esc(a.texto) + '</td></tr>'; }).join('');
   }).join('') + '</table>' : '<p class="nada">Twilio no tiene ninguna llamada: lo que marcaste nunca llegó a Twilio (operadora, prefijo, o número).</p>');
   var nu = (ll && ll.llamadas) || [];
   dentro += '<h3>Lo que habló Vale</h3>' + (nu.length ? nu.slice(0, 5).map(function (c) {

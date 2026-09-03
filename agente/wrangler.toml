@@ -70,11 +70,21 @@ crons = ["0 9 * * *"]
 # aviso queda escrito en la base con entregado = 0 para que lo veas en la
 # bandeja. El BANDEJA_TOKEN no es opcional si quieres leer las conversaciones.
 
-# El telefono (agente/src/telefono.js). La voz la pone Twilio: Amazon Mia
-# generativa es mujer, mexicana y natural. Los secretos van aparte:
+# El telefono (agente/src/telefono.js). La voz la pone Twilio. ElevenLabs
+# (Flash 2.5) con "Ana Maria": mujer joven, acento mexicano neutro, del catalogo
+# de Twilio para es-MX. Otras del mismo catalogo, por si esta no convence:
+# Regina (contact center) 9Godp7dNohUvXk6qp0gS, Ana Sofia ewn5JTa3lNPY8QVuZJi6.
+# Se afina con sufijo: <id>-<modelo>-<velocidad>_<estabilidad>_<similitud>,
+# p. ej. m7yTemJqdIqrcNleANfX-flash_v2_5-1.0_0.5_0.8. Amazon Mia-Generative
+# fue la primera y Daniel la oyo "terrible" (2026-09-03). Los secretos van aparte:
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM (el numero, +1... o +52...)
 #   TEL_RELAY_TOKEN (aleatorio; viaja solo dentro del TwiML firmado)
+#   FISH_API_KEY y FISH_VOZ (opcionales): con los dos puestos, la voz la pone
+#   Fish Audio en vez de Twilio. FISH_VOZ es el id de la voz en fish.audio
+#   (el "reference id" de la pagina de la voz). FISH_MODELO por defecto
+#   s2.1-pro (15 USD por millon de letras; s2.1-pro-free es gratis con tope
+#   de uso justo). FISH_VELOCIDAD, de 0.5 a 2, por si hay que apurarla.
 [vars]
-TEL_TTS = "Amazon"
-TEL_VOZ = "Mia-Generative"
+TEL_TTS = "ElevenLabs"
+TEL_VOZ = "m7yTemJqdIqrcNleANfX"
 MODELO_VOZ = "deepseek-v4-flash"
